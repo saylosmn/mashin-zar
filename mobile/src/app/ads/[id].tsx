@@ -9,6 +9,7 @@ import { C } from "@/lib/theme";
 import { errMsg, initial, money, timeAgo } from "@/lib/format";
 import { Button, CatChip, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { Ad, PublicAd } from "@/lib/types";
+import { useLiveSync } from "@/lib/live";
 
 const W = Dimensions.get("window").width;
 
@@ -49,6 +50,7 @@ export default function AdDetail() {
   }, [id, uid]);
 
   useEffect(() => { load(); }, [load]);
+  useLiveSync((e) => { if (!e.id || e.id === id) load(); }, ["ads"]);
 
   async function toggleFav() {
     const next = !fav;

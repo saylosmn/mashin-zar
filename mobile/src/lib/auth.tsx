@@ -6,6 +6,7 @@ import * as QueryParams from "expo-auth-session/build/QueryParams";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { registerPush } from "./push";
+import { useLiveSync } from "./live";
 import type { Profile, Settings } from "./types";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -71,6 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => sub.subscription.unsubscribe();
   }, [loadProfile]);
+
+  // Профайл (эрх, хаагдсан эсэх) болон тохиргоо өөрчлөгдвөл шууд шинэчилнэ
+  useLiveSync((e) => {
+    const uid = session?.user.id;
+    if (uid && (e.table !== "profiles" || !e.id || e.id === uid)) loadProfile(uid);
+  }, ["profiles", "settings", "staff_invites"]);
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo = makeRedirectUri({ scheme: "mashinzar", path: "auth/callback" });

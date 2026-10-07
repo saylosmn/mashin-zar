@@ -8,6 +8,7 @@ import { C, F } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
 import { BRANDS } from "@/lib/cars";
 import { AdCard, Button, CardSkeleton, StateView, T } from "@/components/ui";
+import { useLiveSync } from "@/lib/live";
 import type { PublicAd } from "@/lib/types";
 
 const PAGE = 20;
@@ -68,6 +69,13 @@ export default function Home() {
       .eq("read", false)
       .then(({ count: c }) => setUnread(c ?? 0));
   }, []);
+
+  // Шинэ зар батлагдах, зарагдах, устгагдахад жагсаалт шууд шинэчлэгдэнэ
+  useLiveSync(() => load(0), ["ads"]);
+  const loadUnread = useCallback(() => {
+    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("read", false).then(({ count: c }) => setUnread(c ?? 0));
+  }, []);
+  useLiveSync(loadUnread, ["ads", "*"]);
 
   const tabs: { key: Cat; label: string }[] = [
     { key: "all", label: "Бүгд" },

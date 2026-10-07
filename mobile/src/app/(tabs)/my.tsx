@@ -7,6 +7,7 @@ import { C } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
 import { Button, CardSkeleton, Photo, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
+import { useLiveSync } from "@/lib/live";
 
 type Tab = "all" | AdStatus | "saved";
 
@@ -39,6 +40,8 @@ export default function MyAds() {
   }, [uid]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+  // Менежер батлах, санал илгээх, зарагдсан болгоход төлөв шууд солигдоно
+  useLiveSync(() => load(), ["ads"]);
 
   function remove(a: Ad) {
     Alert.alert("Зар устгах уу?", `${a.brand} ${a.model} зарыг бүр мөсөн устгана.`, [
