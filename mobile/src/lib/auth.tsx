@@ -44,7 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("settings").select("*").eq("id", 1).maybeSingle(),
     ]);
-    setProfile((p as Profile) ?? null);
+    if (p) setProfile(p as Profile);
+    else {
+      const { data: u } = await supabase.auth.getUser();
+      const meta = u.user?.user_metadata ?? {};
+      const { data: created } = await supabase
+        .from("profiles")
+        .insert({ id: uid, email: u.user?.email, full_name: meta.full_name ?? meta.name ?? null, avatar_url: meta.avatar_url ?? null })
+        .select("*")
+        .maybeSingle();
+      setProfile((created as Profile) ?? null);
+    }
     if (s) setSettings(s as Settings);
   }, []);
 

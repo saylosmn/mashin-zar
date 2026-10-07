@@ -8,8 +8,24 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return null;
-  const { data } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
-  return (data as Profile) ?? null;
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
+  // Эрхийн алдааг нэвтрэх хуудас руу дахин буцаах биш, алдааны хуудсаар харуулна.
+  if (error) throw new Error(`Профайл уншиж чадсангүй: ${error.message}`);
+  if (data) return data as Profile;
+  // Профайл байхгүй бол (trigger ажиллаагүй үед) өөрөө үүсгэнэ.
+  const meta = auth.user.user_metadata ?? {};
+  const { data: created, error: insErr } = await supabase
+    .from("profiles")
+    .insert({
+      id: auth.user.id,
+      email: auth.user.email,
+      full_name: meta.full_name ?? meta.name ?? null,
+      avatar_url: meta.avatar_url ?? null,
+    })
+    .select("*")
+    .single();
+  if (insErr) throw new Error(`Профайл үүсгэж чадсангүй: ${insErr.message}`);
+  return created as Profile;
 });
 
 /** Нэвтэрсэн, хаагдаагүй хэрэглэгч шаардана. */

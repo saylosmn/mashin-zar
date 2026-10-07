@@ -275,10 +275,6 @@ drop policy if exists profiles_select on public.profiles;
 create policy profiles_select on public.profiles for select using (id = auth.uid() or public.is_staff());
 drop policy if exists profiles_update_own on public.profiles;
 create policy profiles_update_own on public.profiles for update using (id = auth.uid()) with check (id = auth.uid());
--- Хэрэглэгч өөрийн role / is_blocked-ийг өөрчилж чадахгүй
-revoke update on public.profiles from authenticated, anon;
-grant update (full_name, phone, city, profile_completed, notify_new_ads, notify_category, notify_brand, notify_max_price)
-  on public.profiles to authenticated;
 
 -- staff_invites
 drop policy if exists invites_admin on public.staff_invites;
@@ -498,9 +494,43 @@ language sql stable security definer set search_path = public as $$
   select * from public.profiles where id = auth.uid()
 $$;
 
+-- ---------------------------------------------------------------------
+-- Эрх (GRANT) — шинэ Supabase project-д автоматаар өгөгддөггүй
+-- ---------------------------------------------------------------------
+grant usage on schema public to anon, authenticated;
+
+-- Нээлттэй унших
+grant select on public.settings to anon, authenticated;
+grant select on public.public_ads to anon, authenticated;
+
+-- Нэвтэрсэн хэрэглэгч (мөр бүрийг RLS хамгаална)
+grant select on public.profiles to authenticated;
+grant select, insert, update, delete on public.ads to authenticated;
+grant select, insert, delete on public.favorites to authenticated;
+grant select, update, delete on public.notifications to authenticated;
+grant select, insert, update, delete on public.push_tokens to authenticated;
+grant select, insert, update, delete on public.staff_invites to authenticated;
+grant select on public.activity_log to authenticated;
+grant update on public.settings to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+
+-- Профайл: зөвхөн эдгээр баганыг өөрөө бичнэ (role, is_blocked-ийг өөрчилж чадахгүй)
+revoke insert, update on public.profiles from anon, authenticated;
+grant insert (id, email, full_name, avatar_url) on public.profiles to authenticated;
+grant update (full_name, phone, city, profile_completed, notify_new_ads, notify_category, notify_brand, notify_max_price)
+  on public.profiles to authenticated;
+
+drop policy if exists profiles_insert_own on public.profiles;
+create policy profiles_insert_own on public.profiles for insert to authenticated
+  with check (id = auth.uid() and role = 'user' and not is_blocked);
+
+-- Функцууд
+grant execute on all functions in schema public to anon, authenticated;
 revoke execute on function public.approve_ad, public.reject_ad, public.mark_contacted, public.save_note,
   public.send_offer, public.mark_sold, public.set_blocked, public.invite_staff, public.remove_staff,
   public.update_settings, public.push_targets from anon;
+revoke execute on function public.log_action from anon, authenticated;
+
 
 -- ---------------------------------------------------------------------
 -- Зургийн сан (Storage)
