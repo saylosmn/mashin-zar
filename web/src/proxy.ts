@@ -4,6 +4,16 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login", "/auth"];
 
 export async function proxy(request: NextRequest) {
+  // Supabase нь redirect URL-ийг зөвшөөрөөгүй үед Site URL руу ?code=... -тэй буцаадаг.
+  // Тийм код ирвэл callback руу шилжүүлж нэвтрэлтийг дуусгана.
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && !request.nextUrl.pathname.startsWith("/auth/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    url.search = `?code=${encodeURIComponent(code)}&next=/`;
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
