@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "Машин зар",
+    "slug": "mashin-zar",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "mn.mashinzar.app"
+    },
+    "android": {
+      "package": "mn.mashinzar.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#111317",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-sqlite",
+      "expo-web-browser",
+      "expo-image",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#111317",
+          "image": "./assets/icon.png",
+          "imageWidth": 120
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#F5B800"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Машины зураг оруулахын тулд зургийн санд хандах зөвшөөрөл хэрэгтэй.",
+          "cameraPermission": "Машины зураг авахын тулд камерт хандах зөвшөөрөл хэрэгтэй."
+        }
+      ]
+    ],
+    "scheme": "mashinzar",
+    "backgroundColor": "#F3F4F1",
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "eas": {}
+    }
+  }
+}
