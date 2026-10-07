@@ -1,0 +1,128 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { getSettings, requireUser } from "@/lib/data";
+import { categoryLabel, dateShort, money, num } from "@/lib/format";
+import { CarPhoto } from "@/components/CarPhoto";
+import { StatusBadge } from "@/components/StatusBadge";
+import { AdCard } from "@/components/AdCard";
+import { IconCheck, IconClose } from "@/components/icons";
+import { deleteMyAd } from "../actions";
+import type { Ad, AdStatus, PublicAd } from "@/lib/types";
+
+export const metadata = { title: "Миний зарууд" };
+
+const TABS: { key?: AdStatus | "saved"; label: string }[] = [
+  { label: "Бүгд" },
+  { key: "pending", label: "Хүлээгдэж" },
+  { key: "active", label: "Идэвхтэй" },
+  { key: "sold", label: "Зарагдсан" },
+  { key: "saved", label: "Хадгалсан" },
+];
+
+export default async function MyAdsPage({ searchParams }: { searchParams: Promise<{ tab?: string; created?: string; deleted?: string; error?: string }> }) {
+  const sp = await searchParams;
+  const me = await requireUser("/my");
+  const settings = await getSettings();
+  const supabase = await createClient();
+  const { data } = await supabase.from("ads").select("*").eq("user_id", me.id).order("created_at", { ascending: false });
+  const ads = (data ?? []) as Ad[];
+  const { data: favRows } = await supabase.from("favorites").select("ad_id").eq("user_id", me.id);
+  const favIds = (favRows ?? []).map((f) => f.ad_id as string);
+  const { data: favAds } = favIds.length
+    ? await supabase.from("public_ads").select("*").in("id", favIds)
+    : { data: [] as PublicAd[] };
+
+  const tab = sp.tab;
+  const shown = tab && tab !== "saved" ? ads.filter((a) => a.status === tab) : ads;
+  const countOf = (k?: string) => (k === "saved" ? (favAds ?? []).length : k ? ads.filter((a) => a.status === k).length : ads.length);
+
+  return (
+    <main className="max-w-[1280px] w-full mx-auto px-4 sm:px-6 pt-8 pb-16 flex flex-col gap-5">
+      {sp.created && (
+        <div role="status" className="flex items-center gap-3.5 bg-ink text-paper rounded-2xl px-5 py-4.5 flex-wrap">
+          <span className="w-10 h-10 rounded-xl bg-yellow text-ink flex items-center justify-center shrink-0"><IconCheck size={22} /></span>
+          <div className="flex flex-col gap-0.5 flex-[1_1_300px]">
+            <span className="font-bold text-[16px]">Зар амжилттай үүслээ</span>
+            <span className="text-[14px] text-[#c9cdd3]">Манай менежер удахгүй тантай холбогдоно.</span>
+          </div>
+          <Link href="/my" aria-label="Хаах" className="w-11 h-11 flex items-center justify-center text-paper"><IconClose size={18} /></Link>
+        </div>
+      )}
+      {sp.deleted && <p role="status" className="m-0 card px-4 py-3 text-[14px]">Зар устгагдлаа.</p>}
+      {sp.error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">Устгаж чадсангүй. Зарагдсан зарыг устгах боломжгүй.</p>}
+
+      <div className="flex justify-between items-center gap-3 flex-wrap">
+        <h1 className="h-display m-0 text-[clamp(24px,3vw,32px)]">Миний зарууд</h1>
+        <nav aria-label="Төлөв" className="flex gap-1.5 flex-wrap">
+          {TABS.map((t) => {
+            const on = (t.key ?? "") === (tab ?? "");
+            return (
+              <Link
+                key={t.label}
+                href={t.key ? `/my?tab=${t.key}` : "/my"}
+                aria-current={on ? "page" : undefined}
+                className={`h-10 px-3.5 rounded-full flex items-center text-[14px] no-underline ${on ? "bg-ink text-yellow font-semibold" : "border border-line-2 bg-card"}`}
+              >
+                {t.label} {countOf(t.key)}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      {tab === "saved" ? (
+        (favAds ?? []).length ? (
+          <div className="grid gap-[18px] grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
+            {(favAds as PublicAd[]).map((a) => <AdCard key={a.id} ad={a} cutoff={settings.cutoff_year} />)}
+          </div>
+        ) : (
+          <p className="card m-0 px-6 py-10 text-center text-muted">Хадгалсан зар алга. Зарын ♡ товчийг дарж хадгална.</p>
+        )
+      ) : shown.length === 0 ? (
+        <div className="card px-6 py-12 flex flex-col items-center gap-4 text-center">
+          <p className="m-0 text-[15px] text-body">Энд зар алга байна.</p>
+          <Link href="/post" className="btn btn-lg btn-ink">Зар нэмэх</Link>
+        </div>
+      ) : (
+        <div className="table-wrap">
+          <table className="table min-w-[820px]">
+            <thead>
+              <tr><th>Машин</th><th>Ангилал</th><th>Үнэ</th><th>Төлөв</th><th>Үзэлт</th><th>Огноо</th><th><span className="sr-only">Үйлдэл</span></th></tr>
+            </thead>
+            <tbody>
+              {shown.map((a) => (
+                <tr key={a.id}>
+                  <td>
+                    <Link href={`/ads/${a.id}`} className="flex items-center gap-3 no-underline">
+                      <CarPhoto path={a.photos[0]} alt="" className="w-16 h-12 rounded-lg" label="IMG" />
+                      <span className="font-semibold">{a.brand} {a.model} · {a.year_made}</span>
+                    </Link>
+                  </td>
+                  <td><span className="cat-chip">{categoryLabel(a.category, settings.cutoff_year)}</span></td>
+                  <td className="h-display text-[14px]">{money(a.price)}</td>
+                  <td>
+                    <div className="flex flex-col gap-1 items-start">
+                      <StatusBadge status={a.status} />
+                      {a.status === "pending" && <span className="text-[12px] text-muted">Менежер удахгүй холбогдоно</span>}
+                      {a.offer_amount && <span className="text-[12px] text-pending-fg font-semibold">Санал: {money(a.offer_amount)}</span>}
+                    </div>
+                  </td>
+                  <td className="mono">{a.status === "pending" ? "—" : num(a.views)}</td>
+                  <td className="text-muted">{dateShort(a.created_at)}</td>
+                  <td className="text-right">
+                    {a.status !== "sold" && (
+                      <form action={deleteMyAd}>
+                        <input type="hidden" name="id" value={a.id} />
+                        <button className="btn btn-sm btn-danger">Устгах</button>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </main>
+  );
+}
