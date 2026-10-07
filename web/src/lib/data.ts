@@ -10,7 +10,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   if (!auth.user) return null;
   const { data, error } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
   // Эрхийн алдааг нэвтрэх хуудас руу дахин буцаах биш, алдааны хуудсаар харуулна.
-  if (error) throw new Error(`Профайл уншиж чадсангүй: ${error.message}`);
+  if (error) redirect(`/setup-error?m=${encodeURIComponent(`Профайл уншиж чадсангүй: ${error.message}`)}`);
   if (data) return data as Profile;
   // Профайл байхгүй бол (trigger ажиллаагүй үед) өөрөө үүсгэнэ.
   const meta = auth.user.user_metadata ?? {};
@@ -24,7 +24,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
     })
     .select("*")
     .single();
-  if (insErr) throw new Error(`Профайл үүсгэж чадсангүй: ${insErr.message}`);
+  if (insErr) redirect(`/setup-error?m=${encodeURIComponent(`Профайл үүсгэж чадсангүй: ${insErr.message}`)}`);
   return created as Profile;
 });
 
