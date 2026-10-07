@@ -50,3 +50,5 @@ on conflict (id) do nothing;
 -- Урилгад байгаа и-мэйлүүдийн эрхийг шинэчлэх (админ болох мөр ажиллуулсан бол)
 update public.profiles p set role = i.role
 from public.staff_invites i where lower(i.email) = lower(p.email) and p.role <> i.role;
+
+notify pgrst, 'reload schema';
