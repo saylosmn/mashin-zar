@@ -555,6 +555,9 @@ do $$ begin
   alter publication supabase_realtime add table public.notifications;
 exception when others then null; end $$;
 
+-- API-ийн кэшийг шинэчлэх (хүснэгтүүд шууд харагдана)
+notify pgrst, 'reload schema';
+
 -- =====================================================================
 -- ЭХНИЙ АДМИН: доорх мөрөнд өөрийн Google и-мэйлийг бичээд ажиллуулна.
 -- (Нэвтрэхээсээ өмнө эсвэл дараа ажиллуулж болно.)
