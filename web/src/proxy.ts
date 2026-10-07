@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth", "/setup-error"];
+const PUBLIC_PATHS = ["/login", "/auth", "/setup-error", "/app"];
 
 export async function proxy(request: NextRequest) {
   // Supabase нь redirect URL-ийг зөвшөөрөөгүй үед Site URL руу ?code=... -тэй буцаадаг.

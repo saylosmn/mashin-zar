@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { OfflineBanner } from "./OfflineBanner";
+import { LiveSync } from "./LiveSync";
 import type { Profile } from "@/lib/types";
 
 export type NavItem = { href: string; label: string; badge?: number; key: string };
@@ -69,6 +70,7 @@ export function PanelShell({
       </nav>
       <main className="flex-[999_1_560px] min-w-0 px-[clamp(16px,3vw,40px)] pt-7 pb-12 flex flex-col gap-5">
         <OfflineBanner />
+        <LiveSync userId={profile.id} />
         {children}
       </main>
     </div>

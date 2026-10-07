@@ -46,6 +46,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </p>
           )}
           <GoogleButton next={next} />
+          <a href="/app" className="btn btn-lg btn-ghost w-full">Android апп татах</a>
           <p className="m-0 text-[13px] leading-relaxed text-muted">
             Нэвтэрснээр үйлчилгээний нөхцөл болон нууцлалын бодлогыг зөвшөөрнө.
           </p>

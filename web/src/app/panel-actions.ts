@@ -188,3 +188,13 @@ export async function saveSettings(fd: FormData) {
     }),
   );
 }
+
+export async function saveAppLink(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const url = String(fd.get("apk_url") || "").trim();
+  if (url && !/^https:\/\//.test(url)) redirect("/admin/settings?err=" + encodeURIComponent("Холбоос https:// -ээр эхлэх ёстой"));
+  await run(fd, "/admin/settings", "Апп татах холбоос хадгалагдлаа", () =>
+    supabase.rpc("set_app_link", { p_url: url, p_version: String(fd.get("apk_version") || "") || null }),
+  );
+}

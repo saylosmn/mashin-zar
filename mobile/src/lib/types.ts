@@ -84,6 +84,9 @@ export type Settings = {
   ad_days: number;
   notify_all_on_approve: boolean;
   notify_staff_on_new: boolean;
+  apk_url?: string | null;
+  apk_version?: string | null;
+  apk_updated_at?: string | null;
 };
 
 export type Notification = {

@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/SiteHeader";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { LiveSync } from "@/components/LiveSync";
 import { getProfile, unreadCount } from "@/lib/data";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -9,10 +10,11 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     <>
       <SiteHeader profile={profile} unread={unread} />
       <OfflineBanner />
+      <LiveSync userId={profile?.id} />
       <div className="flex-1 flex flex-col">{children}</div>
       <footer className="border-t border-line mt-8">
         <div className="max-w-[1280px] mx-auto px-6 py-6 flex flex-wrap justify-between gap-3 text-[13px] text-muted">
-          <span>© {new Date().getFullYear()} Машин зар</span>
+          <span>© {new Date().getFullYear()} Машин зар · <a href="/app" className="underline">Android апп татах</a></span>
           <form action="/auth/signout" method="post">
             <button className="underline cursor-pointer bg-transparent border-0 text-muted p-0">Гарах</button>
           </form>
