@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "141492297656",
+    "project_id": "mashinzar-e802b",
+    "storage_bucket": "mashinzar-e802b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:141492297656:android:0264cd0f31483ae41ab94d",
+        "android_client_info": {
+          "package_name": "mn.mashinzar.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9WQTexqjnsYowgtLB6uBdiMXyn4nca7I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
