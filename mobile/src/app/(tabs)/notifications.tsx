@@ -47,7 +47,7 @@ export default function Notifications() {
   }
 
   async function setPref(patch: Record<string, unknown>) {
-    await supabase.from("profiles").update(patch).eq("id", profile!.id);
+    await supabase.from("profiles").update(patch).eq("id", session?.user.id ?? "");
     refreshProfile();
   }
 

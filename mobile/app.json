@@ -62,6 +62,9 @@
     },
     "extra": {
       "eas": {}
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

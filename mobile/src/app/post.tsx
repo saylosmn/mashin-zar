@@ -25,7 +25,8 @@ async function compress(uri: string) {
 }
 
 export default function Post() {
-  const { profile, settings } = useAuth();
+  const { profile, settings, session } = useAuth();
+  const uid = session?.user.id ?? profile?.id ?? "";
   const insets = useSafeAreaInsets();
   const net = useNetInfo();
   const { max_photos: maxP, min_photos: minP, cutoff_year: cy } = settings;
@@ -86,7 +87,7 @@ export default function Post() {
       for (const [i, p] of pics.entries()) {
         const small = await compress(p.uri);
         const buf = await fetch(small).then((r) => r.arrayBuffer());
-        const path = `${profile!.id}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        const path = `${uid}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.jpg`;
         const { error } = await supabase.storage.from("ad-photos").upload(path, buf, { contentType: "image/jpeg" });
         if (error) throw error;
         uploaded.push(path);
@@ -94,7 +95,7 @@ export default function Post() {
       }
       setBusy({ done: pics.length, step: 3 });
       const { error } = await supabase.from("ads").insert({
-        user_id: profile!.id,
+        user_id: uid,
         brand: brand.trim(),
         model: model.trim(),
         trim: trim.trim() || null,

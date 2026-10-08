@@ -60,15 +60,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session);
-      await loadProfile(data.session?.user.id);
-      setReady(true);
-    });
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        setSession(data.session);
+        try {
+          await loadProfile(data.session?.user.id);
+        } catch (e) {
+          console.log("profile load failed", e);
+        }
+      })
+      .finally(() => setReady(true));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      loadProfile(s?.user.id);
-      if (s?.user.id) registerPush(s.user.id);
+      // Supabase-ийн зөвлөмж: энэ callback дотор шууд өөр supabase дуудлага хийхгүй
+      setTimeout(() => {
+        loadProfile(s?.user.id).catch(() => {});
+        if (s?.user.id) registerPush(s.user.id);
+      }, 0);
     });
     return () => sub.subscription.unsubscribe();
   }, [loadProfile]);

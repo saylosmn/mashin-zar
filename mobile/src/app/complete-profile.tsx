@@ -11,7 +11,7 @@ import { Button, Field, Input, T } from "@/components/ui";
 
 export default function CompleteProfile() {
   const { next } = useLocalSearchParams<{ next?: string }>();
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, session } = useAuth();
   const [name, setName] = useState(profile?.full_name ?? "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
   const [city, setCity] = useState(profile?.city ?? "Улаанбаатар");
@@ -26,7 +26,7 @@ export default function CompleteProfile() {
     if (!consent) return setErr("Менежер холбогдохыг зөвшөөрнө үү.");
     setBusy(true);
     setErr(null);
-    const { error } = await supabase.from("profiles").update({ full_name: name.trim(), phone: ph, city, profile_completed: true }).eq("id", profile!.id);
+    const { error } = await supabase.from("profiles").update({ full_name: name.trim(), phone: ph, city, profile_completed: true }).eq("id", session?.user.id ?? "");
     setBusy(false);
     if (error) return setErr(errMsg(error));
     await refreshProfile();
