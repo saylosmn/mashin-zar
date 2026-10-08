@@ -1,22 +1,41 @@
 import { Platform } from "react-native";
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { supabase } from "./supabase";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Expo Go (Android) дээр push мэдэгдэл дэмжигдэхгүй тул модулийг огт ачаалахгүй.
+const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const canPush = Platform.OS !== "web" && !inExpoGo;
 
-/** Push токен авч Supabase-д хадгална. EAS projectId байхгүй (Expo Go) бол чимээгүй алгасна. */
+type NotifModule = typeof import("expo-notifications");
+let N: NotifModule | null = null;
+function notifications(): NotifModule | null {
+  if (!canPush) return null;
+  if (!N) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      N = require("expo-notifications") as NotifModule;
+      N.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    } catch {
+      N = null;
+    }
+  }
+  return N;
+}
+
+/** Push токен авч Supabase-д хадгална. Боломжгүй орчинд чимээгүй алгасна — апп хэзээ ч унахгүй. */
 export async function registerPush(userId: string) {
+  const Notifications = notifications();
+  if (!Notifications) return;
   try {
-    if (Platform.OS === "web" || !Device.isDevice) return;
+    const Device = await import("expo-device");
+    if (!Device.isDevice) return;
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
         name: "Мэдэгдэл",

@@ -10,6 +10,9 @@ echo.
 echo [2/3] EAS project холбож байна (асуулт гарвал Y дарна)
 call npx eas-cli@latest init || goto :err
 echo.
+echo [2b] Шинэчлэл (EAS Update) тохируулж байна
+call npx eas-cli@latest update:configure || goto :err
+echo.
 echo [3/3] APK build хийж байна (Expo-ийн сервер дээр 10-20 минут)
 call npx eas-cli@latest build -p android --profile preview || goto :err
 echo.

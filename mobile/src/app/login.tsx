@@ -57,7 +57,7 @@ export default function Login() {
         />
         <T style={{ textAlign: "center", fontSize: 13, color: "#9AA0A9", lineHeight: 20 }}>
           Нэвтэрснээр{" "}
-          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL("https://mashin-zar.vercel.app")}>үйлчилгээний нөхцөл</T>{" "}
+          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL("https://web-mu-fawn-45.vercel.app")}>үйлчилгээний нөхцөл</T>{" "}
           болон нууцлалын бодлогыг зөвшөөрнө.
         </T>
       </View>

@@ -5,7 +5,7 @@ import { C } from "@/lib/theme";
 import { initial } from "@/lib/format";
 import { Button, T, s } from "@/components/ui";
 
-const WEB = "https://mashin-zar.vercel.app";
+const WEB = "https://web-mu-fawn-45.vercel.app";
 
 export default function ProfileTab() {
   const { profile, signOut } = useAuth();
