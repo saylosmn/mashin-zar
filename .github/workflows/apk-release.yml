@@ -1,0 +1,52 @@
+# Өмнө нь хийсэн EAS build-ийн APK-г GitHub Release-д хуулж тавина (EXPO_TOKEN шаардлагагүй).
+# URL өгөөгүй бол админ тохиргоонд хадгалсан апп татах холбоосыг ашиглана.
+name: APK → GitHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "APK файлын шууд холбоос (хоосон бол админ тохиргооных)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: APK татаж Release үүсгэх
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_URL: ${{ inputs.url }}
+        run: |
+          URL="$INPUT_URL"
+          VER=""
+          if [ -z "$URL" ]; then
+            KEY=$(grep -oE 'sb_publishable_[A-Za-z0-9_-]+' mobile/src/lib/supabase.ts | head -1)
+            HOST=$(grep -oE 'https://[a-z0-9]+\.supabase\.co' mobile/src/lib/supabase.ts | head -1)
+            J=$(curl -fsS "$HOST/rest/v1/settings?select=apk_url,apk_version&id=eq.1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" || echo "[]")
+            echo "settings: $J"
+            URL=$(echo "$J" | jq -r '.[0].apk_url // empty')
+            VER=$(echo "$J" | jq -r '.[0].apk_version // empty')
+          fi
+          if [ -z "$URL" ]; then
+            echo "::error::APK холбоос олдсонгүй. Run workflow дээр url талбарт APK-ийн шууд холбоосыг оруулна уу."
+            exit 1
+          fi
+          curl -fL --retry 3 -o mashin-zar.apk "$URL"
+          ls -lh mashin-zar.apk
+          if ! unzip -l mashin-zar.apk | grep -q AndroidManifest.xml; then
+            echo "::error::Татсан файл APK биш байна: $URL"
+            exit 1
+          fi
+          [ -z "$VER" ] && VER=$(node -p "require('./mobile/app.json').expo.version")
+          gh release create "apk-v$VER-${{ github.run_number }}" mashin-zar.apk \
+            --target "${{ github.sha }}" \
+            --title "Машин зар v$VER" \
+            --notes "Android апп (APK). Сайтын \"Апп татах\" товчоор шууд татагдана." \
+            --latest

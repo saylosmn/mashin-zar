@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import QRCode from "qrcode";
-import { getSettings } from "@/lib/data";
 import { Logo } from "@/components/Logo";
 import { LiveSync } from "@/components/LiveSync";
 import { apkInfo } from "@/lib/release";
@@ -10,14 +9,13 @@ import { apkInfo } from "@/lib/release";
 export const metadata: Metadata = { title: "Апп татах", description: "Машин зар Android апп татах" };
 
 export default async function AppDownload() {
-  const s = await getSettings();
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
   const proto = h.get("x-forwarded-proto") ?? "https";
   const ua = h.get("user-agent") ?? "";
   const isPhone = /Android|iPhone|iPad|Mobile/i.test(ua);
   const isIOS = /iPhone|iPad/i.test(ua);
-  const apk = await apkInfo(s);
+  const apk = await apkInfo();
   const ready = Boolean(apk);
   const qr = await QRCode.toString(`${proto}://${host}/app/download`, {
     type: "svg",

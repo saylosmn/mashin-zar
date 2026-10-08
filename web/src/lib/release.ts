@@ -1,14 +1,13 @@
-import type { Settings } from "./types";
-
 /**
  * APK нь GitHub Release-д "mashin-zar.apk" нэртэй хавсралт болж байрлана (GitHub Actions автоматаар хийнэ).
- * Repo private бол Vercel дээр GH_RELEASE_TOKEN (зөвхөн уншах эрхтэй токен) тохируулна.
- * Repo public бол токен хэрэггүй.
+ * Repo public бол токен хэрэггүй. Private бол Vercel дээр GH_RELEASE_TOKEN (Contents: Read-only) тохируулна.
  */
 const REPO = process.env.GH_RELEASE_REPO || "saylosmn/mashin-zar";
 const ASSET = "mashin-zar.apk";
+/** Public repo-д API дуудалгүйгээр хамгийн сүүлийн Release-ийн файл руу шууд очих холбоос */
+const LATEST_URL = `https://github.com/${REPO}/releases/latest/download/${ASSET}`;
 
-type GhAsset = { id: number; name: string; size: number; browser_download_url: string; updated_at: string };
+type GhAsset = { id: number; name: string; size: number; browser_download_url: string };
 type GhRelease = { tag_name: string; name: string | null; published_at: string; assets: GhAsset[] };
 
 function ghHeaders(accept = "application/vnd.github+json"): HeadersInit {
@@ -36,33 +35,29 @@ async function latestAsset(): Promise<{ release: GhRelease; asset: GhAsset } | n
 export type ApkInfo = { version: string | null; sizeMb: number | null; date: string | null };
 
 /** Апп татах хуудсанд харуулах мэдээлэл. null бол апп хараахан бэлэн биш. */
-export async function apkInfo(s: Settings): Promise<ApkInfo | null> {
+export async function apkInfo(): Promise<ApkInfo | null> {
   const gh = await latestAsset();
-  if (gh) {
-    return {
-      version: gh.release.name?.replace(/^.*v/i, "") || gh.release.tag_name,
-      sizeMb: Math.round((gh.asset.size / 1024 / 1024) * 10) / 10,
-      date: gh.release.published_at,
-    };
-  }
-  if (s.apk_url) return { version: s.apk_version ?? null, sizeMb: null, date: s.apk_updated_at ?? null };
-  return null;
+  if (!gh) return null;
+  return {
+    version: gh.release.name?.match(/v([\d.]+)/i)?.[1] ?? null,
+    sizeMb: Math.round((gh.asset.size / 1024 / 1024) * 10) / 10,
+    date: gh.release.published_at,
+  };
 }
 
 /** Шууд татах URL. Private repo бол GitHub-ийн хэдэн минут хүчинтэй гарын үсэгтэй холбоосыг авна. */
-export async function apkDownloadUrl(s: Settings): Promise<string | null> {
+export async function apkDownloadUrl(): Promise<string> {
+  if (!process.env.GH_RELEASE_TOKEN) return LATEST_URL;
   const gh = await latestAsset();
-  if (gh) {
-    if (!process.env.GH_RELEASE_TOKEN) return gh.asset.browser_download_url;
-    try {
-      const res = await fetch(`https://api.github.com/repos/${REPO}/releases/assets/${gh.asset.id}`, {
-        headers: ghHeaders("application/octet-stream"),
-        redirect: "manual",
-        cache: "no-store",
-      });
-      const loc = res.headers.get("location");
-      if (loc) return loc;
-    } catch {}
+  if (!gh) return LATEST_URL;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/assets/${gh.asset.id}`, {
+      headers: ghHeaders("application/octet-stream"),
+      redirect: "manual",
+      cache: "no-store",
+    });
+    return res.headers.get("location") ?? LATEST_URL;
+  } catch {
+    return LATEST_URL;
   }
-  return s.apk_url ?? null;
 }
