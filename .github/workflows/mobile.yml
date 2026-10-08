@@ -1,7 +1,7 @@
 # Апп-ыг автоматаар шинэчлэх:
 #  - mobile/ доторх JS код өөрчлөгдөх бүрт  → EAS Update (суулгасан апп дараа нээгдэхдээ шинэ кодоо татна)
-#  - app.json / package.json / eas.json / assets өөрчлөгдвөл, эсвэл APK хараахан байхгүй бол
-#    → EAS Build (APK) → web/public/mashin-zar.apk болгож commit хийнэ → Vercel сайт шууд тараана
+#  - app.json / package.json / eas.json / assets өөрчлөгдвөл, эсвэл GitHub Release-д APK хараахан байхгүй бол
+#    → EAS Build (APK) → GitHub Release-д "mashin-zar.apk" болж хавсрагдана → сайтын "Апп татах" товч шууд татна
 # Шаардлага: GitHub repo → Settings → Secrets → Actions → EXPO_TOKEN
 name: Mobile (EAS Update / Build)
 
@@ -39,10 +39,12 @@ jobs:
       - name: Шийдвэр — build эсвэл update
         id: decide
         working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           BUILD=false
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.build }}" = "true" ]; then BUILD=true; fi
-          if [ ! -f web/public/mashin-zar.apk ]; then BUILD=true; fi
+          if ! gh release view --json assets --jq '.assets[].name' 2>/dev/null | grep -qx mashin-zar.apk; then BUILD=true; fi
           if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
             if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -qE '^mobile/(app\.json|package\.json|eas\.json|assets/)'; then BUILD=true; fi
           fi
@@ -87,20 +89,20 @@ jobs:
           eas build -p android --profile preview --non-interactive --wait --json > build.json
           URL=$(node -e "const b=require('./build.json');console.log((Array.isArray(b)?b[0]:b).artifacts.buildUrl)")
           echo "APK: $URL"
-          curl -fL --retry 3 -o ../web/public/mashin-zar.apk "$URL"
-          VERSION=$(node -p "require('./app.json').expo.version")
-          SIZE=$(stat -c%s ../web/public/mashin-zar.apk)
-          node -e "require('fs').writeFileSync('../web/src/app-release.json', JSON.stringify({available:true,version:'$VERSION',size:$SIZE,builtAt:new Date().toISOString(),source:'$URL'},null,2)+'\n')"
+          curl -fL --retry 3 -o mashin-zar.apk "$URL"
+          ls -lh mashin-zar.apk
           # Дараагийн update-ууд энэ build-тэй таарахын тулд нэг удаа EAS Update бас илгээнэ
-          eas update --channel preview --platform android --non-interactive --message "APK v$VERSION" || true
+          eas update --channel preview --platform android --non-interactive --message "APK build" || true
 
-      - name: APK-г сайт руу commit хийх
+      - name: GitHub Release-д APK байрлуулах
         if: steps.decide.outputs.build == 'true'
-        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web/public/mashin-zar.apk web/src/app-release.json mobile/app.json
-          git commit -m "Шинэ APK (EAS build) — сайтаас татагдана" || exit 0
-          git pull --rebase origin main
-          git push origin HEAD:main
+          VERSION=$(node -p "require('./app.json').expo.version")
+          TAG="apk-v$VERSION-${{ github.run_number }}"
+          gh release create "$TAG" mashin-zar.apk \
+            --target "${{ github.sha }}" \
+            --title "Машин зар v$VERSION" \
+            --notes "Android апп (APK). Сайтын \"Апп татах\" товчоор татагдана." \
+            --latest
