@@ -1,0 +1,31 @@
+# Release-уудыг цэгцлэх: сонгосон tag-ийг "latest" болгож, хуучин/давхар release-ийг устгана.
+name: Release цэгцлэх
+
+on:
+  workflow_dispatch:
+    inputs:
+      latest_tag:
+        description: "Latest болгох release tag"
+        required: true
+      delete_tag:
+        description: "Устгах release tag (заавал биш)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Цэгцлэх
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          LATEST: ${{ inputs.latest_tag }}
+          DEL: ${{ inputs.delete_tag }}
+        run: |
+          if [ -n "$DEL" ]; then gh release delete "$DEL" --repo "$REPO" --yes --cleanup-tag; fi
+          gh release edit "$LATEST" --repo "$REPO" --latest
+          gh release view --repo "$REPO" --json tagName,name --jq '"latest: \(.tagName) \(.name)"'
