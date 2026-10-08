@@ -10,6 +10,8 @@ import { JetBrainsMono_500Medium, JetBrainsMono_700Bold } from "@expo-google-fon
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { AppVersionBanner } from "@/components/AppVersionBanner";
+import { usePushRouting } from "@/lib/push";
 import { C } from "@/lib/theme";
 import Splash from "@/components/Splash";
 import Blocked from "@/components/Blocked";
@@ -21,10 +23,11 @@ function RootStack() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
+  usePushRouting(!!session && ready);
   if (!ready) return <Splash />;
   if (session && profile?.is_blocked) return <Blocked />;
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.paper } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.paper }, animation: "fade_from_bottom", animationDuration: 180 }}>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="login" />
       </Stack.Protected>
@@ -34,6 +37,9 @@ function RootStack() {
         <Stack.Screen name="post" />
         <Stack.Screen name="complete-profile" />
         <Stack.Screen name="success" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="panel/ad/[id]" />
+        <Stack.Screen name="panel/users" />
+        <Stack.Screen name="panel/settings" />
       </Stack.Protected>
     </Stack>
   );
@@ -57,6 +63,7 @@ export default function RootLayout() {
         <SafeAreaView edges={["top"]} style={{ backgroundColor: C.paper }}>
           <OfflineBanner />
           <UpdateBanner />
+          <AppVersionBanner />
         </SafeAreaView>
         <View style={{ flex: 1 }}>
           <RootStack />

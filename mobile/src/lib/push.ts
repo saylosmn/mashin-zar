@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Platform } from "react-native";
+import { router } from "expo-router";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { supabase } from "./supabase";
 
@@ -54,4 +56,30 @@ export async function registerPush(userId: string) {
   } catch (e) {
     console.log("push register skipped", e);
   }
+}
+
+type PushData = { adId?: string | null; type?: string };
+
+function openFromPush(data: PushData | undefined) {
+  if (!data) return;
+  if (data.adId) router.push(data.type === "staff_new_ad" ? `/panel/ad/${data.adId}` : `/ads/${data.adId}`);
+  else router.push("/notifications");
+}
+
+/** Push мэдэгдэл дээр дарахад холбогдох зар/хуудсыг нээнэ (апп хаалттай байсан ч). */
+export function usePushRouting(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return;
+    const Notifications = notifications();
+    if (!Notifications) return;
+    let handled: string | null = null;
+    const go = (r: { notification: { request: { identifier: string; content: { data?: unknown } } } } | null) => {
+      if (!r || r.notification.request.identifier === handled) return;
+      handled = r.notification.request.identifier;
+      setTimeout(() => openFromPush(r.notification.request.content.data as PushData), 300);
+    };
+    Notifications.getLastNotificationResponseAsync().then(go).catch(() => {});
+    const sub = Notifications.addNotificationResponseReceivedListener(go);
+    return () => sub.remove();
+  }, [enabled]);
 }

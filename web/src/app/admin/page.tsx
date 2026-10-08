@@ -56,7 +56,7 @@ export default async function AdminDashboard() {
           <Link href="/post" className="btn btn-ink">+ Зар нэмэх</Link>
         </div>
       </div>
-      <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(170px,1fr))]">
+      <div className="grid gap-3.5 grid-cols-2 md:grid-cols-[repeat(auto-fit,minmax(170px,1fr))]">
         <Kpi label="Нийт хэрэглэгч" value={(users.count ?? 0).toLocaleString("en-US")} sub={`+${usersMonth.count ?? 0} энэ сард`} />
         <Kpi label="Нийт зар" value={(totalAds.count ?? 0).toLocaleString("en-US")} sub={`${pending} хүлээгдэж буй`} />
         <Kpi label="Идэвхтэй зар" value={active.count ?? 0} sub={`${cy}+: ${activeNew.count ?? 0} · өмнө: ${(active.count ?? 0) - (activeNew.count ?? 0)}`} />

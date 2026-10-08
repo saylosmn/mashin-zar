@@ -16,6 +16,7 @@ const TYPE_LABEL: Record<string, string> = {
   offer: "Санал",
   sold: "Таны зар",
   staff_new_ad: "Менежерт",
+  broadcast: "Зарлал",
 };
 
 export default async function NotificationsPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {

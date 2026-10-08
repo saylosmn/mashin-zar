@@ -76,3 +76,11 @@ Build дуусахад гарах холбоосоор APK татаж утсан
 - `app.json`, `package.json`, `eas.json`, `assets/` өөрчлөгдвөл → шинэ APK build →
   GitHub Release-д `mashin-zar.apk` болж хавсрагдана → сайтын "Апп татах" (`/app/download`) товч
   хамгийн сүүлийн Release-ээс шууд татна.
+
+## Push мэдэгдэл (Android)
+1. Supabase SQL Editor дээр `supabase/fix-03-push.sql` ажиллуулна (push-ийг өгөгдлийн сангаас илгээнэ).
+2. Firebase (console.firebase.google.com) → төсөл → Android апп `mn.mashinzar.app` нэмж `google-services.json` татна →
+   `mobile/google-services.json` болгож repo-д нэмнэ (энэ файл нууц биш).
+3. Firebase → Project settings → Service accounts → **Generate new private key** →
+   expo.dev → mashin-zar → Credentials → Android → **FCM V1 service account key** → Upload. (Энэ файлыг хэнд ч бүү өг.)
+4. Push хийхэд workflow шинэ APK (хувилбар автоматаар +1) бүтээж Release-д тавина; хуучин апп-д "Шинэ хувилбар гарлаа · Татах" гарна.

@@ -5,21 +5,26 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/lib/theme";
 import { T } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
+import { isStaff } from "@/lib/staff";
 
 const ITEMS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap }> = {
   index: { label: "Зарууд", icon: "home" },
   notifications: { label: "Мэдэгдэл", icon: "bell" },
   my: { label: "Миний зар", icon: "list" },
+  panel: { label: "Панел", icon: "shield" },
   profile: { label: "Профайл", icon: "user" },
 };
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { profile } = useAuth();
+  const staff = isStaff(profile);
   return (
     <Tabs
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.paper } }}
       tabBar={({ state, navigation }) => {
-        const routes = state.routes.filter((r) => ITEMS[r.name]);
+        const routes = state.routes.filter((r) => ITEMS[r.name] && (r.name !== "panel" || staff));
         const cells = routes.map((r) => {
           const idx = state.routes.indexOf(r);
           const on = state.index === idx;
@@ -59,6 +64,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="notifications" />
       <Tabs.Screen name="my" />
+      <Tabs.Screen name="panel" />
       <Tabs.Screen name="profile" />
     </Tabs>
   );

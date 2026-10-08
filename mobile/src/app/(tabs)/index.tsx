@@ -3,6 +3,7 @@ import { FlatList, Pressable, RefreshControl, ScrollView, TextInput, View } from
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import { adCache } from "@/lib/cache";
 import { useAuth } from "@/lib/auth";
 import { C, F } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
@@ -157,7 +158,7 @@ export default function Home() {
       contentContainerStyle={{ padding: 20, paddingTop: 12, gap: 14 }}
       ListHeaderComponent={header}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(0); }} tintColor={C.ink} />}
-      renderItem={({ item }) => <AdCard ad={item} cy={cy} onPress={() => router.push(`/ads/${item.id}`)} />}
+      renderItem={({ item }) => <AdCard ad={item} cy={cy} onPress={() => { adCache.set(item.id, item); router.push(`/ads/${item.id}`); }} />}
       onEndReachedThreshold={0.4}
       onEndReached={() => { if (!loading && ads.length < count) load(ads.length); }}
       ListEmptyComponent={

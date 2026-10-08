@@ -1,11 +1,11 @@
-import { Linking, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { initial } from "@/lib/format";
 import { Button, T, s } from "@/components/ui";
+import { openWebPanel } from "@/lib/staff";
 
-const WEB = "https://web-mu-fawn-45.vercel.app";
 
 export default function ProfileTab() {
   const { profile, signOut } = useAuth();
@@ -33,11 +33,15 @@ export default function ProfileTab() {
       </View>
       <Button title={profile?.profile_completed ? "Профайл засах" : "Профайл үүсгэх"} variant="ghost" icon="edit-2" onPress={() => router.push("/complete-profile")} />
       {staff && (
-        <Button
-          title={profile?.role === "admin" ? "Админ панел нээх (вэб)" : "Менежерийн панел нээх (вэб)"}
-          icon="external-link"
-          onPress={() => Linking.openURL(`${WEB}/${profile?.role === "admin" ? "admin" : "manager"}`)}
-        />
+        <>
+          <Button title="Удирдлага (апп дотор)" icon="shield" onPress={() => router.push("/panel")} />
+          <Button
+            title={profile?.role === "admin" ? "Вэб админ панел" : "Вэб менежерийн панел"}
+            icon="external-link"
+            variant="ghost"
+            onPress={() => openWebPanel(profile?.role === "admin" ? "/admin" : "/manager")}
+          />
+        </>
       )}
       <Button title="Гарах" variant="danger" icon="log-out" onPress={signOut} />
     </ScrollView>

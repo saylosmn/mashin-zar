@@ -28,6 +28,8 @@ concurrency:
 jobs:
   eas:
     runs-on: ubuntu-latest
+    env:
+      EAS_NO_VCS: "1"
     defaults:
       run:
         working-directory: mobile
@@ -46,7 +48,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.build }}" = "true" ]; then BUILD=true; fi
           if ! gh release view --json assets --jq '.assets[].name' 2>/dev/null | grep -qx mashin-zar.apk; then BUILD=true; fi
           if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -qE '^mobile/(app\.json|package\.json|eas\.json|assets/)'; then BUILD=true; fi
+            if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -qE '^mobile/(app\.json|package\.json|eas\.json|google-services\.json|assets/)'; then BUILD=true; fi
           fi
           echo "build=$BUILD" >> "$GITHUB_OUTPUT"
           echo "Build хийх: $BUILD"
@@ -83,6 +85,25 @@ jobs:
         if: steps.decide.outputs.build != 'true'
         run: eas update --channel preview --platform android --non-interactive --message "$(git log -1 --pretty=%s)"
 
+      - name: Хувилбарын дугаар ахиулах, Firebase тохиргоо
+        if: steps.decide.outputs.build == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LAST=$(gh release view --json name --jq .name 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)*' | tail -1 || true)
+          node -e '
+            const fs = require("fs");
+            const j = JSON.parse(fs.readFileSync("app.json", "utf8"));
+            const norm = (v) => String(v || "0").split(".").map(Number).concat([0, 0, 0]).slice(0, 3);
+            const c = norm(j.expo.version), l = norm(process.argv[1]);
+            const cmp = c[0] - l[0] || c[1] - l[1] || c[2] - l[2];
+            if (cmp <= 0) { l[2]++; j.expo.version = l.join("."); }
+            // Push мэдэгдэл (FCM) — mobile/google-services.json байвал холбоно
+            if (fs.existsSync("google-services.json")) j.expo.android.googleServicesFile = "./google-services.json";
+            fs.writeFileSync("app.json", JSON.stringify(j, null, 2) + "\n");
+            console.log("Шинэ хувилбар:", j.expo.version, "| FCM:", !!j.expo.android.googleServicesFile);
+          ' "$LAST"
+
       - name: EAS Build (APK)
         if: steps.decide.outputs.build == 'true'
         run: |
@@ -106,3 +127,13 @@ jobs:
             --title "Машин зар v$VERSION" \
             --notes "Android апп (APK). Сайтын \"Апп татах\" товчоор татагдана." \
             --latest
+
+      - name: Шинэ хувилбарын дугаарыг repo-д хадгалах
+        if: steps.decide.outputs.build == 'true'
+        working-directory: .
+        run: |
+          git config user.name "saylosmn"
+          git config user.email "saylosmn@users.noreply.github.com"
+          git add mobile/app.json
+          git commit -m "Апп v$(node -p "require('./mobile/app.json').expo.version") (APK build)" || exit 0
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && break; sleep 5; done
