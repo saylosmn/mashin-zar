@@ -59,3 +59,16 @@ Build дуусахад гарах холбоосоор APK татаж утсан
 ## Шууд шинэчлэл (realtime)
 Зар нэмэгдэх, батлагдах, зарагдах, устгагдах, аккаунт хаагдах, тохиргоо өөрчлөгдөх бүрт өгөгдлийн сангийн trigger
 `mz-sync` суваг руу дохио илгээнэ. Вэб (`LiveSync`) болон апп (`useLiveSync`) энэ дохиогоор refresh-гүйгээр шинэчлэгдэнэ.
+
+## Апп автоматаар build/update хийх (GitHub Actions)
+
+Нэг удаагийн тохиргоо:
+1. expo.dev → Account settings → Access tokens → **Create token** → хуулна.
+2. GitHub → repo → Settings → Secrets and variables → Actions → **New repository secret**
+   нэр: `EXPO_TOKEN`, утга: хуулсан токен.
+3. GitHub → Actions → **Mobile (EAS Update / Build)** → Run workflow.
+
+Үүний дараа:
+- `mobile/` доторх код өөрчлөгдөх бүрт → EAS Update → суулгасан апп дээр "Шинэчлэх" мөр гарна.
+- `app.json`, `package.json`, `eas.json`, `assets/` өөрчлөгдвөл → шинэ APK build →
+  `web/public/mashin-zar.apk` болж commit хийгдэнэ → Vercel сайтын "Апп татах" товч шууд энэ файлыг татна.

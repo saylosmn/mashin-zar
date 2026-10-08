@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { getSettings } from "@/lib/data";
 import { Logo } from "@/components/Logo";
 import { LiveSync } from "@/components/LiveSync";
+import { apkInfo } from "@/lib/release";
 
 export const metadata: Metadata = { title: "Апп татах", description: "Машин зар Android апп татах" };
 
@@ -16,7 +17,8 @@ export default async function AppDownload() {
   const ua = h.get("user-agent") ?? "";
   const isPhone = /Android|iPhone|iPad|Mobile/i.test(ua);
   const isIOS = /iPhone|iPad/i.test(ua);
-  const ready = Boolean(s.apk_url);
+  const apk = apkInfo(s);
+  const ready = Boolean(apk);
   const qr = await QRCode.toString(`${proto}://${host}/app/download`, {
     type: "svg",
     margin: 0,
@@ -44,12 +46,12 @@ export default async function AppDownload() {
             </p>
           ) : ready ? (
             <>
-              <a href="/app/download" className="btn btn-yellow w-full h-16 rounded-2xl text-[19px]">
+              <a href={apk!.url} download="mashin-zar.apk" className="btn btn-yellow w-full h-16 rounded-2xl text-[19px]">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 4v12M6 10l6 6 6-6M5 20h14" /></svg>
                 Апп татах
               </a>
               <p className="m-0 text-[14px] text-pale leading-relaxed">
-                Android{s.apk_version ? ` · v${s.apk_version}` : ""}. Татсан файлаа нээгээд <strong className="text-paper">“Суулгах”</strong> дарна.
+                Android{apk?.version ? ` · v${apk.version}` : ""}{apk?.sizeMb ? ` · ${apk.sizeMb} MB` : ""}. Татсан файлаа нээгээд <strong className="text-paper">“Суулгах”</strong> дарна.
                 Зөвшөөрөл асуувал <strong className="text-paper">“Зөвшөөрөх”</strong> гэнэ.
               </p>
             </>
