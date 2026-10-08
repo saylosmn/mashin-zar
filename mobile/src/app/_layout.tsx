@@ -9,6 +9,7 @@ import { Unbounded_700Bold } from "@expo-google-fonts/unbounded";
 import { JetBrainsMono_500Medium, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { UpdateBanner } from "@/components/UpdateBanner";
 import { C } from "@/lib/theme";
 import Splash from "@/components/Splash";
 import Blocked from "@/components/Blocked";
@@ -55,6 +56,7 @@ export default function RootLayout() {
         <StatusBar style="dark" />
         <SafeAreaView edges={["top"]} style={{ backgroundColor: C.paper }}>
           <OfflineBanner />
+          <UpdateBanner />
         </SafeAreaView>
         <View style={{ flex: 1 }}>
           <RootStack />

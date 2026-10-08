@@ -1,0 +1,97 @@
+# Апп-ыг автоматаар шинэчлэх:
+#  - mobile/ доторх JS код өөрчлөгдөх бүрт  → EAS Update (суулгасан апп дараа нээгдэхдээ шинэ кодоо татна)
+#  - app.json / package.json / eas.json / assets өөрчлөгдвөл, эсвэл APK хараахан байхгүй бол
+#    → EAS Build (APK) → web/public/mashin-zar.apk болгож commit хийнэ → Vercel сайт шууд тараана
+# Шаардлага: GitHub repo → Settings → Secrets → Actions → EXPO_TOKEN
+name: Mobile (EAS Update / Build)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile.yml"
+  workflow_dispatch:
+    inputs:
+      build:
+        description: "Шинэ APK build хийх үү?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile-eas
+  cancel-in-progress: false
+
+jobs:
+  eas:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Шийдвэр — build эсвэл update
+        id: decide
+        working-directory: .
+        run: |
+          BUILD=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.build }}" = "true" ]; then BUILD=true; fi
+          if [ ! -f web/public/mashin-zar.apk ]; then BUILD=true; fi
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -qE '^mobile/(app\.json|package\.json|eas\.json|assets/)'; then BUILD=true; fi
+          fi
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "Build хийх: $BUILD"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Сангууд суулгах
+        run: npm ci || npm install
+
+      - name: EAS project холбох
+        run: |
+          eas init --non-interactive --force
+          eas update:configure --platform android --non-interactive || true
+
+      - name: EAS Update (код шинэчлэл)
+        if: steps.decide.outputs.build != 'true'
+        run: eas update --channel preview --platform android --non-interactive --message "$(git log -1 --pretty=%s)"
+
+      - name: EAS Build (APK)
+        if: steps.decide.outputs.build == 'true'
+        run: |
+          eas build -p android --profile preview --non-interactive --wait --json > build.json
+          URL=$(node -e "const b=require('./build.json');console.log((Array.isArray(b)?b[0]:b).artifacts.buildUrl)")
+          echo "APK: $URL"
+          curl -fL --retry 3 -o ../web/public/mashin-zar.apk "$URL"
+          VERSION=$(node -p "require('./app.json').expo.version")
+          SIZE=$(stat -c%s ../web/public/mashin-zar.apk)
+          node -e "require('fs').writeFileSync('../web/src/app-release.json', JSON.stringify({available:true,version:'$VERSION',size:$SIZE,builtAt:new Date().toISOString(),source:'$URL'},null,2)+'\n')"
+          # Дараагийн update-ууд энэ build-тэй таарахын тулд нэг удаа EAS Update бас илгээнэ
+          eas update --channel preview --platform android --non-interactive --message "APK v$VERSION" || true
+
+      - name: APK-г сайт руу commit хийх
+        if: steps.decide.outputs.build == 'true'
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/public/mashin-zar.apk web/src/app-release.json mobile/app.json
+          git commit -m "Шинэ APK (EAS build) — сайтаас татагдана" || exit 0
+          git pull --rebase origin main
+          git push origin HEAD:main
