@@ -43,7 +43,7 @@ export default async function ManagerDashboard() {
         <h1 className="h-display m-0 text-[28px]">Самбар</h1>
         <span className="text-[14px] text-muted">Сайн байна уу, {me.full_name?.split(" ")[0] ?? "менежер"}</span>
       </div>
-      <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
+      <div className="grid gap-3.5 grid-cols-2 md:grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
         <Kpi label="Зарагдсан (энэ сар)" value={soldThisMonth.length} sub={`${cy}+: ${soldThisMonth.filter((s) => s.category === "new").length} · ${cy}-аас өмнө: ${soldThisMonth.filter((s) => s.category === "old").length}`} />
         <Kpi dark label="Хүлээгдэж буй зар" value={pending} sub="Холбогдох шаардлагатай →" href="/manager/ads" />
         <Kpi label="Идэвхтэй зар" value={active.count ?? 0} sub={`${cy}+: ${activeNew.count ?? 0} · ${cy}-аас өмнө: ${(active.count ?? 0) - (activeNew.count ?? 0)}`} />

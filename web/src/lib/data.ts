@@ -6,13 +6,17 @@ import type { Profile, Settings } from "./types";
 
 export const getProfile = cache(async (): Promise<Profile | null> => {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return null;
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
+  // getClaims нь JWT-г сервер дээр шалгадаг тул Supabase руу нэмэлт хүсэлт явуулахгүй (хурдан)
+  const { data: claims } = await supabase.auth.getClaims();
+  const uid = claims?.claims?.sub;
+  if (!uid) return null;
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
   // Эрхийн алдааг нэвтрэх хуудас руу дахин буцаах биш, алдааны хуудсаар харуулна.
   if (error) redirect(`/setup-error?m=${encodeURIComponent(`Профайл уншиж чадсангүй: ${error.message}`)}`);
   if (data) return data as Profile;
   // Профайл байхгүй бол (trigger ажиллаагүй үед) өөрөө үүсгэнэ.
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return null;
   const meta = auth.user.user_metadata ?? {};
   const { data: created, error: insErr } = await supabase
     .from("profiles")

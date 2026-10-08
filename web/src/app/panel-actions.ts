@@ -5,31 +5,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireStaff } from "@/lib/data";
 
-/** Expo push руу илгээх (апп суулгасан хэрэглэгчдэд). Алдаа гарвал алгасна. */
-async function sendPush(adId: string) {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.rpc("push_targets", { p_ad: adId });
-    const rows = (data ?? []) as { token: string; title: string; body: string | null }[];
-    for (let i = 0; i < rows.length; i += 100) {
-      const chunk = rows.slice(i, i + 100).map((r) => ({
-        to: r.token,
-        title: r.title,
-        body: r.body ?? "",
-        sound: "default",
-        data: { adId },
-      }));
-      await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(chunk),
-      });
-    }
-  } catch (e) {
-    console.error("push failed", e);
-  }
-}
-
 function back(fd: FormData, fallback: string, extra: Record<string, string>) {
   const to = String(fd.get("back") || fallback);
   const url = new URL(to, "http://x");
@@ -50,7 +25,6 @@ export async function approveAd(fd: FormData) {
   const id = String(fd.get("id"));
   const supabase = await createClient();
   const { error } = await supabase.rpc("approve_ad", { p_ad: id });
-  if (!error) await sendPush(id);
   revalidatePath("/", "layout");
   redirect(back(fd, "/manager/ads", error ? { err: error.message } : { ok: "Зар батлагдаж, хэрэглэгчдэд мэдэгдэл илгээгдлээ" }));
 }
@@ -61,7 +35,6 @@ export async function rejectAd(fd: FormData) {
   const id = String(fd.get("id"));
   const note = String(fd.get("note") || "") || null;
   const { error } = await supabase.rpc("reject_ad", { p_ad: id, p_note: note });
-  if (!error) await sendPush(id);
   revalidatePath("/", "layout");
   redirect(back(fd, "/manager/ads", error ? { err: error.message } : { ok: "Зар татгалзагдлаа" }));
 }
@@ -87,7 +60,6 @@ export async function sendOffer(fd: FormData) {
   const id = String(fd.get("id"));
   const supabase = await createClient();
   const { error } = await supabase.rpc("send_offer", { p_ad: id });
-  if (!error) await sendPush(id);
   revalidatePath("/", "layout");
   redirect(back(fd, "/manager/ads", error ? { err: error.message } : { ok: "Санал хэрэглэгчид илгээгдлээ" }));
 }
@@ -98,7 +70,6 @@ export async function markSold(fd: FormData) {
   const price = Number(String(fd.get("price") || "").replace(/\D/g, "")) || null;
   const supabase = await createClient();
   const { error } = await supabase.rpc("mark_sold", { p_ad: id, p_price: price });
-  if (!error) await sendPush(id);
   revalidatePath("/", "layout");
   redirect(back(fd, "/manager/all", error ? { err: error.message } : { ok: "Зарагдсан гэж тэмдэглэлээ" }));
 }
@@ -197,4 +168,14 @@ export async function saveAppLink(fd: FormData) {
   await run(fd, "/admin/settings", "Апп татах холбоос хадгалагдлаа", () =>
     supabase.rpc("set_app_link", { p_url: url, p_version: String(fd.get("apk_version") || "") || null }),
   );
+}
+
+export async function sendBroadcast(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const title = String(fd.get("title") || "").trim();
+  const body = String(fd.get("body") || "").trim() || null;
+  const { data, error } = await supabase.rpc("broadcast", { p_title: title, p_body: body });
+  revalidatePath("/", "layout");
+  redirect(back(fd, "/admin/settings", error ? { err: error.message } : { ok: `${data ?? 0} хэрэглэгчид зарлал илгээгдлээ` }));
 }

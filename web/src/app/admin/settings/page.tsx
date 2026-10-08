@@ -1,7 +1,7 @@
 import { getSettings, requireAdmin } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import { saveAppLink, saveSettings } from "../../panel-actions";
+import { saveSettings, sendBroadcast } from "../../panel-actions";
 
 export const metadata = { title: "Админ · Тохиргоо" };
 
@@ -14,24 +14,22 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
     <PanelShell profile={me} area="admin" active="admin-settings" pending={pending}>
       <h1 className="h-display m-0 text-[28px]">Тохиргоо</h1>
       <Flash ok={sp.ok} err={sp.err} />
-      <form id="apk" action={saveAppLink} className={`card p-5.5 flex flex-col gap-3.5 max-w-[920px] ${sp.apk ? "ring-4 ring-yellow" : ""}`}>
+      <form action={sendBroadcast} className="card p-5.5 flex flex-col gap-3.5 max-w-[920px]">
         <input type="hidden" name="back" value="/admin/settings" />
         <div className="flex flex-col gap-1">
-          <h2 className="m-0 text-[17px] font-bold">Апп татах (APK)</h2>
-          <span className="text-[14px] text-muted">
-            EAS build дуусахад гарах .apk холбоосыг энд оруулна. Сайтын “Апп татах” товч шууд энэ холбоос руу заана.
-          </span>
+          <h2 className="m-0 text-[17px] font-bold">Бүх хэрэглэгчид зарлал илгээх</h2>
+          <span className="text-[14px] text-muted">Жишээ нь “Апп шинэчлэгдлээ”. Хүн бүрийн мэдэгдэлд орж, апп суулгасан бол утсанд нь push мэдэгдлээр очно.</span>
         </div>
-        <div className="flex flex-wrap gap-3 items-end">
-          <label className="label flex-[3_1_360px] text-[14px]">APK холбоос
-            <input name="apk_url" type="url" defaultValue={sp.apk ?? s.apk_url ?? ""} placeholder="https://expo.dev/artifacts/eas/....apk" className="input mono text-[13px]" />
-          </label>
-          <label className="label flex-[1_1_140px] text-[14px]">Хувилбар
-            <input name="apk_version" defaultValue={sp.v ?? s.apk_version ?? ""} placeholder="1.0.0" className="input mono" />
-          </label>
-          <button className="btn btn-ink h-12">Хадгалах</button>
+        <label className="label text-[14px]">Гарчиг
+          <input name="title" required maxLength={80} placeholder="Апп шинэчлэгдлээ" className="input" />
+        </label>
+        <label className="label text-[14px]">Дэлгэрэнгүй (заавал биш)
+          <textarea name="body" maxLength={300} rows={2} placeholder="Шинэ боломжууд..." className="textarea" />
+        </label>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <a href="/app" className="text-[13px] font-semibold">Апп татах хуудас →</a>
+          <button className="btn btn-ink h-12">Илгээх</button>
         </div>
-        <a href="/app" className="text-[13px] font-semibold self-start">Татах хуудсыг үзэх →</a>
       </form>
       <form action={saveSettings} className="flex flex-col gap-4.5 max-w-[920px]">
         <input type="hidden" name="back" value="/admin/settings" />

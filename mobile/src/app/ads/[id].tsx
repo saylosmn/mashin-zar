@@ -10,6 +10,7 @@ import { errMsg, initial, money, timeAgo } from "@/lib/format";
 import { Button, CatChip, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { Ad, PublicAd } from "@/lib/types";
 import { useLiveSync } from "@/lib/live";
+import { adCache } from "@/lib/cache";
 
 const W = Dimensions.get("window").width;
 
@@ -17,8 +18,8 @@ export default function AdDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session, settings } = useAuth();
   const insets = useSafeAreaInsets();
-  const [ad, setAd] = useState<PublicAd | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [ad, setAd] = useState<PublicAd | null>(() => adCache.get(id) ?? null);
+  const [loading, setLoading] = useState(() => !adCache.has(id));
   const [error, setError] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
   const [fav, setFav] = useState(false);
@@ -28,6 +29,7 @@ export default function AdDetail() {
   const load = useCallback(async () => {
     try {
       setError(null);
+      const favP = supabase.from("favorites").select("ad_id").eq("ad_id", id).maybeSingle();
       const { data, error: e } = await supabase.from("public_ads").select("*").eq("id", id).maybeSingle();
       if (e) throw e;
       if (data) {
@@ -40,7 +42,7 @@ export default function AdDetail() {
           setAd({ ...a, plate_masked: a.plate_number, vin_masked: a.vin, seller_name: "", seller_city: null, seller_ad_count: 0 } as PublicAd);
         } else setAd(null);
       }
-      const { data: f } = await supabase.from("favorites").select("ad_id").eq("ad_id", id).maybeSingle();
+      const { data: f } = await favP;
       setFav(!!f);
     } catch (e) {
       setError(errMsg(e));

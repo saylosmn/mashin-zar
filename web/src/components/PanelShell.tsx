@@ -39,28 +39,34 @@ export function PanelShell({
           ...(isAdmin ? [{ key: "admin", href: "/admin", label: "Админ панел" }] : []),
         ];
   return (
-    <div className="min-h-dvh flex flex-wrap">
-      <nav aria-label={area === "admin" ? "Админ цэс" : "Менежерийн цэс"} className="flex-[1_1_240px] max-w-full lg:max-w-[260px] bg-ink text-paper px-4 py-6 flex flex-col gap-1.5">
-        <div className="px-2 pb-5">
+    <div className="min-h-dvh flex flex-col lg:flex-row">
+      <nav
+        aria-label={area === "admin" ? "Админ цэс" : "Менежерийн цэс"}
+        className="sticky top-0 z-30 lg:h-dvh w-full lg:w-[260px] lg:flex-none bg-ink text-paper lg:px-4 lg:py-6 flex flex-col gap-1.5"
+      >
+        <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-1 lg:px-2 lg:pt-0 lg:pb-5">
           <Logo sub={area === "admin" ? "Админ · бүх эрх" : "Менежер"} href={area === "admin" ? "/admin" : "/manager"} />
+          <Link href="/" className="lg:hidden text-[13px] text-pale no-underline whitespace-nowrap">← Сайт</Link>
         </div>
-        {nav.map((n) => {
-          const on = n.key === active;
-          return (
-            <Link
-              key={n.key}
-              href={n.href}
-              aria-current={on ? "page" : undefined}
-              className={`h-11 px-3 rounded-[10px] flex items-center justify-between text-[14px] no-underline ${on ? "bg-yellow text-ink font-semibold" : "text-[#e2e4df] hover:bg-ink-2"}`}
-            >
-              {n.label}
-              {n.badge ? (
-                <span className={`mono text-[11px] font-bold px-2 py-0.5 rounded-full ${on ? "bg-ink text-yellow" : "bg-[#ff7a1a] text-ink"}`}>{n.badge}</span>
-              ) : null}
-            </Link>
-          );
-        })}
-        <div className="mt-auto pt-6 flex flex-col gap-2 px-2">
+        <div className="flex lg:flex-col gap-1.5 overflow-x-auto px-3 pb-3 lg:p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {nav.map((n) => {
+            const on = n.key === active;
+            return (
+              <Link
+                key={n.key}
+                href={n.href}
+                aria-current={on ? "page" : undefined}
+                className={`shrink-0 whitespace-nowrap h-9 lg:h-11 px-3 rounded-full lg:rounded-[10px] flex items-center justify-between gap-2 text-[13px] lg:text-[14px] no-underline ${on ? "bg-yellow text-ink font-semibold" : "text-[#e2e4df] bg-ink-2 lg:bg-transparent hover:bg-ink-2"}`}
+              >
+                {n.label}
+                {n.badge ? (
+                  <span className={`mono text-[11px] font-bold px-2 py-0.5 rounded-full ${on ? "bg-ink text-yellow" : "bg-[#ff7a1a] text-ink"}`}>{n.badge}</span>
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
+        <div className="hidden lg:flex mt-auto pt-6 flex-col gap-2 px-2">
           <Link href="/" className="text-[13px] text-pale">← Сайт руу буцах</Link>
           <span className="text-[12px] text-[#8a9099] truncate">{profile.email}</span>
           <form action="/auth/signout" method="post">
@@ -68,7 +74,7 @@ export function PanelShell({
           </form>
         </div>
       </nav>
-      <main className="flex-[999_1_560px] min-w-0 px-[clamp(16px,3vw,40px)] pt-7 pb-12 flex flex-col gap-5">
+      <main className="flex-1 min-w-0 px-4 sm:px-[clamp(16px,3vw,40px)] pt-5 lg:pt-7 pb-12 flex flex-col gap-5">
         <OfflineBanner />
         <LiveSync userId={profile.id} />
         {children}
@@ -78,11 +84,11 @@ export function PanelShell({
 }
 
 export function Kpi({ label, value, sub, dark = false, href }: { label: string; value: string | number; sub?: string; dark?: boolean; href?: string }) {
-  const cls = `rounded-2xl p-4.5 flex flex-col gap-1.5 no-underline ${dark ? "bg-ink text-paper" : "card"}`;
+  const cls = `rounded-2xl p-3.5 sm:p-4.5 flex flex-col gap-1 sm:gap-1.5 no-underline min-w-0 ${dark ? "bg-ink text-paper" : "card"}`;
   const inner = (
     <>
       <span className={`text-[13px] ${dark ? "text-[#c9cdd3]" : "text-muted"}`}>{label}</span>
-      <span className={`h-display text-[28px] ${dark ? "text-yellow" : ""}`}>{value}</span>
+      <span className={`h-display text-[24px] sm:text-[28px] ${dark ? "text-yellow" : ""}`}>{value}</span>
       {sub && <span className={`text-[12px] ${dark ? "text-[#c9cdd3]" : "text-body"}`}>{sub}</span>}
     </>
   );

@@ -9,7 +9,7 @@ import { errMsg, timeAgo } from "@/lib/format";
 import { Button, StateView, T } from "@/components/ui";
 import type { Notification } from "@/lib/types";
 
-const LABEL: Record<string, string> = { new_ad: "Шинэ зар", ad_approved: "Таны зар", ad_rejected: "Таны зар", offer: "Санал", sold: "Таны зар", staff_new_ad: "Менежерт" };
+const LABEL: Record<string, string> = { new_ad: "Шинэ зар", ad_approved: "Таны зар", ad_rejected: "Таны зар", offer: "Санал", sold: "Таны зар", staff_new_ad: "Менежерт", broadcast: "Зарлал" };
 
 export default function Notifications() {
   const { profile, refreshProfile, settings, session } = useAuth();
@@ -96,7 +96,7 @@ export default function Notifications() {
         <Pressable
           onPress={async () => {
             if (!n.read) { supabase.from("notifications").update({ read: true }).eq("id", n.id).then(() => {}); setItems((x) => x.map((y) => (y.id === n.id ? { ...y, read: true } : y))); }
-            if (n.ad_id) router.push(`/ads/${n.ad_id}`);
+            if (n.ad_id) router.push(n.type === "staff_new_ad" && (profile?.role === "manager" || profile?.role === "admin") ? `/panel/ad/${n.ad_id}` : `/ads/${n.ad_id}`);
           }}
           style={{ flexDirection: "row", gap: 12, padding: 12, borderRadius: 14, backgroundColor: n.read ? "transparent" : C.card, borderWidth: n.read ? 0 : 1, borderColor: C.line }}
         >

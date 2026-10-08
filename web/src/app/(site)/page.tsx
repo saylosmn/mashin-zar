@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MobileCollapse } from "@/components/MobileCollapse";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings, requireUser } from "@/lib/data";
 import { AdCard } from "@/components/AdCard";
@@ -88,7 +89,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </div>
 
       <div className="flex flex-wrap gap-6 items-start">
-        <aside aria-label="Шүүлтүүр" className="card flex-[1_1_240px] max-w-full p-5 flex flex-col gap-4">
+        <MobileCollapse label="Шүүлтүүр" count={[sp.brand, sp.model, sp.pmin || sp.pmax, sp.ymin || sp.ymax, sp.imin || sp.imax].filter(Boolean).length} className="flex-[1_1_240px] max-w-full">
+        <aside aria-label="Шүүлтүүр" className="card p-5 flex flex-col gap-4">
           <form action="/" className="flex flex-col gap-4">
             {cat && <input type="hidden" name="cat" value={cat} />}
             {q && <input type="hidden" name="q" value={q} />}
@@ -155,6 +157,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </button>
           </form>
         </aside>
+        </MobileCollapse>
 
         <section className="flex-[999_1_560px] min-w-0 flex flex-col gap-3.5">
           <span className="text-[14px] text-muted">{total} зар олдлоо</span>
