@@ -60,15 +60,19 @@ Build дуусахад гарах холбоосоор APK татаж утсан
 Зар нэмэгдэх, батлагдах, зарагдах, устгагдах, аккаунт хаагдах, тохиргоо өөрчлөгдөх бүрт өгөгдлийн сангийн trigger
 `mz-sync` суваг руу дохио илгээнэ. Вэб (`LiveSync`) болон апп (`useLiveSync`) энэ дохиогоор refresh-гүйгээр шинэчлэгдэнэ.
 
-## Апп автоматаар build/update хийх (GitHub Actions)
+## Апп автоматаар build/update хийх (GitHub Actions + Release)
 
 Нэг удаагийн тохиргоо:
 1. expo.dev → Account settings → Access tokens → **Create token** → хуулна.
 2. GitHub → repo → Settings → Secrets and variables → Actions → **New repository secret**
    нэр: `EXPO_TOKEN`, утга: хуулсан токен.
-3. GitHub → Actions → **Mobile (EAS Update / Build)** → Run workflow.
+3. Repo **private** бол: GitHub → Settings → Developer settings → Fine-grained tokens → энэ repo,
+   Permissions → **Contents: Read-only** → токен үүсгэнэ → Vercel → Project → Settings →
+   Environment Variables → `GH_RELEASE_TOKEN` = токен → Redeploy. (Repo public бол энэ алхам хэрэггүй.)
+4. GitHub → Actions → **Mobile (EAS Update / Build)** → Run workflow.
 
 Үүний дараа:
 - `mobile/` доторх код өөрчлөгдөх бүрт → EAS Update → суулгасан апп дээр "Шинэчлэх" мөр гарна.
 - `app.json`, `package.json`, `eas.json`, `assets/` өөрчлөгдвөл → шинэ APK build →
-  `web/public/mashin-zar.apk` болж commit хийгдэнэ → Vercel сайтын "Апп татах" товч шууд энэ файлыг татна.
+  GitHub Release-д `mashin-zar.apk` болж хавсрагдана → сайтын "Апп татах" (`/app/download`) товч
+  хамгийн сүүлийн Release-ээс шууд татна.

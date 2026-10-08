@@ -17,7 +17,7 @@ export default async function AppDownload() {
   const ua = h.get("user-agent") ?? "";
   const isPhone = /Android|iPhone|iPad|Mobile/i.test(ua);
   const isIOS = /iPhone|iPad/i.test(ua);
-  const apk = apkInfo(s);
+  const apk = await apkInfo(s);
   const ready = Boolean(apk);
   const qr = await QRCode.toString(`${proto}://${host}/app/download`, {
     type: "svg",
@@ -46,7 +46,7 @@ export default async function AppDownload() {
             </p>
           ) : ready ? (
             <>
-              <a href={apk!.url} download="mashin-zar.apk" className="btn btn-yellow w-full h-16 rounded-2xl text-[19px]">
+              <a href="/app/download" className="btn btn-yellow w-full h-16 rounded-2xl text-[19px]">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 4v12M6 10l6 6 6-6M5 20h14" /></svg>
                 Апп татах
               </a>
