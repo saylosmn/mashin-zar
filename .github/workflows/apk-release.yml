@@ -23,6 +23,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           INPUT_URL: ${{ inputs.url }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           URL="$INPUT_URL"
           VER=""
@@ -37,6 +38,17 @@ jobs:
           if [ -z "$URL" ]; then
             echo "::error::APK холбоос олдсонгүй. Run workflow дээр url талбарт APK-ийн шууд холбоосыг оруулна уу."
             exit 1
+          fi
+          # expo.dev/.../builds/<id> хуудас бол APK файлын шууд холбоосыг Expo API-аас авна
+          BID=$(echo "$URL" | grep -oE '/builds/[0-9a-f-]{36}' | cut -d/ -f3 || true)
+          if [ -n "$BID" ]; then
+            AUTH=()
+            [ -n "$EXPO_TOKEN" ] && AUTH=(-H "Authorization: Bearer $EXPO_TOKEN")
+            Q=$(jq -nc --arg id "$BID" '{query:"query($id:ID!){builds{byId(buildId:$id){artifacts{buildUrl applicationArchiveUrl}}}}",variables:{id:$id}}')
+            R=$(curl -sS https://api.expo.dev/graphql -H "Content-Type: application/json" "${AUTH[@]}" -d "$Q")
+            echo "expo: $R" | cut -c1-400
+            URL=$(echo "$R" | jq -r '.data.builds.byId.artifacts.applicationArchiveUrl // .data.builds.byId.artifacts.buildUrl // empty')
+            [ -z "$URL" ] && { echo "::error::Expo build-ийн файлын холбоосыг авч чадсангүй (EXPO_TOKEN secret хэрэгтэй байж магадгүй)"; exit 1; }
           fi
           curl -fL --retry 3 -o mashin-zar.apk "$URL"
           ls -lh mashin-zar.apk
