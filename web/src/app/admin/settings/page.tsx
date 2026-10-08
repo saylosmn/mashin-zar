@@ -5,7 +5,7 @@ import { saveAppLink, saveSettings } from "../../panel-actions";
 
 export const metadata = { title: "Админ · Тохиргоо" };
 
-export default async function AdminSettings({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string }> }) {
+export default async function AdminSettings({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string; apk?: string; v?: string }> }) {
   const sp = await searchParams;
   const me = await requireAdmin();
   const [s, pending] = await Promise.all([getSettings(), pendingCount()]);
@@ -14,7 +14,7 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
     <PanelShell profile={me} area="admin" active="admin-settings" pending={pending}>
       <h1 className="h-display m-0 text-[28px]">Тохиргоо</h1>
       <Flash ok={sp.ok} err={sp.err} />
-      <form action={saveAppLink} className="card p-5.5 flex flex-col gap-3.5 max-w-[920px]">
+      <form id="apk" action={saveAppLink} className={`card p-5.5 flex flex-col gap-3.5 max-w-[920px] ${sp.apk ? "ring-4 ring-yellow" : ""}`}>
         <input type="hidden" name="back" value="/admin/settings" />
         <div className="flex flex-col gap-1">
           <h2 className="m-0 text-[17px] font-bold">Апп татах (APK)</h2>
@@ -24,10 +24,10 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
         </div>
         <div className="flex flex-wrap gap-3 items-end">
           <label className="label flex-[3_1_360px] text-[14px]">APK холбоос
-            <input name="apk_url" type="url" defaultValue={s.apk_url ?? ""} placeholder="https://expo.dev/artifacts/eas/....apk" className="input mono text-[13px]" />
+            <input name="apk_url" type="url" defaultValue={sp.apk ?? s.apk_url ?? ""} placeholder="https://expo.dev/artifacts/eas/....apk" className="input mono text-[13px]" />
           </label>
           <label className="label flex-[1_1_140px] text-[14px]">Хувилбар
-            <input name="apk_version" defaultValue={s.apk_version ?? ""} placeholder="1.0.0" className="input mono" />
+            <input name="apk_version" defaultValue={sp.v ?? s.apk_version ?? ""} placeholder="1.0.0" className="input mono" />
           </label>
           <button className="btn btn-ink h-12">Хадгалах</button>
         </div>
