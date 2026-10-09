@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { errMsg, photoUrl } from "@/lib/format";
 import { IconCamera, IconClose, IconSpinner } from "@/components/icons";
+import { OptionPicker } from "@/components/OptionPicker";
 import type { Ad } from "@/lib/types";
 
 type Pic = { key: string; path?: string; file?: File; url: string };
@@ -28,6 +29,7 @@ export function EditAdForm({ ad, userId, maxPhotos }: { ad: Ad; userId: string; 
   const fileRef = useRef<HTMLInputElement>(null);
   const [pics, setPics] = useState<Pic[]>(ad.photos.map((p) => ({ key: p, path: p, url: photoUrl(p) ?? "" })));
   const [price, setPrice] = useState(fmt(ad.price));
+  const [options, setOptions] = useState<string[]>(ad.options);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,7 +75,7 @@ export function EditAdForm({ ad, userId, maxPhotos }: { ad: Ad; userId: string; 
           plate_number: str("plate_number"),
           vin: str("vin"),
           phone: str("phone").replace(/[^\d+]/g, ""),
-          options: str("options").split(",").map((x) => x.trim()).filter(Boolean),
+          options,
           modifications: str("modifications"),
           description: str("description"),
           price: p,
@@ -132,7 +134,7 @@ export function EditAdForm({ ad, userId, maxPhotos }: { ad: Ad; userId: string; 
         <label className="label flex-[1_1_160px]">Улсын дугаар<input name="plate_number" required defaultValue={ad.plate_number} className="input mono" /></label>
         <label className="label flex-[1_1_220px]">Арлын дугаар<input name="vin" required defaultValue={ad.vin} className="input mono" /></label>
         <label className="label flex-[1_1_160px]">Утас<input name="phone" required defaultValue={ad.phone} className="input mono" /></label>
-        <label className="label basis-full">Опшн (таслалаар тусгаарлана)<input name="options" defaultValue={ad.options.join(", ")} className="input" /></label>
+        <div className="basis-full flex flex-col gap-2"><span className="text-[13px] font-semibold">Опшн</span><OptionPicker value={options} onChange={setOptions} /></div>
         <label className="label flex-[1_1_300px]">Нэмж хийсэн зүйлс<textarea name="modifications" defaultValue={ad.modifications ?? ""} className="textarea font-normal" /></label>
         <label className="label flex-[1_1_300px]">Тайлбар<textarea name="description" defaultValue={ad.description ?? ""} className="textarea font-normal" /></label>
       </section>

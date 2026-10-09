@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { BRANDS, OPTIONS } from "@/lib/cars";
+import { BRANDS } from "@/lib/cars";
+import { OptionPicker } from "@/components/OptionPicker";
 import { errMsg } from "@/lib/format";
 import { IconCamera, IconCheck, IconClose, IconSpinner } from "@/components/icons";
 import { SignaturePad } from "@/components/SignaturePad";
@@ -52,7 +53,6 @@ export function PostForm({
   const [brand, setBrand] = useState("");
   const [yearMade, setYearMade] = useState("");
   const [options, setOptions] = useState<string[]>([]);
-  const [customOpt, setCustomOpt] = useState("");
   const [price, setPrice] = useState("");
   const [busy, setBusy] = useState<null | { step: number; done: number }>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +62,6 @@ export function PostForm({
   const [agree, setAgree] = useState(false);
   const [signName, setSignName] = useState(fullName);
 
-  const allOptions = useMemo(() => Array.from(new Set([...OPTIONS, ...options])), [options]);
   const models = BRANDS[brand] ?? [];
   const y = Number(yearMade);
   const category = y ? (y >= cutoff ? "new" : "old") : null;
@@ -316,38 +315,7 @@ export function PostForm({
 
         <section className="card p-6 flex flex-col gap-3.5">
           <h2 className="m-0 text-[18px] font-bold">4 · Нэмэлт опшн</h2>
-          <div className="flex flex-wrap gap-2">
-            {allOptions.map((o) => {
-              const on = options.includes(o);
-              return (
-                <label key={o} className={`flex items-center gap-1.5 h-10 px-3.5 rounded-full text-[14px] cursor-pointer ${on ? "bg-ink text-paper" : "border border-line-2 bg-card"}`}>
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() => setOptions((s) => (on ? s.filter((x) => x !== o) : [...s, o]))}
-                    className="m-0 accent-yellow"
-                  />
-                  {o}
-                </label>
-              );
-            })}
-            <div className="flex items-center gap-1.5">
-              <input
-                value={customOpt}
-                onChange={(e) => setCustomOpt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    if (customOpt.trim()) setOptions((s) => [...s, customOpt.trim()]);
-                    setCustomOpt("");
-                  }
-                }}
-                placeholder="+ Өөр опшн"
-                aria-label="Өөр опшн нэмэх"
-                className="h-10 px-3.5 rounded-full border-[1.5px] border-dashed border-[#9aa0a9] bg-transparent text-[14px] outline-none w-40"
-              />
-            </div>
-          </div>
+          <OptionPicker value={options} onChange={setOptions} />
         </section>
 
         <section className="card p-6 flex flex-wrap gap-3.5">

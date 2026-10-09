@@ -10,7 +10,8 @@ import { useNetInfo } from "@react-native-community/netinfo";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C, F } from "@/lib/theme";
-import { BRANDS, OPTIONS } from "@/lib/cars";
+import { BRANDS } from "@/lib/cars";
+import { OptionPicker } from "@/components/OptionPicker";
 import { errMsg } from "@/lib/format";
 import { Button, Field, Input, T, s } from "@/components/ui";
 import { SignaturePad } from "@/components/SignaturePad";
@@ -44,7 +45,6 @@ export default function Post() {
   const [vin, setVin] = useState("");
   const [phone, setPhone] = useState(profile?.phone ?? "");
   const [options, setOptions] = useState<string[]>([]);
-  const [custom, setCustom] = useState("");
   const [mods, setMods] = useState("");
   const [desc, setDesc] = useState("");
   const [price, setPrice] = useState("");
@@ -340,21 +340,7 @@ export default function Post() {
 
         <View style={{ gap: 12 }}>
           <T w="bold" style={s.h2}>5 · Нэмэлт опшн</T>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {Array.from(new Set([...OPTIONS, ...options])).map((o) => {
-              const on = options.includes(o);
-              return (
-                <Pressable key={o} accessibilityRole="checkbox" accessibilityState={{ checked: on }} onPress={() => setOptions((x) => (on ? x.filter((v) => v !== o) : [...x, o]))} style={{ height: 38, paddingHorizontal: 12, borderRadius: 19, backgroundColor: on ? C.ink : C.card, borderWidth: on ? 0 : 1, borderColor: C.line2, flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  {on && <Feather name="check" size={14} color={C.yellow} />}
-                  <T style={{ fontSize: 13, color: on ? C.paper : C.ink }}>{o}</T>
-                </Pressable>
-              );
-            })}
-          </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <Input value={custom} onChangeText={setCustom} placeholder="+ Өөр опшн" style={{ flex: 1, height: 44 }} onSubmitEditing={() => { if (custom.trim()) setOptions((x) => [...x, custom.trim()]); setCustom(""); }} />
-            <Button small title="Нэмэх" variant="ghost" style={{ height: 44 }} onPress={() => { if (custom.trim()) setOptions((x) => [...x, custom.trim()]); setCustom(""); }} />
-          </View>
+          <OptionPicker value={options} onChange={setOptions} />
         </View>
 
         <Field label="6 · Нэмж хийсэн зүйлс"><Input value={mods} onChangeText={setMods} multiline placeholder="Өвлийн шинэ дугуй, автозапуск, салоны бүрээс..." /></Field>
