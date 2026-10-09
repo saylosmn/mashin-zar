@@ -179,11 +179,12 @@ export default function AdDetail() {
 
           {ad.seller_name ? (
             <View style={[s.card, { flexDirection: "row", alignItems: "center", gap: 12, padding: 12 }]}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-                <T w="bold" style={{ color: C.yellow }}>{initial(ad.seller_name)}</T>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: ad.seller_shop ? C.yellow : C.ink, alignItems: "center", justifyContent: "center" }}>
+                {ad.seller_shop ? <Feather name="shopping-bag" size={18} color={C.ink} /> : <T w="bold" style={{ color: C.yellow }}>{initial(ad.seller_name)}</T>}
               </View>
               <View style={{ gap: 2 }}>
-                <T w="semibold" style={{ fontSize: 14 }}>{ad.seller_name}</T>
+                {ad.seller_shop ? <T w="bold" style={{ fontSize: 10, color: C.pendingFg, letterSpacing: 0.5 }}>АВТО ХУДАЛДАА</T> : null}
+                <T w="semibold" style={{ fontSize: 14 }}>{ad.seller_shop ?? ad.seller_name}</T>
                 <T style={{ fontSize: 12, color: C.muted }}>{ad.seller_city ?? "Монгол"} · {ad.seller_ad_count} зар</T>
               </View>
             </View>

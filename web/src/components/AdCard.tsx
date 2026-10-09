@@ -9,6 +9,11 @@ export function AdCard({ ad, cutoff }: { ad: PublicAd; cutoff: number }) {
       <div className="relative">
         <CarPhoto path={ad.photos[0]} alt={`${ad.brand} ${ad.model}`} className="w-full h-[190px]" />
         <span className="cat-chip absolute left-3 top-3">{categoryLabel(ad.category, cutoff)}</span>
+        {ad.seller_shop && (
+          <span className="absolute left-3 bottom-3 max-w-[60%] truncate bg-yellow text-ink text-[11px] font-bold px-2 py-0.5 rounded">
+            🏪 {ad.seller_shop}
+          </span>
+        )}
         {ad.photos.length > 0 && (
           <span className="mono absolute right-3 bottom-3 bg-ink/85 text-paper text-[11px] px-2 py-0.5 rounded">
             {ad.photos.length} зураг

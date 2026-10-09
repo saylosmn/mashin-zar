@@ -24,7 +24,11 @@ export const STATUS: Record<AdStatus, { label: string; cls: string }> = {
   active: { label: "Идэвхтэй", cls: "bg-active-bg text-active-fg" },
   sold: { label: "Зарагдсан", cls: "bg-sold-bg text-sold-fg" },
   rejected: { label: "Татгалзсан", cls: "bg-danger-bg text-[#9b1c1c]" },
+  hidden: { label: "Нуусан", cls: "bg-soft text-body" },
 };
+
+export const roleLabel = (r?: string | null) =>
+  r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : "Хэрэглэгч";
 
 const MONTHS = ["1-р сар", "2-р сар", "3-р сар", "4-р сар", "5-р сар", "6-р сар", "7-р сар", "8-р сар", "9-р сар", "10-р сар", "11-р сар", "12-р сар"];
 export const monthLabel = (d: Date) => MONTHS[d.getMonth()];

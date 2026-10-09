@@ -1,5 +1,5 @@
-export type Role = "user" | "manager" | "admin";
-export type AdStatus = "pending" | "active" | "sold" | "rejected";
+export type Role = "user" | "manager" | "admin" | "dealer";
+export type AdStatus = "pending" | "active" | "sold" | "rejected" | "hidden";
 export type Category = "new" | "old";
 
 export type Profile = {
@@ -11,6 +11,7 @@ export type Profile = {
   avatar_url: string | null;
   role: Role;
   is_blocked: boolean;
+  shop_name?: string | null;
   profile_completed: boolean;
   notify_new_ads: boolean;
   notify_category: Category | null;
@@ -75,6 +76,7 @@ export type PublicAd = {
   seller_name: string;
   seller_city: string | null;
   seller_ad_count: number;
+  seller_shop?: string | null;
 };
 
 export type Settings = {

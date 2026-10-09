@@ -8,12 +8,13 @@ import { errMsg, money } from "@/lib/format";
 import { Button, CardSkeleton, Photo, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
 import { useLiveSync } from "@/lib/live";
-import { openContract } from "@/lib/staff";
+import { confirm, openContract, staffRpc } from "@/lib/staff";
 
 type Tab = "all" | AdStatus | "saved";
 
 export default function MyAds() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
+  const dealer = profile?.role === "dealer";
   const uid = session?.user.id;
   const [ads, setAds] = useState<Ad[]>([]);
   const [saved, setSaved] = useState<PublicAd[]>([]);
@@ -63,11 +64,21 @@ export default function MyAds() {
   const count = (t: Tab) => (t === "all" ? ads.length : t === "saved" ? saved.length : ads.filter((a) => a.status === t).length);
   const tabs: { key: Tab; label: string }[] = [
     { key: "all", label: "Бүгд" },
-    { key: "pending", label: "Хүлээгдэж" },
+    ...(dealer ? [] : [{ key: "pending" as Tab, label: "Хүлээгдэж" }]),
     { key: "active", label: "Идэвхтэй" },
+    ...(dealer ? [{ key: "hidden" as Tab, label: "Нуусан" }] : []),
     { key: "sold", label: "Зарагдсан" },
     { key: "saved", label: "Хадгалсан" },
   ];
+
+  async function setStatus(a: Ad, status: "active" | "hidden" | "sold") {
+    if (status === "sold") {
+      const ok = await confirm("Зарагдсан гэж тэмдэглэх үү?", `${a.brand} ${a.model} нийтээс хасагдана.`, "Тийм");
+      if (!ok) return;
+    }
+    const r = await staffRpc("dealer_set_status", { p_ad: a.id, p_status: status, p_price: null });
+    if (r.ok) load();
+  }
   const shown = tab === "all" ? ads : tab === "saved" ? [] : ads.filter((a) => a.status === tab);
 
   if (error && !ads.length)
@@ -126,11 +137,20 @@ export default function MyAds() {
                 </View>
               </Pressable>
               {(a.status !== "sold" || a.contract_id) && (
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: 1, borderColor: "#ECEDE9", paddingTop: 10, gap: 8 }}>
-                  <T style={{ fontSize: 12, color: a.offer_amount ? C.pendingFg : C.muted, flex: 1 }} w={a.offer_amount ? "semibold" : "body"}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: dealer ? "flex-start" : "space-between", borderTopWidth: 1, borderColor: "#ECEDE9", paddingTop: 10, gap: 8 }}>
+                  <T style={{ fontSize: 12, color: a.offer_amount ? C.pendingFg : C.muted, flex: dealer ? undefined : 1, flexBasis: dealer ? "100%" : undefined }} w={a.offer_amount ? "semibold" : "body"}>
                     {a.offer_amount ? `Санал: ${money(a.offer_amount)}` : a.status === "pending" ? "Менежер удахгүй холбогдоно" : a.status === "rejected" ? "Татгалзагдсан" : `${a.views} үзэлт`}
                   </T>
                   {a.contract_id ? <Button small title="Гэрээ" icon="file-text" variant="ghost" onPress={() => openContract(a.contract_id!)} /> : null}
+                  {dealer && a.status !== "sold" ? (
+                    <>
+                      <Button small title="Засах" icon="edit-2" variant="ghost" onPress={() => router.push(`/edit/${a.id}`)} />
+                      {(a.status === "active" || a.status === "hidden") && (
+                        <Button small title={a.status === "active" ? "Нуух" : "Гаргах"} icon={a.status === "active" ? "eye-off" : "eye"} variant="ghost" onPress={() => setStatus(a, a.status === "active" ? "hidden" : "active")} />
+                      )}
+                      <Button small title="Зарагдсан" icon="check" onPress={() => setStatus(a, "sold")} />
+                    </>
+                  ) : null}
                   {a.status !== "sold" && <Button small title="Устгах" icon="trash-2" variant="danger" onPress={() => remove(a)} />}
                 </View>
               )}

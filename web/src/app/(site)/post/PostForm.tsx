@@ -35,6 +35,7 @@ export function PostForm({
   cutoff,
   fullName,
   contract,
+  dealer = false,
 }: {
   userId: string;
   defaultPhone: string;
@@ -43,6 +44,7 @@ export function PostForm({
   cutoff: number;
   fullName: string;
   contract: { company: string; terms: ContractTerms };
+  dealer?: boolean;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -92,7 +94,7 @@ export function PostForm({
     if (photos.length < minPhotos) return setError(`Хамгийн багадаа ${minPhotos} зураг оруулна уу.`);
     const priceNum = Number(price.replace(/\D/g, ""));
     if (!priceNum) return setError("Үнээ оруулна уу.");
-    setDraft({
+    const d: Draft = {
       brand: String(fd.get("brand")).trim(),
       model: String(fd.get("model")).trim(),
       trim: String(fd.get("trim") || "").trim() || null,
@@ -105,7 +107,10 @@ export function PostForm({
       modifications: String(fd.get("modifications") || "").trim() || null,
       description: String(fd.get("description") || "").trim() || null,
       price: priceNum,
-    });
+    };
+    // Авто худалдаа: гэрээгүй, шууд нийтлэнэ
+    if (dealer) return void send(d, null);
+    setDraft(d);
     setAgree(false);
     setSignature(null);
   }
@@ -116,13 +121,20 @@ export function PostForm({
     if (!signName.trim()) return setError("Овог нэрээ бичнэ үү.");
     if (!signature) return setError("Гарын үсгээ зурна уу.");
     if (!agree) return setError("Гэрээг уншиж зөвшөөрснөө тэмдэглэнэ үү.");
+    await send(draft, signature);
+  }
+
+  /** Зураг байршуулж зар үүсгэнэ. signature=null бол гэрээгүй (авто худалдаа). */
+  async function send(draft: Draft, signature: string | null) {
     if (!navigator.onLine) return setError("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
     setError(null);
     const supabase = createClient();
     setBusy({ step: 1, done: 0 });
     const paths: string[] = [];
     try {
-      const { data: contractId, error: cErr } = await supabase.rpc("sign_contract", {
+      let contractId: string | null = null;
+      if (signature) {
+      const { data: cid, error: cErr } = await supabase.rpc("sign_contract", {
         p_full_name: signName.trim(),
         p_phone: draft.phone,
         p_brand: draft.brand,
@@ -135,6 +147,8 @@ export function PostForm({
         p_ua: navigator.userAgent,
       });
       if (cErr) throw cErr;
+      contractId = cid as string;
+      }
       setBusy({ step: 2, done: 0 });
       for (const [i, p] of photos.entries()) {
         const blob = await compress(p.file);
@@ -148,7 +162,7 @@ export function PostForm({
       const { error: insErr } = await supabase.from("ads").insert({ ...draft, user_id: userId, photos: paths, contract_id: contractId });
       if (insErr) throw insErr;
       // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
-      fetch(`/api/contracts/${contractId}/pdf`, { method: "POST", keepalive: true }).catch(() => {});
+      if (contractId) fetch(`/api/contracts/${contractId}/pdf`, { method: "POST", keepalive: true }).catch(() => {});
       router.push("/my?created=1");
       router.refresh();
     } catch (err) {
@@ -382,7 +396,7 @@ export function PostForm({
             <div role="progressbar" aria-valuemin={0} aria-valuemax={photos.length} aria-valuenow={busy.done} className="h-3 rounded-md bg-ink-line overflow-hidden">
               <div className="h-full bg-yellow rounded-md transition-all" style={{ width: `${(busy.done / Math.max(photos.length, 1)) * 100}%` }} />
             </div>
-            <span className="text-[14px] text-pale">{busy.step === 3 ? "Менежерт илгээж байна…" : ""}</span>
+            <span className="text-[14px] text-pale">{busy.step === 3 ? (dealer ? "Нийтэлж байна…" : "Менежерт илгээж байна…") : ""}</span>
           </div>
         ) : (
           <>
@@ -400,9 +414,11 @@ export function PostForm({
               ))}
             </ul>
             {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
-            <button form="post-form" className="btn btn-lg btn-yellow">Үргэлжлүүлэх · Гэрээ</button>
+            <button form="post-form" className="btn btn-lg btn-yellow">{dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Гэрээ"}</button>
             <p className="m-0 text-[13px] leading-relaxed text-pale">
-              Дараагийн алхамд зуучлалын гэрээг уншиж, гарын үсгээ зурж зөвшөөрнө. Дараа нь “Зар амжилттай үүслээ, манай менежер удахгүй холбогдоно” гэсэн мэдэгдэл гарна.
+              {dealer
+                ? "Авто худалдааны зар менежерийн шалгалтгүйгээр шууд нийтлэгдэнэ."
+                : "Дараагийн алхамд зуучлалын гэрээг уншиж, гарын үсгээ зурж зөвшөөрнө. Дараа нь “Зар амжилттай үүслээ, манай менежер удахгүй холбогдоно” гэсэн мэдэгдэл гарна."}
             </p>
           </>
         )}

@@ -12,6 +12,7 @@ export const STATUS: Record<AdStatus, { label: string; bg: string; fg: string }>
   active: { label: "Идэвхтэй", bg: C.activeBg, fg: C.activeFg },
   sold: { label: "Зарагдсан", bg: C.soldBg, fg: C.soldFg },
   rejected: { label: "Татгалзсан", bg: C.dangerBg, fg: "#9B1C1C" },
+  hidden: { label: "Нуусан", bg: C.soft, fg: C.body },
 };
 
 export function timeAgo(iso: string) {
@@ -32,3 +33,6 @@ export const initial = (s?: string | null) => (s?.trim()?.[0] ?? "?").toUpperCas
 
 export const errMsg = (e: unknown) =>
   e && typeof e === "object" && "message" in e ? String((e as { message: unknown }).message) : "Алдаа гарлаа";
+
+export const roleLabel = (r?: string | null) =>
+  r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : "Хэрэглэгч";

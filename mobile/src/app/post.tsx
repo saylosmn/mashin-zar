@@ -56,6 +56,7 @@ export default function Post() {
   const [agree, setAgree] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const ct = termsFrom(settings);
+  const dealer = profile?.role === "dealer";
 
   useEffect(() => {
     if (profile && !profile.profile_completed) router.replace({ pathname: "/complete-profile", params: { next: "post" } });
@@ -89,24 +90,30 @@ export default function Post() {
     if (!plate.trim() || !vin.trim()) return setErr("Улсын болон арлын дугаараа оруулна уу.");
     if (phone.replace(/\D/g, "").length < 8) return setErr("Утасны дугаараа оруулна уу.");
     if (!priceNum) return setErr("Үнээ оруулна уу.");
+    // Авто худалдаа: гэрээгүй, шууд нийтлэнэ
+    if (dealer) return send(true);
     setAgree(false);
     setSignature(null);
     setContractOpen(true);
   }
 
   /** Гэрээнд гарын үсэг зурж зөвшөөрөөд зар илгээнэ */
-  async function send() {
+  async function send(noContract = false) {
     setErr(null);
     const priceNum = Number(price.replace(/\D/g, ""));
-    if (!signName.trim()) return setErr("Овог нэрээ бичнэ үү.");
-    if (!signature) return setErr("Гарын үсгээ зурна уу.");
-    if (!agree) return setErr("Гэрээг уншиж зөвшөөрснөө тэмдэглэнэ үү.");
+    if (!noContract) {
+      if (!signName.trim()) return setErr("Овог нэрээ бичнэ үү.");
+      if (!signature) return setErr("Гарын үсгээ зурна уу.");
+      if (!agree) return setErr("Гэрээг уншиж зөвшөөрснөө тэмдэглэнэ үү.");
+    }
     if (net.isConnected === false) return setErr("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
 
     const uploaded: string[] = [];
     setBusy({ done: 0, step: 1 });
     try {
-      const { data: contractId, error: cErr } = await supabase.rpc("sign_contract", {
+      let contractId: string | null = null;
+      if (!noContract) {
+      const { data: cid, error: cErr } = await supabase.rpc("sign_contract", {
         p_full_name: signName.trim(),
         p_phone: phone.replace(/[^\d+]/g, ""),
         p_brand: brand.trim(),
@@ -119,6 +126,8 @@ export default function Post() {
         p_ua: `Машин зар апп (${Platform.OS})`,
       });
       if (cErr) throw cErr;
+      contractId = cid as string;
+      }
       setBusy({ done: 0, step: 2 });
       for (const [i, p] of pics.entries()) {
         const small = await compress(p.uri);
@@ -149,10 +158,10 @@ export default function Post() {
       });
       if (error) throw error;
       // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
-      if (session?.access_token) {
+      if (contractId && session?.access_token) {
         fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => {});
       }
-      router.replace({ pathname: "/success", params: { title: `${brand} ${model} · ${y}`, price: String(priceNum), cover: uploaded[0] } });
+      router.replace({ pathname: "/success", params: { title: `${brand} ${model} · ${y}`, price: String(priceNum), cover: uploaded[0], dealer: dealer ? "1" : "0" } });
     } catch (e) {
       if (uploaded.length) await supabase.storage.from("ad-photos").remove(uploaded);
       setBusy(null);
@@ -178,7 +187,7 @@ export default function Post() {
           </View>
         </View>
         <View style={[s.section, { gap: 14 }]}>
-          {[["Гэрээнд гарын үсэг зурсан", true], [`Зураг байршуулж байна`, busy.step >= 2], ["Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
+          {[[dealer ? "Мэдээлэл шалгасан" : "Гэрээнд гарын үсэг зурсан", true], [`Зураг байршуулж байна`, busy.step >= 2], [dealer ? "Нийтлэх" : "Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
             <View key={String(t)} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
               <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: on ? C.ink : "transparent", borderWidth: on ? 0 : 2, borderColor: C.pale, alignItems: "center", justifyContent: "center" }}>
                 {on && <Feather name="check" size={14} color={C.yellow} />}
@@ -233,7 +242,7 @@ export default function Post() {
           {err && <View accessibilityRole="alert" style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}><T style={{ color: "#9B1C1C", fontSize: 14 }}>{err}</T></View>}
         </ScrollView>
         <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
-          <Button title="Зөвшөөрч, зар илгээх" variant="yellow" icon="check" disabled={!signature || !agree} onPress={send} />
+          <Button title="Зөвшөөрч, зар илгээх" variant="yellow" icon="check" disabled={!signature || !agree} onPress={() => send()} />
           <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>Гарын үсэгтэй гэрээний PDF “Миний зар” хэсэгт хадгалагдана</T>
         </View>
       </KeyboardAvoidingView>
@@ -369,8 +378,8 @@ export default function Post() {
         {err && <View accessibilityRole="alert" style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}><T style={{ color: "#9B1C1C", fontSize: 14 }}>{err}</T></View>}
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
-        <Button title="Үргэлжлүүлэх · Гэрээ" variant="yellow" icon="arrow-right" onPress={submit} />
-        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>Дараа нь гэрээнд гарын үсэг зурна · Нийтлэхээс өмнө менежер шалгана</T>
+        <Button title={dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Гэрээ"} variant="yellow" icon={dealer ? "check" : "arrow-right"} onPress={submit} />
+        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>{dealer ? "Авто худалдааны зар шууд нийтлэгдэнэ" : "Дараа нь гэрээнд гарын үсэг зурна · Нийтлэхээс өмнө менежер шалгана"}</T>
       </View>
     </KeyboardAvoidingView>
   );

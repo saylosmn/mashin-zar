@@ -104,11 +104,12 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
           )}
           {ad.seller_name && (
             <div className="flex items-center gap-3 border-t border-[#ecede9] pt-4">
-              <div className="w-11 h-11 rounded-full bg-ink text-yellow flex items-center justify-center font-bold">
-                {initial(ad.seller_name)}
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold ${ad.seller_shop ? "bg-yellow text-ink" : "bg-ink text-yellow"}`}>
+                {ad.seller_shop ? "🏪" : initial(ad.seller_name)}
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="font-semibold text-[14px]">{ad.seller_name}</span>
+                {ad.seller_shop && <span className="text-[11px] font-bold uppercase tracking-wide text-pending-fg">Авто худалдаа</span>}
+                <span className="font-semibold text-[14px]">{ad.seller_shop ?? ad.seller_name}</span>
                 <span className="text-[12px] text-muted">
                   {ad.seller_city ?? "Монгол"} · {ad.seller_ad_count} зар
                 </span>

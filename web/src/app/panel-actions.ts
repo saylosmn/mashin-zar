@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin, requireStaff } from "@/lib/data";
+import { requireAdmin, requireStaff, requireUser } from "@/lib/data";
 
 function back(fd: FormData, fallback: string, extra: Record<string, string>) {
   const to = String(fd.get("back") || fallback);
@@ -239,4 +239,31 @@ export async function saveContractSettings(fd: FormData) {
   await run(fd, "/admin/settings", "Гэрээний нөхцөл хадгалагдлаа", () =>
     supabase.rpc("update_contract_settings", { p_company: String(fd.get("company") || ""), p_tiers: tiers, p_after: n("after") }),
   );
+}
+
+// ---------- Авто худалдаа ----------
+export async function inviteDealer(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const email = String(fd.get("email") || "").trim();
+  const shop = String(fd.get("shop") || "").trim();
+  await run(fd, "/admin/users?tab=dealers", `${shop} авто худалдааны эрхтэй боллоо`, () =>
+    supabase.rpc("invite_dealer", { p_email: email, p_shop: shop, p_phone: String(fd.get("phone") || "") || null }),
+  );
+}
+
+export async function removeDealer(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await run(fd, "/admin/users?tab=dealers", "Авто худалдааны эрх хасагдлаа", () => supabase.rpc("remove_dealer", { p_user: String(fd.get("id")) }));
+}
+
+/** Авто худалдаа: зараа нуух / дахин гаргах / зарагдсан болгох */
+export async function dealerSetStatus(fd: FormData) {
+  await requireUser();
+  const supabase = await createClient();
+  const status = String(fd.get("status"));
+  const msg = status === "hidden" ? "Зар нуугдлаа" : status === "active" ? "Зар дахин нийтлэгдлээ" : "Зарагдсан гэж тэмдэглэлээ";
+  const price = Number(String(fd.get("price") || "").replace(/\D/g, "")) || null;
+  await run(fd, "/my", msg, () => supabase.rpc("dealer_set_status", { p_ad: String(fd.get("id")), p_status: status, p_price: price }));
 }

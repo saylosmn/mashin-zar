@@ -7,6 +7,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { AdCard } from "@/components/AdCard";
 import { IconCheck, IconClose } from "@/components/icons";
 import { deleteMyAd } from "../actions";
+import { dealerSetStatus } from "@/app/panel-actions";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
 
 export const metadata = { title: "Миний зарууд" };
@@ -19,7 +21,7 @@ const TABS: { key?: AdStatus | "saved"; label: string }[] = [
   { key: "saved", label: "Хадгалсан" },
 ];
 
-export default async function MyAdsPage({ searchParams }: { searchParams: Promise<{ tab?: string; created?: string; deleted?: string; error?: string }> }) {
+export default async function MyAdsPage({ searchParams }: { searchParams: Promise<{ tab?: string; created?: string; deleted?: string; error?: string; ok?: string; err?: string }> }) {
   const sp = await searchParams;
   const me = await requireUser("/my");
   const settings = await getSettings();
@@ -32,6 +34,8 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
     ? await supabase.from("public_ads").select("*").in("id", favIds)
     : { data: [] as PublicAd[] };
 
+  const dealer = me.role === "dealer";
+  const tabs = dealer ? [...TABS.slice(0, 3), { key: "hidden" as const, label: "Нуусан" }, ...TABS.slice(3)] : TABS;
   const tab = sp.tab;
   const shown = tab && tab !== "saved" ? ads.filter((a) => a.status === tab) : ads;
   const countOf = (k?: string) => (k === "saved" ? (favAds ?? []).length : k ? ads.filter((a) => a.status === k).length : ads.length);
@@ -42,19 +46,26 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
         <div role="status" className="flex items-center gap-3.5 bg-ink text-paper rounded-2xl px-5 py-4.5 flex-wrap">
           <span className="w-10 h-10 rounded-xl bg-yellow text-ink flex items-center justify-center shrink-0"><IconCheck size={22} /></span>
           <div className="flex flex-col gap-0.5 flex-[1_1_300px]">
-            <span className="font-bold text-[16px]">Зар амжилттай үүслээ</span>
-            <span className="text-[14px] text-[#c9cdd3]">Манай менежер удахгүй тантай холбогдоно.</span>
+            <span className="font-bold text-[16px]">{dealer ? "Зар нийтлэгдлээ" : "Зар амжилттай үүслээ"}</span>
+            <span className="text-[14px] text-[#c9cdd3]">{dealer ? "Таны зар бүх хэрэглэгчид шууд харагдаж байна." : "Манай менежер удахгүй тантай холбогдоно."}</span>
           </div>
           <Link href="/my" aria-label="Хаах" className="w-11 h-11 flex items-center justify-center text-paper"><IconClose size={18} /></Link>
         </div>
       )}
       {sp.deleted && <p role="status" className="m-0 card px-4 py-3 text-[14px]">Зар устгагдлаа.</p>}
+      {sp.ok && <p role="status" className="m-0 card px-4 py-3 text-[14px]">✓ {sp.ok}</p>}
+      {sp.err && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">{sp.err}</p>}
+      {dealer && (
+        <p className="m-0 text-[13px] text-muted">
+          Та <strong className="text-ink">{me.shop_name ?? "Авто худалдаа"}</strong> эрхтэй: зар тань шууд нийтлэгдэх бөгөөд засах, түр нуух, зарагдсан болгох боломжтой.
+        </p>
+      )}
       {sp.error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">Устгаж чадсангүй. Зарагдсан зарыг устгах боломжгүй.</p>}
 
       <div className="flex justify-between items-center gap-3 flex-wrap">
         <h1 className="h-display m-0 text-[clamp(24px,3vw,32px)]">Миний зарууд</h1>
         <nav aria-label="Төлөв" className="flex gap-1.5 flex-wrap">
-          {TABS.map((t) => {
+          {tabs.map((t) => {
             const on = (t.key ?? "") === (tab ?? "");
             return (
               <Link
@@ -113,6 +124,25 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
                     <div className="flex gap-2 justify-end items-center">
                     {a.contract_id && (
                       <a href={`/api/contracts/${a.contract_id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Гэрээ</a>
+                    )}
+                    {dealer && a.status !== "sold" && (
+                      <>
+                        <Link href={`/my/${a.id}/edit`} className="btn btn-sm btn-ghost">Засах</Link>
+                        {(a.status === "active" || a.status === "hidden") && (
+                          <form action={dealerSetStatus}>
+                            <input type="hidden" name="id" value={a.id} />
+                            <input type="hidden" name="back" value="/my" />
+                            <input type="hidden" name="status" value={a.status === "active" ? "hidden" : "active"} />
+                            <button className="btn btn-sm btn-ghost">{a.status === "active" ? "Нуух" : "Гаргах"}</button>
+                          </form>
+                        )}
+                        <form action={dealerSetStatus}>
+                          <input type="hidden" name="id" value={a.id} />
+                          <input type="hidden" name="back" value="/my" />
+                          <input type="hidden" name="status" value="sold" />
+                          <ConfirmButton message={`${a.brand} ${a.model}-ийг зарагдсан гэж тэмдэглэх үү? Зар нийтээс хасагдана.`} className="btn btn-sm btn-ink">Зарагдсан</ConfirmButton>
+                        </form>
+                      </>
                     )}
                     {a.status !== "sold" && (
                       <form action={deleteMyAd}>

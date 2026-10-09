@@ -12,7 +12,7 @@ export default async function PostPage() {
   return (
     <main className="max-w-[1280px] w-full mx-auto px-4 sm:px-6 pt-8 pb-16 flex flex-col gap-6">
       <div className="flex flex-col gap-1.5">
-        <span className="text-[13px] text-muted">Алхам 2 / 3 · Зарын мэдээлэл → дараа нь гэрээ</span>
+        <span className="text-[13px] text-muted">{me.role === "dealer" ? `Авто худалдаа · ${me.shop_name ?? ""} · шууд нийтлэгдэнэ` : "Алхам 2 / 3 · Зарын мэдээлэл → дараа нь гэрээ"}</span>
         <h1 className="h-display m-0 text-[clamp(26px,3vw,36px)]">Зар нэмэх</h1>
       </div>
       <PostForm
@@ -23,6 +23,7 @@ export default async function PostPage() {
         cutoff={settings.cutoff_year}
         fullName={me.full_name ?? ""}
         contract={termsFrom(settings)}
+        dealer={me.role === "dealer"}
       />
     </main>
   );

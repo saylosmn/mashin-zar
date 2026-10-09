@@ -2,7 +2,7 @@ import { ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
-import { initial } from "@/lib/format";
+import { initial, roleLabel } from "@/lib/format";
 import { Button, T, s } from "@/components/ui";
 import { openWebPanel } from "@/lib/staff";
 
@@ -20,7 +20,9 @@ export default function ProfileTab() {
         <View style={{ flex: 1, gap: 2 }}>
           <T w="semibold" style={{ fontSize: 17 }}>{profile?.full_name ?? "Нэр оруулаагүй"}</T>
           <T style={{ fontSize: 13, color: C.muted }} numberOfLines={1}>{profile?.email}</T>
-          {staff && <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>{profile?.role === "admin" ? "Админ" : "Менежер"}</T>}
+          {(staff || profile?.role === "dealer") && (
+            <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>{roleLabel(profile?.role)}{profile?.role === "dealer" && profile?.shop_name ? ` · ${profile.shop_name}` : ""}</T>
+          )}
         </View>
       </View>
       <View style={[s.card]}>
