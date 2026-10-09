@@ -189,8 +189,6 @@ export default function AdDetail() {
               adId={ad.id}
               price={ad.price}
               partners={partners}
-              defaultName={profile?.full_name ?? ""}
-              defaultPhone={profile?.phone ?? ""}
             />
           )}
 

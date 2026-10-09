@@ -106,7 +106,7 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
           </dl>
           {!mine && ad.status === "active" && <ContactBox adId={ad.id} phone={ad.phone} favorite={Boolean(fav)} />}
           {!mine && ad.status === "active" && partners.length > 0 && (
-            <LoanCalculator adId={ad.id} price={ad.price} partners={partners} defaultName={me.full_name ?? ""} defaultPhone={me.phone ?? ""} />
+            <LoanCalculator adId={ad.id} price={ad.price} partners={partners} />
           )}
           {mine && (
             <Link href="/my" className="btn btn-lg btn-ghost">Миний зарууд руу</Link>

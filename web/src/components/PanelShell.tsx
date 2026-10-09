@@ -24,7 +24,7 @@ export function PanelShell({
     area === "leasing"
       ? [
           { key: "leasing", href: "/leasing", label: "Хүсэлтүүд" },
-          { key: "leasing-terms", href: "/leasing?tab=terms", label: "Зээлийн нөхцөл" },
+          { key: "leasing-terms", href: "/leasing?tab=terms", label: "Нөхцөл, шаардлага" },
           ...(isAdmin ? [{ key: "admin-leasing", href: "/admin/leasing", label: "← Админ: Лизинг" }] : []),
         ]
       : area === "admin"

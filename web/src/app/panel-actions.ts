@@ -288,9 +288,18 @@ export async function updateLoanRequest(fd: FormData) {
 export async function savePartnerTerms(fd: FormData) {
   await requireUser();
   const supabase = await createClient();
-  const n = (k: string) => Number(String(fd.get(k) || "").replace(",", "."));
-  await run(fd, "/leasing", "Нөхцөл хадгалагдлаа", () =>
-    supabase.rpc("set_partner_terms", { p_rate: n("rate"), p_min_down: n("min_down"), p_max_term: Math.round(n("max_term")) }),
+  const v = (k: string) => String(fd.get(k) ?? "").replace(/\s/g, "").replace(",", ".");
+  await run(fd, "/leasing?tab=terms", "Нөхцөл, шаардлага хадгалагдлаа", () =>
+    supabase.rpc("set_partner_terms", {
+      p_partner: String(fd.get("partner_id") || ""),
+      p: {
+        rate_annual: v("rate"), min_down_pct: v("min_down"), max_term_months: v("max_term"),
+        min_age: v("min_age"), max_age: v("max_age"), min_work_months: v("min_work"), min_business_months: v("min_business"),
+        max_dti: v("max_dti"), min_car_year: v("min_car_year"), cosigner_over: v("cosigner_over").replace(/\D/g, ""),
+        required_docs: fd.getAll("required_docs").map(String),
+        requirements_note: String(fd.get("requirements_note") ?? ""),
+      },
+    }),
   );
 }
 
