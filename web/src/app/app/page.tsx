@@ -39,9 +39,7 @@ export default async function AppDownload() {
           <h1 className="h-display m-0 text-[clamp(30px,5vw,48px)] leading-[1.1]">Машин зар апп</h1>
 
           {isIOS ? (
-            <p className="m-0 text-[17px] text-pale leading-relaxed">
-              iPhone хувилбар удахгүй гарна. Одоогоор <Link href="/" className="text-yellow underline">вэб хувилбарыг</Link> ашиглана уу.
-            </p>
+            <IosSteps />
           ) : ready ? (
             <>
               <a href="/app/download" className="btn btn-yellow w-full h-16 rounded-2xl text-[19px]">
@@ -73,3 +71,33 @@ export default async function AppDownload() {
     </div>
   );
 }
+
+function IosSteps() {
+  const steps: [string, React.ReactNode][] = [
+    ["1", <>Энэ хуудсыг <strong className="text-paper">Safari</strong>-аар нээнэ</>],
+    [
+      "2",
+      <>
+        Доод талын{" "}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Share" className="inline -mt-1 text-yellow"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" /></svg>{" "}
+        <strong className="text-paper">Share</strong> товч дарна
+      </>,
+    ],
+    ["3", <><strong className="text-paper">“Add to Home Screen”</strong> (Нүүр дэлгэцэд нэмэх) → <strong className="text-paper">Add</strong></>],
+    ["4", <>Нүүр дэлгэц дээрх <strong className="text-paper">Машин зар</strong>-аа нээж нэвтэрнэ → <strong className="text-paper">“Мэдэгдэл асаах”</strong></>],
+  ];
+  return (
+    <div className="w-full flex flex-col gap-3">
+      <p className="m-0 text-[16px] text-pale leading-relaxed">iPhone дээр апп шиг суулгах (үнэгүй, 30 секунд):</p>
+      <ol className="list-none p-0 m-0 flex flex-col gap-2.5">
+        {steps.map(([n, t]) => (
+          <li key={n} className="flex items-start gap-3 bg-ink-2 border border-ink-line rounded-xl px-4 py-3">
+            <span className="mono font-bold text-ink bg-yellow rounded-md w-7 h-7 flex items-center justify-center shrink-0">{n}</span>
+            <span className="text-[15px] text-pale leading-snug pt-0.5">{t}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+

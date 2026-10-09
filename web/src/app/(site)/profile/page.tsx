@@ -1,3 +1,4 @@
+import { WebPushCard } from "@/components/WebPush";
 import { requireUser } from "@/lib/data";
 import { CITIES } from "@/lib/cars";
 import { saveProfile } from "../actions";
@@ -20,6 +21,8 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           Менежер тантай энэ мэдээллээр холбогдоно. Нэг удаа бөглөхөд хангалттай.
         </p>
       </div>
+
+      {!creating && <WebPushCard />}
 
       {saved && (
         <p role="status" className="m-0 card px-4 py-3 text-[14px] flex items-center gap-2"><IconCheck size={18} /> Хадгалагдлаа</p>

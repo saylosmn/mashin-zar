@@ -2,6 +2,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { LiveSync } from "@/components/LiveSync";
 import { MobileTabBar } from "@/components/MobileTabBar";
+import { PushPrompt } from "@/components/WebPush";
 import { getProfile, unreadCount } from "@/lib/data";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -10,6 +11,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   return (
     <>
       <SiteHeader profile={profile} unread={unread} />
+      {profile && <PushPrompt />}
       <OfflineBanner />
       <LiveSync userId={profile?.id} />
       <div className="flex-1 flex flex-col">{children}</div>
