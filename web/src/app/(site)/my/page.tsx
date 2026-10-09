@@ -110,12 +110,17 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
                   <td className="mono">{a.status === "pending" ? "—" : num(a.views)}</td>
                   <td className="text-muted">{dateShort(a.created_at)}</td>
                   <td className="text-right">
+                    <div className="flex gap-2 justify-end items-center">
+                    {a.contract_id && (
+                      <a href={`/api/contracts/${a.contract_id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Гэрээ</a>
+                    )}
                     {a.status !== "sold" && (
                       <form action={deleteMyAd}>
                         <input type="hidden" name="id" value={a.id} />
                         <button className="btn btn-sm btn-danger">Устгах</button>
                       </form>
                     )}
+                    </div>
                   </td>
                 </tr>
               ))}

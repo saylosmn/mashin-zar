@@ -6,8 +6,15 @@ import { createClient } from "@/lib/supabase/client";
 import { BRANDS, OPTIONS } from "@/lib/cars";
 import { errMsg } from "@/lib/format";
 import { IconCamera, IconCheck, IconClose, IconSpinner } from "@/components/icons";
+import { SignaturePad } from "@/components/SignaturePad";
+import { ContractView } from "@/components/ContractView";
+import type { ContractTerms } from "@/lib/contract";
 
 type Photo = { id: string; file: File; url: string };
+type Draft = {
+  brand: string; model: string; trim: string | null; plate_number: string; vin: string; phone: string;
+  year_made: number; year_imported: number | null; options: string[]; modifications: string | null; description: string | null; price: number;
+};
 
 async function compress(file: File, max = 1600): Promise<Blob> {
   const bmp = await createImageBitmap(file).catch(() => null);
@@ -26,12 +33,16 @@ export function PostForm({
   maxPhotos,
   minPhotos,
   cutoff,
+  fullName,
+  contract,
 }: {
   userId: string;
   defaultPhone: string;
   maxPhotos: number;
   minPhotos: number;
   cutoff: number;
+  fullName: string;
+  contract: { company: string; terms: ContractTerms };
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -44,6 +55,10 @@ export function PostForm({
   const [busy, setBusy] = useState<null | { step: number; done: number }>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
+  const [agree, setAgree] = useState(false);
+  const [signName, setSignName] = useState(fullName);
 
   const allOptions = useMemo(() => Array.from(new Set([...OPTIONS, ...options])), [options]);
   const models = BRANDS[brand] ?? [];
@@ -69,19 +84,58 @@ export function PostForm({
     });
   }
 
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
+  /** 1-р алхам: маягтыг шалгаад гэрээний цонх нээнэ */
+  function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
     if (photos.length < minPhotos) return setError(`Хамгийн багадаа ${minPhotos} зураг оруулна уу.`);
     const priceNum = Number(price.replace(/\D/g, ""));
     if (!priceNum) return setError("Үнээ оруулна уу.");
-    if (!navigator.onLine) return setError("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
+    setDraft({
+      brand: String(fd.get("brand")).trim(),
+      model: String(fd.get("model")).trim(),
+      trim: String(fd.get("trim") || "").trim() || null,
+      plate_number: String(fd.get("plate_number")).trim().toUpperCase(),
+      vin: String(fd.get("vin")).trim().toUpperCase(),
+      phone: String(fd.get("phone")).replace(/[^\d+]/g, ""),
+      year_made: Number(fd.get("year_made")),
+      year_imported: Number(fd.get("year_imported")) || null,
+      options,
+      modifications: String(fd.get("modifications") || "").trim() || null,
+      description: String(fd.get("description") || "").trim() || null,
+      price: priceNum,
+    });
+    setAgree(false);
+    setSignature(null);
+  }
 
+  /** 2-р алхам: гэрээнд гарын үсэг зурж зөвшөөрөөд зар илгээнэ */
+  async function confirmAndSend() {
+    if (!draft) return;
+    if (!signName.trim()) return setError("Овог нэрээ бичнэ үү.");
+    if (!signature) return setError("Гарын үсгээ зурна уу.");
+    if (!agree) return setError("Гэрээг уншиж зөвшөөрснөө тэмдэглэнэ үү.");
+    if (!navigator.onLine) return setError("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
+    setError(null);
     const supabase = createClient();
-    setBusy({ step: 2, done: 0 });
+    setBusy({ step: 1, done: 0 });
     const paths: string[] = [];
     try {
+      const { data: contractId, error: cErr } = await supabase.rpc("sign_contract", {
+        p_full_name: signName.trim(),
+        p_phone: draft.phone,
+        p_brand: draft.brand,
+        p_model: draft.model,
+        p_year: draft.year_made,
+        p_plate: draft.plate_number,
+        p_vin: draft.vin,
+        p_price: draft.price,
+        p_signature: signature,
+        p_ua: navigator.userAgent,
+      });
+      if (cErr) throw cErr;
+      setBusy({ step: 2, done: 0 });
       for (const [i, p] of photos.entries()) {
         const blob = await compress(p.file);
         const path = `${userId}/${crypto.randomUUID()}.jpg`;
@@ -91,24 +145,10 @@ export function PostForm({
         setBusy({ step: 2, done: i + 1 });
       }
       setBusy({ step: 3, done: photos.length });
-      const ym = Number(fd.get("year_imported")) || null;
-      const { error: insErr } = await supabase.from("ads").insert({
-        user_id: userId,
-        brand: String(fd.get("brand")).trim(),
-        model: String(fd.get("model")).trim(),
-        trim: String(fd.get("trim") || "").trim() || null,
-        plate_number: String(fd.get("plate_number")).trim().toUpperCase(),
-        vin: String(fd.get("vin")).trim().toUpperCase(),
-        phone: String(fd.get("phone")).replace(/[^\d+]/g, ""),
-        year_made: Number(fd.get("year_made")),
-        year_imported: ym,
-        options,
-        modifications: String(fd.get("modifications") || "").trim() || null,
-        description: String(fd.get("description") || "").trim() || null,
-        price: priceNum,
-        photos: paths,
-      });
+      const { error: insErr } = await supabase.from("ads").insert({ ...draft, user_id: userId, photos: paths, contract_id: contractId });
       if (insErr) throw insErr;
+      // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
+      fetch(`/api/contracts/${contractId}/pdf`, { method: "POST", keepalive: true }).catch(() => {});
       router.push("/my?created=1");
       router.refresh();
     } catch (err) {
@@ -360,13 +400,74 @@ export function PostForm({
               ))}
             </ul>
             {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
-            <button form="post-form" className="btn btn-lg btn-yellow">Зар илгээх</button>
+            <button form="post-form" className="btn btn-lg btn-yellow">Үргэлжлүүлэх · Гэрээ</button>
             <p className="m-0 text-[13px] leading-relaxed text-pale">
-              Илгээсний дараа “Зар амжилттай үүслээ, манай менежер удахгүй холбогдоно” гэсэн мэдэгдэл гарна.
+              Дараагийн алхамд зуучлалын гэрээг уншиж, гарын үсгээ зурж зөвшөөрнө. Дараа нь “Зар амжилттай үүслээ, манай менежер удахгүй холбогдоно” гэсэн мэдэгдэл гарна.
             </p>
           </>
         )}
       </aside>
+
+      {draft && (
+        <div role="dialog" aria-modal="true" aria-labelledby="contract-title" className="fixed inset-0 z-50 bg-ink/60 flex items-end sm:items-center justify-center sm:p-4">
+          <div className="bg-card w-full sm:max-w-[760px] max-h-[94dvh] rounded-t-[22px] sm:rounded-[22px] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
+              <div className="flex flex-col">
+                <span className="text-[12px] text-muted">Алхам 3 / 3</span>
+                <h2 id="contract-title" className="m-0 text-[18px] font-bold">Зуучлалын гэрээ</h2>
+              </div>
+              <button type="button" aria-label="Хаах" disabled={!!busy} onClick={() => setDraft(null)} className="w-10 h-10 rounded-xl bg-paper border-0 flex items-center justify-center cursor-pointer disabled:opacity-40">
+                <IconClose size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto px-5 py-4 flex flex-col gap-5">
+              <div className="rounded-xl bg-paper p-4 max-h-[42dvh] overflow-y-auto border border-line">
+                <ContractView
+                  data={{
+                    company: contract.company,
+                    terms: contract.terms,
+                    fullName: signName || null,
+                    phone: draft.phone,
+                    brand: draft.brand,
+                    model: draft.model,
+                    yearMade: draft.year_made,
+                    plate: draft.plate_number,
+                    vin: draft.vin,
+                    price: draft.price,
+                  }}
+                />
+              </div>
+              <a href="/api/contracts/template" target="_blank" rel="noreferrer" className="text-[13px] font-semibold self-start">Гэрээний загварыг PDF-ээр үзэх ↗</a>
+              <label className="label">
+                Овог нэр (гэрээнд бичигдэнэ)
+                <input value={signName} onChange={(e) => setSignName(e.target.value)} className="input" placeholder="Овог нэр" />
+              </label>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[13px] font-semibold">Гарын үсэг</span>
+                <SignaturePad onChange={setSignature} />
+              </div>
+              <label className="flex items-start gap-3 text-[14px] leading-snug cursor-pointer">
+                <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#111317]" />
+                <span>Би гэрээг бүрэн уншиж танилцсан бөгөөд шимтгэлийн нөхцөлийг зөвшөөрч байна.</span>
+              </label>
+              {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
+            </div>
+            <div className="px-5 py-4 border-t border-line flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
+              <button type="button" disabled={!!busy} onClick={() => setDraft(null)} className="btn btn-lg btn-ghost">Буцах</button>
+              <button type="button" disabled={!!busy || !signature || !agree} onClick={confirmAndSend} className="btn btn-lg btn-yellow disabled:opacity-50">
+                {busy ? (
+                  <>
+                    <IconSpinner size={20} />
+                    {busy.step === 1 ? "Гэрээ хадгалж байна…" : busy.step === 2 ? `Зураг ${busy.done} / ${photos.length}` : "Илгээж байна…"}
+                  </>
+                ) : (
+                  "Зөвшөөрч, зар илгээх"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

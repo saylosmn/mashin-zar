@@ -1,7 +1,8 @@
 import { getSettings, requireAdmin } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import { saveSettings } from "../../panel-actions";
+import { saveContractSettings, saveSettings } from "../../panel-actions";
+import { termsFrom } from "@/lib/contract";
 
 export const metadata = { title: "Админ · Тохиргоо" };
 
@@ -9,6 +10,7 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const me = await requireAdmin();
   const [s, pending] = await Promise.all([getSettings(), pendingCount()]);
+  const ct = termsFrom(s);
   const ex = s.offer_percent != null ? Math.round((50_000_000 * s.offer_percent) / 100).toLocaleString("en-US") + "₮" : "[ДҮН]";
   return (
     <PanelShell profile={me} area="admin" active="admin-settings" pending={pending}>
@@ -21,6 +23,33 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
         </span>
         <span className="text-[14px] font-semibold whitespace-nowrap">Нээх →</span>
       </a>
+      <form action={saveContractSettings} className="card p-5.5 flex flex-col gap-3.5 max-w-[920px]">
+        <input type="hidden" name="back" value="/admin/settings" />
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="m-0 text-[17px] font-bold">Гэрээ ба шимтгэл</h2>
+          <a href="/api/contracts/template" target="_blank" rel="noreferrer" className="text-[13px] font-semibold">Гэрээний загвар (PDF) ↗</a>
+        </div>
+        <span className="text-[14px] text-muted">Хэрэглэгч зар оруулахын өмнө энэ нөхцөлтэй гэрээнд гарын үсэг зурна. Хоног нь зар нийтлэгдсэнээс тоологдоно. Өөрчлөлт зөвхөн шинэ гэрээнд үйлчилнэ.</span>
+        <label className="label text-[14px]">Үйлчилгээ үзүүлэгч (компанийн нэр)
+          <input name="company" required defaultValue={ct.company} className="input" />
+        </label>
+        <div className="flex flex-col gap-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-2 flex-wrap text-[14px]">
+              <input name={`days${i + 1}`} type="number" min={1} defaultValue={ct.terms.tiers[i]?.days ?? ""} className="input mono w-20" aria-label={`${i + 1}-р шатны хоног`} />
+              <span>хоногийн дотор зарагдвал</span>
+              <input name={`pct${i + 1}`} type="number" step="0.1" min={0} max={100} defaultValue={ct.terms.tiers[i]?.percent ?? ""} className="input mono w-20" aria-label={`${i + 1}-р шатны хувь`} />
+              <span>%</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-2 flex-wrap text-[14px]">
+            <span>Түүнээс хойш зарагдвал</span>
+            <input name="after" type="number" step="0.1" min={0} max={100} defaultValue={ct.terms.after} className="input mono w-20" aria-label="Сүүлийн шатнаас хойшхи хувь" />
+            <span>%</span>
+          </div>
+        </div>
+        <div className="flex justify-end"><button className="btn btn-ink h-12">Хадгалах</button></div>
+      </form>
       <form action={saveSettings} className="flex flex-col gap-4.5 max-w-[920px]">
         <input type="hidden" name="back" value="/admin/settings" />
         <section className="card p-5.5 flex flex-col gap-3.5">

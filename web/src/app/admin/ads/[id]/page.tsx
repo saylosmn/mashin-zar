@@ -25,6 +25,9 @@ export default async function EditAd({ params, searchParams }: { params: Promise
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="h-display m-0 text-[26px]">Зар засах</h1>
         <StatusBadge status={ad.status} />
+        {ad.contract_id && (
+          <a href={`/api/contracts/${ad.contract_id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Гэрээ (PDF) ↗</a>
+        )}
       </div>
       <Flash ok={sp.ok} err={sp.err} />
       <form action={adminUpdateAd} className="card p-6 flex flex-wrap gap-4 max-w-[860px]">

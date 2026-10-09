@@ -8,6 +8,7 @@ import { errMsg, money } from "@/lib/format";
 import { Button, CardSkeleton, Photo, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
 import { useLiveSync } from "@/lib/live";
+import { openContract } from "@/lib/staff";
 
 type Tab = "all" | AdStatus | "saved";
 
@@ -124,12 +125,13 @@ export default function MyAds() {
                   <T w="display" style={{ fontSize: 15, color: a.status === "sold" ? C.body : C.ink, textDecorationLine: a.status === "sold" ? "line-through" : "none" }}>{money(a.price)}</T>
                 </View>
               </Pressable>
-              {a.status !== "sold" && (
+              {(a.status !== "sold" || a.contract_id) && (
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: 1, borderColor: "#ECEDE9", paddingTop: 10, gap: 8 }}>
                   <T style={{ fontSize: 12, color: a.offer_amount ? C.pendingFg : C.muted, flex: 1 }} w={a.offer_amount ? "semibold" : "body"}>
                     {a.offer_amount ? `Санал: ${money(a.offer_amount)}` : a.status === "pending" ? "Менежер удахгүй холбогдоно" : a.status === "rejected" ? "Татгалзагдсан" : `${a.views} үзэлт`}
                   </T>
-                  <Button small title="Устгах" icon="trash-2" variant="danger" onPress={() => remove(a)} />
+                  {a.contract_id ? <Button small title="Гэрээ" icon="file-text" variant="ghost" onPress={() => openContract(a.contract_id!)} /> : null}
+                  {a.status !== "sold" && <Button small title="Устгах" icon="trash-2" variant="danger" onPress={() => remove(a)} />}
                 </View>
               )}
             </View>

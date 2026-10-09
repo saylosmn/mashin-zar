@@ -8,7 +8,7 @@ import { useLiveSync } from "@/lib/live";
 import { C } from "@/lib/theme";
 import { categoryLong, errMsg, money, timeAgo } from "@/lib/format";
 import { staffAdCache } from "@/lib/cache";
-import { STAFF_AD_SELECT, confirm, digits, isAdmin, isStaff, staffRpc, type StaffAd } from "@/lib/staff";
+import { STAFF_AD_SELECT, confirm, digits, isAdmin, isStaff, openContract, staffRpc, type StaffAd } from "@/lib/staff";
 import { Button, Field, Input, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 
 const W = Dimensions.get("window").width;
@@ -25,8 +25,6 @@ export default function PanelAd() {
   const [note, setNote] = useState(() => staffAdCache.get(id)?.manager_note ?? "");
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
-  const [selling, setSelling] = useState(false);
-  const [soldPrice, setSoldPrice] = useState(() => String(staffAdCache.get(id)?.price ?? ""));
 
   const load = useCallback(async () => {
     try {
@@ -37,7 +35,6 @@ export default function PanelAd() {
       setAd(a);
       if (a) {
         setNote((n) => (n ? n : a.manager_note ?? ""));
-        setSoldPrice((p) => (p ? p : String(a.price)));
       }
     } catch (e) {
       setError(errMsg(e));
@@ -139,6 +136,11 @@ export default function PanelAd() {
             <Row k="Үйлдвэрлэсэн он" v={String(ad.year_made)} />
             <Row k="Орж ирсэн он" v={ad.year_imported ? String(ad.year_imported) : "—"} />
             <Row k="Сер" v={ad.trim || "—"} />
+            {ad.contract_id ? (
+              <Button small title="Гарын үсэгтэй гэрээ (PDF)" icon="file-text" variant="ghost" onPress={() => openContract(ad.contract_id!)} />
+            ) : (
+              <T style={{ fontSize: 12, color: C.muted }}>Гэрээгүй (гэрээ нэвтрэхээс өмнөх зар)</T>
+            )}
             {ad.options?.length ? (
               <View style={{ gap: 6 }}>
                 <T style={{ fontSize: 13, color: C.muted }}>Опшн</T>
@@ -235,22 +237,7 @@ export default function PanelAd() {
             )}
 
             {ad.status === "active" && (
-              selling ? (
-                <View style={{ gap: 8 }}>
-                  <Field label="Зарагдсан үнэ (₮)">
-                    <Input keyboardType="number-pad" value={soldPrice} onChangeText={(t) => setSoldPrice(digits(t))} />
-                  </Field>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <Button small title="Болих" variant="ghost" style={{ flex: 1 }} onPress={() => setSelling(false)} />
-                    <Button small title="Баталгаажуулах" icon="dollar-sign" style={{ flex: 1 }} loading={busy === "sold"} onPress={async () => {
-                      const ok = await act("sold", () => staffRpc("mark_sold", { p_ad: ad.id, p_price: Number(soldPrice) || null }), "Зарагдсан гэж тэмдэглэлээ");
-                      if (ok) setSelling(false);
-                    }} />
-                  </View>
-                </View>
-              ) : (
-                <Button title="Зарагдсан болгох" icon="dollar-sign" onPress={() => setSelling(true)} />
-              )
+              <Button title="Зарагдсан тайлан илгээх" icon="file-text" onPress={() => router.push({ pathname: "/panel/reports", params: { ad: ad.id } })} />
             )}
 
             {ad.status === "sold" && (

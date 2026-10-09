@@ -48,3 +48,18 @@ export async function openWebPanel(path: string) {
 }
 
 export const digits = (s: string) => s.replace(/\D/g, "");
+
+/** Гарын үсэгтэй гэрээний PDF-ийг нээнэ (эзэмшигч, менежер, админ). */
+export async function openContract(contractId: string) {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) throw new Error("Дахин нэвтэрнэ үү");
+    const r = await fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    const j = (await r.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!r.ok || !j.url) throw new Error(j.error ?? "Гэрээ нээж чадсангүй");
+    await WebBrowser.openBrowserAsync(j.url, { toolbarColor: "#111317", controlsColor: "#F5B800" });
+  } catch (e) {
+    Alert.alert("Гэрээ нээж чадсангүй", errMsg(e));
+  }
+}

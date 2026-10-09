@@ -47,6 +47,7 @@ export type Ad = {
   approved_at: string | null;
   sold_at: string | null;
   sold_price: number | null;
+  contract_id?: string | null;
   created_at: string;
 };
 
@@ -87,6 +88,9 @@ export type Settings = {
   apk_url?: string | null;
   apk_version?: string | null;
   apk_updated_at?: string | null;
+  company_name?: string;
+  commission_tiers?: { days: number; percent: number }[];
+  commission_after?: number;
 };
 
 export type Notification = {
