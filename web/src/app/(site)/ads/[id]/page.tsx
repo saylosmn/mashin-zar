@@ -7,6 +7,8 @@ import { categoryLabel, categoryLong, initial, money, timeAgo } from "@/lib/form
 import { StatusBadge } from "@/components/StatusBadge";
 import { Gallery } from "./Gallery";
 import { ContactBox } from "./ContactBox";
+import { LoanCalculator } from "./LoanCalculator";
+import type { Partner } from "@/lib/loan";
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
 
 type View = PublicAd & { plate_full?: string; vin_full?: string };
@@ -44,7 +46,11 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
   const supabase = await createClient();
   const mine = ad.user_id === me.id;
   if (!mine && ad.status === "active") await supabase.rpc("increment_view", { p_ad: id });
-  const { data: fav } = await supabase.from("favorites").select("ad_id").eq("user_id", me.id).eq("ad_id", id).maybeSingle();
+  const [{ data: fav }, { data: partnerRows }] = await Promise.all([
+    supabase.from("favorites").select("ad_id").eq("user_id", me.id).eq("ad_id", id).maybeSingle(),
+    supabase.from("leasing_partners").select("*").eq("active", true).order("rate_annual"),
+  ]);
+  const partners = (partnerRows ?? []) as Partner[];
   const cy = settings.cutoff_year;
 
   return (
@@ -99,6 +105,9 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
             ))}
           </dl>
           {!mine && ad.status === "active" && <ContactBox adId={ad.id} phone={ad.phone} favorite={Boolean(fav)} />}
+          {!mine && ad.status === "active" && partners.length > 0 && (
+            <LoanCalculator adId={ad.id} price={ad.price} partners={partners} defaultName={me.full_name ?? ""} defaultPhone={me.phone ?? ""} />
+          )}
           {mine && (
             <Link href="/my" className="btn btn-lg btn-ghost">Миний зарууд руу</Link>
           )}

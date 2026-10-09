@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { WebPushCard } from "@/components/WebPush";
 import { requireUser } from "@/lib/data";
 import { CITIES } from "@/lib/cars";
@@ -70,6 +71,12 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           {creating && next === "/post" ? "Профайл үүсгээд зар нэмэх" : "Хадгалах"}
         </button>
       </form>
+      {!creating && (
+        <Link href="/loans" className="card px-4 py-3.5 flex items-center justify-between gap-3 no-underline text-ink">
+          <span className="flex flex-col"><span className="font-semibold text-[15px]">Миний лизингийн хүсэлтүүд</span><span className="text-[13px] text-muted">Илгээсэн хүсэлтийн явц, хариу</span></span>
+          <span aria-hidden>→</span>
+        </Link>
+      )}
       <form action="/auth/signout" method="post">
         <button className="btn btn-ghost w-full">Гарах</button>
       </form>

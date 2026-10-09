@@ -9,6 +9,7 @@ import { C, F } from "@/lib/theme";
 import { errMsg, money, timeAgo } from "@/lib/format";
 import { STAFF_AD_SELECT, isAdmin, isStaff, type StaffAd } from "@/lib/staff";
 import { staffAdCache } from "@/lib/cache";
+import { LeasingPanel } from "@/components/LeasingPanel";
 import { Button, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { AdStatus } from "@/lib/types";
 
@@ -24,7 +25,14 @@ const FILTERS: { key: AdStatus; label: string }[] = [
 
 const head = { count: "exact" as const, head: true };
 
-export default function Panel() {
+export default function PanelTab() {
+  const { profile } = useAuth();
+  // Лизингийн түншийн ажилтанд өөрийн панел
+  if (profile?.role === "leasing") return <LeasingPanel />;
+  return <Panel />;
+}
+
+function Panel() {
   const { profile } = useAuth();
   const admin = isAdmin(profile);
   const [stats, setStats] = useState<Stats>(EMPTY);
@@ -104,6 +112,7 @@ export default function Panel() {
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <IconBtn icon="file-text" label="Тайлан" onPress={() => router.push("/panel/reports")} />
+          {admin && <IconBtn icon="percent" label="Лизинг" onPress={() => router.push("/panel/leasing")} />}
           {!admin && <IconBtn icon="users" label="Хэрэглэгчид" onPress={() => router.push("/panel/users")} />}
           {admin && <IconBtn icon="bell" label="Мэдэгдэл" onPress={() => router.push("/panel/broadcasts")} />}
           {admin && <IconBtn icon="settings" label="Тохиргоо" onPress={() => router.push("/panel/settings")} />}

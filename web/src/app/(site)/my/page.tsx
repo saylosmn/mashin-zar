@@ -63,7 +63,10 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
       {sp.error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">Устгаж чадсангүй. Зарагдсан зарыг устгах боломжгүй.</p>}
 
       <div className="flex justify-between items-center gap-3 flex-wrap">
-        <h1 className="h-display m-0 text-[clamp(24px,3vw,32px)]">Миний зарууд</h1>
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <h1 className="h-display m-0 text-[clamp(24px,3vw,32px)]">Миний зарууд</h1>
+          <Link href="/loans" className="text-[14px] font-semibold">Лизингийн хүсэлтүүд →</Link>
+        </div>
         <nav aria-label="Төлөв" className="flex gap-1.5 flex-wrap">
           {tabs.map((t) => {
             const on = (t.key ?? "") === (tab ?? "");

@@ -1,4 +1,4 @@
-export type Role = "user" | "manager" | "admin" | "dealer";
+export type Role = "user" | "manager" | "admin" | "dealer" | "leasing";
 export type AdStatus = "pending" | "active" | "sold" | "rejected" | "hidden";
 export type Category = "new" | "old";
 
@@ -12,6 +12,7 @@ export type Profile = {
   role: Role;
   is_blocked: boolean;
   shop_name?: string | null;
+  partner_id?: string | null;
   profile_completed: boolean;
   notify_new_ads: boolean;
   notify_category: Category | null;

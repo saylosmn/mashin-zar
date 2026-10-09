@@ -26,7 +26,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {profile && (
         <MobileTabBar
           unread={unread}
-          staffHref={profile.role === "admin" ? "/admin" : profile.role === "manager" ? "/manager" : null}
+          staffHref={profile.role === "admin" ? "/admin" : profile.role === "manager" ? "/manager" : profile.role === "leasing" ? "/leasing" : null}
         />
       )}
     </>

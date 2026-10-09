@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Dimensions, FlatList, Linking, Pressable, ScrollView, View } from "react-native";
+import { Dimensions, FlatList, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,12 +11,14 @@ import { Button, CatChip, Photo, Skeleton, StateView, StatusBadge, T, s } from "
 import type { Ad, PublicAd } from "@/lib/types";
 import { useLiveSync } from "@/lib/live";
 import { adCache } from "@/lib/cache";
+import type { Partner } from "@/lib/loan";
+import { LoanCalculator } from "@/components/LoanCalculator";
 
 const W = Dimensions.get("window").width;
 
 export default function AdDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { session, settings } = useAuth();
+  const { session, settings, profile } = useAuth();
   const insets = useSafeAreaInsets();
   const [ad, setAd] = useState<PublicAd | null>(() => adCache.get(id) ?? null);
   const [loading, setLoading] = useState(() => !adCache.has(id));
@@ -24,12 +26,16 @@ export default function AdDetail() {
   const [idx, setIdx] = useState(0);
   const [fav, setFav] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const uid = session?.user.id;
 
   const load = useCallback(async () => {
     try {
       setError(null);
       const favP = supabase.from("favorites").select("ad_id").eq("ad_id", id).maybeSingle();
+      // Лизингийн түншүүд — алдаа гарвал тооцоолуур л харагдахгүй, зар нээгдэнэ
+      supabase.from("leasing_partners").select("*").eq("active", true).order("name")
+        .then(({ data: lp }) => setPartners((lp ?? []) as Partner[]), () => setPartners([]));
       const { data, error: e } = await supabase.from("public_ads").select("*").eq("id", id).maybeSingle();
       if (e) throw e;
       if (data) {
@@ -52,7 +58,7 @@ export default function AdDetail() {
   }, [id, uid]);
 
   useEffect(() => { load(); }, [load]);
-  useLiveSync((e) => { if (!e.id || e.id === id) load(); }, ["ads"]);
+  useLiveSync((e) => { if (e.table === "leasing_partners" || !e.id || e.id === id) load(); }, ["ads", "leasing_partners"]);
 
   async function toggleFav() {
     const next = !fav;
@@ -79,8 +85,8 @@ export default function AdDetail() {
   const cy = settings.cutoff_year;
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.paper }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.paper }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
         <View>
           {ad.photos.length ? (
             <FlatList
@@ -177,6 +183,17 @@ export default function AdDetail() {
             </View>
           ) : null}
 
+          {!mine && ad.status === "active" && partners.length > 0 && (
+            <LoanCalculator
+              key={ad.id + ad.price}
+              adId={ad.id}
+              price={ad.price}
+              partners={partners}
+              defaultName={profile?.full_name ?? ""}
+              defaultPhone={profile?.phone ?? ""}
+            />
+          )}
+
           {ad.seller_name ? (
             <View style={[s.card, { flexDirection: "row", alignItems: "center", gap: 12, padding: 12 }]}>
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: ad.seller_shop ? C.yellow : C.ink, alignItems: "center", justifyContent: "center" }}>
@@ -201,6 +218,6 @@ export default function AdDetail() {
           )}
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }

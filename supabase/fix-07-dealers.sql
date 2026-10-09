@@ -143,7 +143,7 @@ declare a public.ads;
 begin
   select * into a from public.ads where id = p_ad;
   if a.id is null then raise exception 'Зар олдсонгүй'; end if;
-  if not (public.is_admin() or (public.my_role() = 'dealer' and a.user_id = auth.uid())) then raise exception 'Эрх хүрэхгүй'; end if;
+  if not (public.is_admin() or coalesce(public.my_role() = 'dealer' and a.user_id = auth.uid(), false)) then raise exception 'Эрх хүрэхгүй'; end if;
   if a.status = 'sold' then raise exception 'Зарагдсан зарыг засах боломжгүй'; end if;
   if p ? 'price' and coalesce((p->>'price')::bigint, 0) <= 0 then raise exception 'Үнэ буруу'; end if;
   if p ? 'photos' and (jsonb_typeof(p->'photos') <> 'array' or jsonb_array_length(p->'photos') = 0 or jsonb_array_length(p->'photos') > 16) then
@@ -173,7 +173,7 @@ declare a public.ads;
 begin
   select * into a from public.ads where id = p_ad;
   if a.id is null then raise exception 'Зар олдсонгүй'; end if;
-  if not (public.is_admin() or (public.my_role() = 'dealer' and a.user_id = auth.uid())) then raise exception 'Эрх хүрэхгүй'; end if;
+  if not (public.is_admin() or coalesce(public.my_role() = 'dealer' and a.user_id = auth.uid(), false)) then raise exception 'Эрх хүрэхгүй'; end if;
   if a.status = 'sold' then raise exception 'Зарагдсан зарыг өөрчлөх боломжгүй'; end if;
   if p_status not in ('active','hidden','sold') then raise exception 'Буруу төлөв'; end if;
   if p_status = 'sold' then

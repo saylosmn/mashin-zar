@@ -267,3 +267,62 @@ export async function dealerSetStatus(fd: FormData) {
   const price = Number(String(fd.get("price") || "").replace(/\D/g, "")) || null;
   await run(fd, "/my", msg, () => supabase.rpc("dealer_set_status", { p_ad: String(fd.get("id")), p_status: status, p_price: price }));
 }
+
+// ---------- Лизинг ----------
+export async function cancelLoanRequest(fd: FormData) {
+  await requireUser();
+  const supabase = await createClient();
+  await run(fd, "/loans", "Хүсэлт цуцлагдлаа", () => supabase.rpc("cancel_loan_request", { p_id: String(fd.get("id")) }));
+}
+
+export async function updateLoanRequest(fd: FormData) {
+  await requireUser();
+  const supabase = await createClient();
+  const status = String(fd.get("status"));
+  const label: Record<string, string> = { contacted: "Холбогдсон", approved: "Зөвшөөрсөн", rejected: "Татгалзсан", new: "Шинэ" };
+  await run(fd, "/leasing", `Төлөв: ${label[status] ?? status}`, () =>
+    supabase.rpc("update_loan_request", { p_id: String(fd.get("id")), p_status: status, p_note: String(fd.get("note") || "") || null }),
+  );
+}
+
+export async function savePartnerTerms(fd: FormData) {
+  await requireUser();
+  const supabase = await createClient();
+  const n = (k: string) => Number(String(fd.get(k) || "").replace(",", "."));
+  await run(fd, "/leasing", "Нөхцөл хадгалагдлаа", () =>
+    supabase.rpc("set_partner_terms", { p_rate: n("rate"), p_min_down: n("min_down"), p_max_term: Math.round(n("max_term")) }),
+  );
+}
+
+export async function upsertPartner(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const n = (k: string) => { const v = String(fd.get(k) || "").replace(",", "."); return v ? Number(v) : null; };
+  await run(fd, "/admin/leasing", "Лизингийн компани хадгалагдлаа", () =>
+    supabase.rpc("upsert_partner", {
+      p_id: String(fd.get("id") || "") || null,
+      p_name: String(fd.get("name") || ""),
+      p_phone: String(fd.get("phone") || ""),
+      p_rate: n("rate"),
+      p_min_down: n("min_down"),
+      p_max_term: n("max_term"),
+      p_trial_until: String(fd.get("trial_until") || "") || null,
+      p_active: fd.get("active") === "on",
+    }),
+  );
+}
+
+export async function inviteLeasingStaff(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const email = String(fd.get("email") || "").trim();
+  await run(fd, "/admin/leasing", `${email} лизингийн панелд нэвтрэх эрхтэй боллоо`, () =>
+    supabase.rpc("invite_leasing_staff", { p_email: email, p_partner: String(fd.get("partner_id") || "") }),
+  );
+}
+
+export async function removeLeasingStaff(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await run(fd, "/admin/leasing", "Лизингийн ажилтны эрх хасагдлаа", () => supabase.rpc("remove_leasing_staff", { p_user: String(fd.get("id")) }));
+}
