@@ -40,6 +40,7 @@ function RootStack() {
         <Stack.Screen name="panel/ad/[id]" />
         <Stack.Screen name="panel/users" />
         <Stack.Screen name="panel/settings" />
+        <Stack.Screen name="panel/broadcasts" />
       </Stack.Protected>
     </Stack>
   );

@@ -1,7 +1,7 @@
 import { getSettings, requireAdmin } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import { saveSettings, sendBroadcast } from "../../panel-actions";
+import { saveSettings } from "../../panel-actions";
 
 export const metadata = { title: "Админ · Тохиргоо" };
 
@@ -14,23 +14,13 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
     <PanelShell profile={me} area="admin" active="admin-settings" pending={pending}>
       <h1 className="h-display m-0 text-[28px]">Тохиргоо</h1>
       <Flash ok={sp.ok} err={sp.err} />
-      <form action={sendBroadcast} className="card p-5.5 flex flex-col gap-3.5 max-w-[920px]">
-        <input type="hidden" name="back" value="/admin/settings" />
-        <div className="flex flex-col gap-1">
-          <h2 className="m-0 text-[17px] font-bold">Бүх хэрэглэгчид зарлал илгээх</h2>
-          <span className="text-[14px] text-muted">Жишээ нь “Апп шинэчлэгдлээ”. Хүн бүрийн мэдэгдэлд орж, апп суулгасан бол утсанд нь push мэдэгдлээр очно.</span>
-        </div>
-        <label className="label text-[14px]">Гарчиг
-          <input name="title" required maxLength={80} placeholder="Апп шинэчлэгдлээ" className="input" />
-        </label>
-        <label className="label text-[14px]">Дэлгэрэнгүй (заавал биш)
-          <textarea name="body" maxLength={300} rows={2} placeholder="Шинэ боломжууд..." className="textarea" />
-        </label>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <a href="/app" className="text-[13px] font-semibold">Апп татах хуудас →</a>
-          <button className="btn btn-ink h-12">Илгээх</button>
-        </div>
-      </form>
+      <a href="/admin/notifications" className="card p-5 flex items-center justify-between gap-3 max-w-[920px] no-underline">
+        <span className="flex flex-col gap-1">
+          <span className="font-bold text-[17px]">Зарлал, мэдэгдэл</span>
+          <span className="text-[14px] text-muted">Бүх хэрэглэгчид зарлал илгээх, өмнө илгээснээ устгах</span>
+        </span>
+        <span className="text-[14px] font-semibold whitespace-nowrap">Нээх →</span>
+      </a>
       <form action={saveSettings} className="flex flex-col gap-4.5 max-w-[920px]">
         <input type="hidden" name="back" value="/admin/settings" />
         <section className="card p-5.5 flex flex-col gap-3.5">

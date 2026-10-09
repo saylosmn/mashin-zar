@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
-import { confirm, digits, isAdmin, openWebPanel, staffRpc } from "@/lib/staff";
+import { digits, isAdmin, openWebPanel, staffRpc } from "@/lib/staff";
 import { Button, Field, Input, StateView, T, s } from "@/components/ui";
 
 export default function PanelSettings() {
@@ -17,9 +17,6 @@ export default function PanelSettings() {
   const [notifyAll, setNotifyAll] = useState(true);
   const [notifyStaff, setNotifyStaff] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     setPct(settings.offer_percent != null ? String(settings.offer_percent) : "");
@@ -50,19 +47,6 @@ export default function PanelSettings() {
     if (r.ok) {
       await refreshProfile();
       Alert.alert("Хадгалагдлаа", "Тохиргоо бүх хэрэглэгчид шууд үйлчилнэ.");
-    }
-  }
-
-  async function broadcast() {
-    if (!title.trim()) return Alert.alert("Гарчиг оруулна уу");
-    if (!(await confirm("Бүх хэрэглэгчид илгээх үү?", `"${title.trim()}" мэдэгдэл бүх хэрэглэгчийн утсанд очно.`, "Илгээх"))) return;
-    setSending(true);
-    const r = await staffRpc<number>("broadcast", { p_title: title.trim(), p_body: body.trim() || null });
-    setSending(false);
-    if (r.ok) {
-      setTitle("");
-      setBody("");
-      Alert.alert("Илгээгдлээ", `${r.data ?? 0} хэрэглэгчид мэдэгдэл очлоо.`);
     }
   }
 
@@ -107,13 +91,7 @@ export default function PanelSettings() {
 
         <Button title="Хадгалах" icon="save" variant="yellow" loading={saving} onPress={save} />
 
-        <View style={[s.section, { marginTop: 8 }]}>
-          <T w="bold" style={s.h2}>Бүх хэрэглэгчид зарлал илгээх</T>
-          <T style={{ fontSize: 13, color: C.muted, lineHeight: 19 }}>Жишээ нь "Апп шинэчлэгдлээ" гэх мэт. Хүн бүрийн утсанд push мэдэгдлээр очно.</T>
-          <Field label="Гарчиг"><Input value={title} onChangeText={setTitle} placeholder="Апп шинэчлэгдлээ" /></Field>
-          <Field label="Дэлгэрэнгүй (заавал биш)"><Input multiline value={body} onChangeText={setBody} placeholder="Шинэ боломжууд..." /></Field>
-          <Button title="Илгээх" icon="send" loading={sending} onPress={broadcast} />
-        </View>
+        <Button title="Зарлал, мэдэгдэл удирдах" icon="bell" variant="ghost" onPress={() => router.push("/panel/broadcasts")} />
 
         <Button title="Вэб админ панел нээх" icon="external-link" variant="ghost" onPress={() => openWebPanel("/admin")} />
       </ScrollView>
