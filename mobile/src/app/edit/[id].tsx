@@ -12,6 +12,7 @@ import { C, F } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
 import { digits } from "@/lib/staff";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
+import { OptionPicker } from "@/components/OptionPicker";
 import type { Ad } from "@/lib/types";
 
 type Pic = { key: string; path?: string; uri: string };
@@ -38,6 +39,7 @@ export default function EditAd() {
   const [pics, setPics] = useState<Pic[]>([]);
   const [f, setF] = useState({ brand: "", model: "", trim: "", year_made: "", year_imported: "", plate_number: "", vin: "", phone: "", options: "", modifications: "", description: "", price: "" });
   const set = (k: keyof typeof f) => (v: string) => setF((x) => ({ ...x, [k]: v }));
+  const [opts, setOpts] = useState<string[]>([]);
 
   useEffect(() => {
     supabase.from("ads").select("*").eq("id", id).maybeSingle().then(({ data }) => {
@@ -45,6 +47,7 @@ export default function EditAd() {
       setAd(a);
       if (a) {
         setPics(a.photos.map((p) => ({ key: p, path: p, uri: photoUrl(p) ?? "" })));
+        setOpts(a.options);
         setF({
           brand: a.brand, model: a.model, trim: a.trim ?? "", year_made: String(a.year_made), year_imported: a.year_imported ? String(a.year_imported) : "",
           plate_number: a.plate_number, vin: a.vin, phone: a.phone, options: a.options.join(", "), modifications: a.modifications ?? "",
@@ -99,7 +102,7 @@ export default function EditAd() {
         p: {
           brand: f.brand, model: f.model, trim: f.trim, year_made: Number(f.year_made) || ad!.year_made, year_imported: f.year_imported,
           plate_number: f.plate_number, vin: f.vin, phone: f.phone.replace(/[^\d+]/g, ""),
-          options: f.options.split(",").map((x) => x.trim()).filter(Boolean),
+          options: opts,
           modifications: f.modifications, description: f.description, price, photos: paths,
         },
       });
@@ -169,7 +172,10 @@ export default function EditAd() {
           <View style={{ flex: 1.3 }}><Field label="Арлын дугаар"><Input value={f.vin} onChangeText={set("vin")} autoCapitalize="characters" mono /></Field></View>
         </View>
         <Field label="Утас"><Input value={f.phone} onChangeText={set("phone")} keyboardType="phone-pad" mono /></Field>
-        <Field label="Опшн (таслалаар)"><Input value={f.options} onChangeText={set("options")} placeholder="Люк, Камер, ..." /></Field>
+        <View style={{ gap: 6 }}>
+          <T w="semibold" style={{ fontSize: 13 }}>Опшн</T>
+          <OptionPicker value={opts} onChange={setOpts} />
+        </View>
         <Field label="Нэмж хийсэн зүйлс"><Input value={f.modifications} onChangeText={set("modifications")} multiline /></Field>
         <Field label="Тайлбар"><Input value={f.description} onChangeText={set("description")} multiline /></Field>
         <View style={{ gap: 8 }}>
