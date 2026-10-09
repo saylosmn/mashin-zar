@@ -104,6 +104,7 @@ export default function Panel() {
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <IconBtn icon="users" label="Хэрэглэгчид" onPress={() => router.push("/panel/users")} />
+          {admin && <IconBtn icon="bell" label="Мэдэгдэл" onPress={() => router.push("/panel/broadcasts")} />}
           {admin && <IconBtn icon="settings" label="Тохиргоо" onPress={() => router.push("/panel/settings")} />}
         </View>
       </View>

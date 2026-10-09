@@ -177,5 +177,21 @@ export async function sendBroadcast(fd: FormData) {
   const body = String(fd.get("body") || "").trim() || null;
   const { data, error } = await supabase.rpc("broadcast", { p_title: title, p_body: body });
   revalidatePath("/", "layout");
-  redirect(back(fd, "/admin/settings", error ? { err: error.message } : { ok: `${data ?? 0} хэрэглэгчид зарлал илгээгдлээ` }));
+  redirect(back(fd, "/admin/notifications", error ? { err: error.message } : { ok: `${data ?? 0} хэрэглэгчид зарлал илгээгдлээ` }));
+}
+
+export async function deleteBroadcast(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await run(fd, "/admin/notifications", "Зарлал бүх хэрэглэгчээс устгагдлаа", () =>
+    supabase.rpc("delete_broadcast", { p_id: String(fd.get("id")) }),
+  );
+}
+
+export async function resendBroadcast(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("resend_broadcast", { p_id: String(fd.get("id")) });
+  revalidatePath("/", "layout");
+  redirect(back(fd, "/admin/notifications", error ? { err: error.message } : { ok: `Дахин илгээгдлээ (${data ?? 0} хэрэглэгч)` }));
 }

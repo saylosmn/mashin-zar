@@ -28,6 +28,7 @@ export function PanelShell({
           { key: "admin-ads", href: "/admin/ads", label: "Бүх зар" },
           { key: "mgr-ads", href: "/manager/ads", label: "Шинэ зар ба санал", badge: pending },
           { key: "mgr", href: "/manager", label: "Менежерийн самбар" },
+          { key: "admin-notif", href: "/admin/notifications", label: "Мэдэгдэл" },
           { key: "admin-settings", href: "/admin/settings", label: "Тохиргоо" },
         ]
       : [
