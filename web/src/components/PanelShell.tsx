@@ -14,14 +14,20 @@ export function PanelShell({
   children,
 }: {
   profile: Profile;
-  area: "manager" | "admin";
+  area: "manager" | "admin" | "leasing";
   active: string;
   pending?: number;
   children: React.ReactNode;
 }) {
   const isAdmin = profile.role === "admin";
   const nav: NavItem[] =
-    area === "admin"
+    area === "leasing"
+      ? [
+          { key: "leasing", href: "/leasing", label: "Хүсэлтүүд" },
+          { key: "leasing-terms", href: "/leasing?tab=terms", label: "Зээлийн нөхцөл" },
+          ...(isAdmin ? [{ key: "admin-leasing", href: "/admin/leasing", label: "← Админ: Лизинг" }] : []),
+        ]
+      : area === "admin"
       ? [
           { key: "admin", href: "/admin", label: "Самбар" },
           { key: "admin-users", href: "/admin/users", label: "Аккаунтууд" },
@@ -29,6 +35,7 @@ export function PanelShell({
           { key: "mgr-ads", href: "/manager/ads", label: "Шинэ зар ба санал", badge: pending },
           { key: "mgr", href: "/manager", label: "Менежерийн самбар" },
           { key: "admin-reports", href: "/admin/reports", label: "Тайлангууд" },
+          { key: "admin-leasing", href: "/admin/leasing", label: "Лизинг" },
           { key: "admin-notif", href: "/admin/notifications", label: "Мэдэгдэл" },
           { key: "admin-settings", href: "/admin/settings", label: "Тохиргоо" },
         ]
@@ -48,7 +55,7 @@ export function PanelShell({
         className="sticky top-0 z-30 lg:h-dvh w-full lg:w-[260px] lg:flex-none bg-ink text-paper lg:px-4 lg:py-6 flex flex-col gap-1.5"
       >
         <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-1 lg:px-2 lg:pt-0 lg:pb-5">
-          <Logo sub={area === "admin" ? "Админ · бүх эрх" : "Менежер"} href={area === "admin" ? "/admin" : "/manager"} />
+          <Logo sub={area === "admin" ? "Админ · бүх эрх" : area === "leasing" ? "Лизингийн түнш" : "Менежер"} href={area === "admin" ? "/admin" : area === "leasing" ? "/leasing" : "/manager"} />
           <Link href="/" className="lg:hidden text-[13px] text-pale no-underline whitespace-nowrap">← Сайт</Link>
         </div>
         <div className="flex lg:flex-col gap-1.5 overflow-x-auto px-3 pb-3 lg:p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

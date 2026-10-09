@@ -35,4 +35,4 @@ export const errMsg = (e: unknown) =>
   e && typeof e === "object" && "message" in e ? String((e as { message: unknown }).message) : "Алдаа гарлаа";
 
 export const roleLabel = (r?: string | null) =>
-  r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : "Хэрэглэгч";
+  r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : r === "leasing" ? "Лизинг" : "Хэрэглэгч";

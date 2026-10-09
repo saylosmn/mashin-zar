@@ -6,6 +6,7 @@ import type { Profile } from "@/lib/types";
 
 export function SiteHeader({ profile, unread, q }: { profile: Profile | null; unread: number; q?: string }) {
   const staff = profile && (profile.role === "manager" || profile.role === "admin");
+  const leasing = profile?.role === "leasing";
   return (
     <header className="bg-ink text-paper">
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex items-center gap-x-3 sm:gap-x-6 gap-y-2.5 flex-wrap">
@@ -26,6 +27,9 @@ export function SiteHeader({ profile, unread, q }: { profile: Profile | null; un
             <Link href={profile!.role === "admin" ? "/admin" : "/manager"} className="btn btn-dark-ghost px-3 sm:px-4">
               {profile!.role === "admin" ? "Админ" : "Менежер"}
             </Link>
+          )}
+          {leasing && (
+            <Link href="/leasing" className="btn btn-dark-ghost px-3 sm:px-4">Лизинг</Link>
           )}
           <Link href="/notifications" aria-label="Мэдэгдэл" className="btn btn-dark-ghost w-11 px-0 relative hidden sm:inline-flex">
             <IconBell />

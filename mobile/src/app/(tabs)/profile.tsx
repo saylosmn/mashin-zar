@@ -20,7 +20,7 @@ export default function ProfileTab() {
         <View style={{ flex: 1, gap: 2 }}>
           <T w="semibold" style={{ fontSize: 17 }}>{profile?.full_name ?? "Нэр оруулаагүй"}</T>
           <T style={{ fontSize: 13, color: C.muted }} numberOfLines={1}>{profile?.email}</T>
-          {(staff || profile?.role === "dealer") && (
+          {(staff || profile?.role === "dealer" || profile?.role === "leasing") && (
             <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>{roleLabel(profile?.role)}{profile?.role === "dealer" && profile?.shop_name ? ` · ${profile.shop_name}` : ""}</T>
           )}
         </View>
@@ -34,6 +34,13 @@ export default function ProfileTab() {
         ))}
       </View>
       <Button title={profile?.profile_completed ? "Профайл засах" : "Профайл үүсгэх"} variant="ghost" icon="edit-2" onPress={() => router.push("/complete-profile")} />
+      <Button title="Миний лизингийн хүсэлтүүд" variant="ghost" icon="percent" onPress={() => router.push("/loans")} />
+      {profile?.role === "leasing" && (
+        <>
+          <Button title="Лизингийн панел" icon="briefcase" onPress={() => router.push("/panel")} />
+          <Button title="Вэб лизингийн панел" icon="external-link" variant="ghost" onPress={() => openWebPanel("/leasing")} />
+        </>
+      )}
       {staff && (
         <>
           <Button title="Удирдлага (апп дотор)" icon="shield" onPress={() => router.push("/panel")} />

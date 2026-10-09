@@ -19,7 +19,7 @@ const ITEMS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
-  const staff = isStaff(profile);
+  const staff = isStaff(profile) || profile?.role === "leasing";
   return (
     <Tabs
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.paper } }}

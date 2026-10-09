@@ -77,3 +77,10 @@ export async function unreadCount(userId: string) {
     .eq("read", false);
   return count ?? 0;
 }
+
+/** Лизингийн түншийн ажилтан (эсвэл админ) шаардана. */
+export async function requireLeasing(): Promise<Profile> {
+  const p = await requireUser("/leasing");
+  if (p.role !== "leasing" && p.role !== "admin") redirect("/");
+  return p;
+}
