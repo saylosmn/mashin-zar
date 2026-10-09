@@ -1,12 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { PwaSetup } from "@/components/WebPush";
 
 export const metadata: Metadata = {
   title: { default: "Машин зар", template: "%s — Машин зар" },
   description: "Менежерээр шалгагдсан автомашины зарууд. 2016 ба хойш, 2016-аас өмнө ангилалтай.",
+  applicationName: "Машин зар",
+  appleWebApp: { capable: true, title: "Машин зар", statusBarStyle: "black" },
+  formatDetection: { telephone: false },
 };
 
-export const viewport: Viewport = { themeColor: "#111317" };
+export const viewport: Viewport = { themeColor: "#111317", viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -20,7 +24,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap"
         />
       </head>
-      <body className="min-h-dvh flex flex-col">{children}</body>
+      <body className="min-h-dvh flex flex-col">
+        <PwaSetup />
+        {children}
+      </body>
     </html>
   );
 }

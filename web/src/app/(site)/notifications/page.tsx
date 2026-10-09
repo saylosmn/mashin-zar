@@ -1,3 +1,4 @@
+import { WebPushCard } from "@/components/WebPush";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings, requireUser } from "@/lib/data";
@@ -43,6 +44,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
             <form action={markAllRead}><button className="btn btn-sm btn-ghost">Бүгдийг уншсан</button></form>
           )}
         </div>
+        <WebPushCard />
         {items.length === 0 ? (
           <div className="card px-6 py-12 flex flex-col items-center gap-3 text-center">
             <IconBell size={40} />
