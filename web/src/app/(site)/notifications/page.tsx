@@ -18,6 +18,8 @@ const TYPE_LABEL: Record<string, string> = {
   sold: "Таны зар",
   staff_new_ad: "Менежерт",
   broadcast: "Зарлал",
+  sale_report: "Тайлан",
+  report_reviewed: "Тайлан",
 };
 
 export default async function NotificationsPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
@@ -53,7 +55,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
         ) : (
           <ul className="list-none p-0 m-0 flex flex-col gap-2">
             {items.map((n) => {
-              const href = n.ad_id ? (n.type === "staff_new_ad" && staff ? `/manager/ads?id=${n.ad_id}` : `/ads/${n.ad_id}`) : "#";
+              const href = n.type === "sale_report" ? "/admin/reports" : n.type === "report_reviewed" ? "/manager/reports" : n.ad_id ? (n.type === "staff_new_ad" && staff ? `/manager/ads?id=${n.ad_id}` : `/ads/${n.ad_id}`) : "#";
               return (
                 <li key={n.id}>
                   <Link href={href} className={`flex gap-3 p-3.5 rounded-[14px] no-underline border ${n.read ? "border-transparent" : "bg-card border-line"}`}>

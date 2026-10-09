@@ -7,7 +7,7 @@ import { Flash, PanelShell } from "@/components/PanelShell";
 import { CarPhoto } from "@/components/CarPhoto";
 import { StatusBadge } from "@/components/StatusBadge";
 import { IconPhone } from "@/components/icons";
-import { approveAd, markContacted, markSold, rejectAd, saveNote, sendOffer } from "../../panel-actions";
+import { approveAd, markContacted, rejectAd, saveNote, sendOffer } from "../../panel-actions";
 import type { Ad, Profile } from "@/lib/types";
 
 export const metadata = { title: "Менежер · Шинэ зар ба санал" };
@@ -147,6 +147,14 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                 <div className="flex justify-between text-[14px]"><span className="text-muted">Арлын</span><span className="mono font-bold">{ad.vin}</span></div>
                 <div className="flex justify-between text-[14px]"><span className="text-muted">Үйлд. / Орж ирсэн</span><span className="mono font-bold">{ad.year_made} / {ad.year_imported ?? "—"}</span></div>
                 <div className="flex justify-between text-[14px] gap-3"><span className="text-muted">Опшн</span><span className="text-right">{ad.options.join(", ") || "—"}</span></div>
+                <div className="flex justify-between text-[14px] gap-3">
+                  <span className="text-muted">Гэрээ</span>
+                  {ad.contract_id ? (
+                    <a href={`/api/contracts/${ad.contract_id}/pdf`} target="_blank" rel="noreferrer" className="font-semibold">Гарын үсэгтэй PDF ↗</a>
+                  ) : (
+                    <span className="text-muted">Гэрээгүй (өмнөх зар)</span>
+                  )}
+                </div>
               </div>
             </div>
             {(ad.modifications || ad.description) && (
@@ -208,11 +216,7 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                 </form>
               )}
               {ad.status === "active" && (
-                <form action={markSold} className="flex-[2_1_220px] flex">
-                  <input type="hidden" name="id" value={ad.id} />
-                  <input type="hidden" name="back" value={backUrl} />
-                  <button className="btn btn-lg btn-ink flex-1">Зарагдсан гэж тэмдэглэх</button>
-                </form>
+                <Link href={`/manager/reports?ad=${ad.id}`} className="btn btn-lg btn-ink flex-[2_1_220px]">Зарагдсан тайлан илгээх</Link>
               )}
             </div>
             <span className="text-[12px] text-muted">Батлагдмагц зар нийтлэгдэж, бүх хэрэглэгчид шинэ зарын мэдэгдэл очно.</span>

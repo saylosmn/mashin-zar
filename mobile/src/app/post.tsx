@@ -13,6 +13,10 @@ import { C, F } from "@/lib/theme";
 import { BRANDS, OPTIONS } from "@/lib/cars";
 import { errMsg } from "@/lib/format";
 import { Button, Field, Input, T, s } from "@/components/ui";
+import { SignaturePad } from "@/components/SignaturePad";
+import { ContractView } from "@/components/ContractView";
+import { termsFrom } from "@/lib/contract";
+import { WEB_URL } from "@/lib/staff";
 
 type Pic = { uri: string; id: string };
 
@@ -46,6 +50,12 @@ export default function Post() {
   const [price, setPrice] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | { done: number; step: 1 | 2 | 3 }>(null);
+  const [contractOpen, setContractOpen] = useState(false);
+  const [signName, setSignName] = useState(profile?.full_name ?? "");
+  const [signature, setSignature] = useState<string | null>(null);
+  const [agree, setAgree] = useState(false);
+  const [drawing, setDrawing] = useState(false);
+  const ct = termsFrom(settings);
 
   useEffect(() => {
     if (profile && !profile.profile_completed) router.replace({ pathname: "/complete-profile", params: { next: "post" } });
@@ -79,11 +89,37 @@ export default function Post() {
     if (!plate.trim() || !vin.trim()) return setErr("Улсын болон арлын дугаараа оруулна уу.");
     if (phone.replace(/\D/g, "").length < 8) return setErr("Утасны дугаараа оруулна уу.");
     if (!priceNum) return setErr("Үнээ оруулна уу.");
+    setAgree(false);
+    setSignature(null);
+    setContractOpen(true);
+  }
+
+  /** Гэрээнд гарын үсэг зурж зөвшөөрөөд зар илгээнэ */
+  async function send() {
+    setErr(null);
+    const priceNum = Number(price.replace(/\D/g, ""));
+    if (!signName.trim()) return setErr("Овог нэрээ бичнэ үү.");
+    if (!signature) return setErr("Гарын үсгээ зурна уу.");
+    if (!agree) return setErr("Гэрээг уншиж зөвшөөрснөө тэмдэглэнэ үү.");
     if (net.isConnected === false) return setErr("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
 
     const uploaded: string[] = [];
-    setBusy({ done: 0, step: 2 });
+    setBusy({ done: 0, step: 1 });
     try {
+      const { data: contractId, error: cErr } = await supabase.rpc("sign_contract", {
+        p_full_name: signName.trim(),
+        p_phone: phone.replace(/[^\d+]/g, ""),
+        p_brand: brand.trim(),
+        p_model: model.trim(),
+        p_year: y,
+        p_plate: plate.trim().toUpperCase(),
+        p_vin: vin.trim().toUpperCase(),
+        p_price: priceNum,
+        p_signature: signature,
+        p_ua: `Машин зар апп (${Platform.OS})`,
+      });
+      if (cErr) throw cErr;
+      setBusy({ done: 0, step: 2 });
       for (const [i, p] of pics.entries()) {
         const small = await compress(p.uri);
         const buf = await fetch(small).then((r) => r.arrayBuffer());
@@ -109,8 +145,13 @@ export default function Post() {
         description: desc.trim() || null,
         price: priceNum,
         photos: uploaded,
+        contract_id: contractId,
       });
       if (error) throw error;
+      // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
+      if (session?.access_token) {
+        fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => {});
+      }
       router.replace({ pathname: "/success", params: { title: `${brand} ${model} · ${y}`, price: String(priceNum), cover: uploaded[0] } });
     } catch (e) {
       if (uploaded.length) await supabase.storage.from("ad-photos").remove(uploaded);
@@ -137,7 +178,7 @@ export default function Post() {
           </View>
         </View>
         <View style={[s.section, { gap: 14 }]}>
-          {[["Мэдээлэл шалгасан", true], [`Зураг байршуулж байна`, busy.step >= 2], ["Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
+          {[["Гэрээнд гарын үсэг зурсан", true], [`Зураг байршуулж байна`, busy.step >= 2], ["Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
             <View key={String(t)} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
               <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: on ? C.ink : "transparent", borderWidth: on ? 0 : 2, borderColor: C.pale, alignItems: "center", justifyContent: "center" }}>
                 {on && <Feather name="check" size={14} color={C.yellow} />}
@@ -147,6 +188,55 @@ export default function Post() {
           ))}
         </View>
       </View>
+    );
+
+  if (contractOpen)
+    return (
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.paper }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 }}>
+          <Pressable accessibilityLabel="Буцах" onPress={() => setContractOpen(false)} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>
+            <Feather name="chevron-left" size={22} color={C.ink} />
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontSize: 12, color: C.muted }}>Сүүлийн алхам</T>
+            <T w="display" style={{ fontSize: 19 }}>Зуучлалын гэрээ</T>
+          </View>
+        </View>
+        <ScrollView scrollEnabled={!drawing} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 150 }} keyboardShouldPersistTaps="handled">
+          <View style={[s.section, { backgroundColor: C.card }]}>
+            <ContractView
+              data={{
+                company: ct.company,
+                terms: ct.terms,
+                fullName: signName || null,
+                phone: phone.replace(/[^\d+]/g, ""),
+                brand: brand.trim(),
+                model: model.trim(),
+                yearMade: y || null,
+                plate: plate.trim().toUpperCase(),
+                vin: vin.trim().toUpperCase(),
+                price: Number(price.replace(/\D/g, "")) || null,
+              }}
+            />
+          </View>
+          <Field label="Овог нэр (гэрээнд бичигдэнэ)"><Input value={signName} onChangeText={setSignName} placeholder="Овог нэр" /></Field>
+          <View style={{ gap: 6 }}>
+            <T w="semibold" style={{ fontSize: 13 }}>Гарын үсэг</T>
+            <SignaturePad onChange={setSignature} onDrawing={setDrawing} />
+          </View>
+          <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: agree }} onPress={() => setAgree((v) => !v)} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+            <View style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: C.ink, backgroundColor: agree ? C.ink : C.card, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+              {agree && <Feather name="check" size={16} color={C.yellow} />}
+            </View>
+            <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>Би гэрээг бүрэн уншиж танилцсан бөгөөд шимтгэлийн нөхцөлийг зөвшөөрч байна.</T>
+          </Pressable>
+          {err && <View accessibilityRole="alert" style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}><T style={{ color: "#9B1C1C", fontSize: 14 }}>{err}</T></View>}
+        </ScrollView>
+        <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
+          <Button title="Зөвшөөрч, зар илгээх" variant="yellow" icon="check" disabled={!signature || !agree} onPress={send} />
+          <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>Гарын үсэгтэй гэрээний PDF “Миний зар” хэсэгт хадгалагдана</T>
+        </View>
+      </KeyboardAvoidingView>
     );
 
   return (
@@ -279,8 +369,8 @@ export default function Post() {
         {err && <View accessibilityRole="alert" style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}><T style={{ color: "#9B1C1C", fontSize: 14 }}>{err}</T></View>}
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
-        <Button title="Зар илгээх" variant="yellow" onPress={submit} />
-        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>Нийтлэгдэхээс өмнө менежер шалгана</T>
+        <Button title="Үргэлжлүүлэх · Гэрээ" variant="yellow" icon="arrow-right" onPress={submit} />
+        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>Дараа нь гэрээнд гарын үсэг зурна · Нийтлэхээс өмнө менежер шалгана</T>
       </View>
     </KeyboardAvoidingView>
   );

@@ -28,6 +28,7 @@ export function PanelShell({
           { key: "admin-ads", href: "/admin/ads", label: "Бүх зар" },
           { key: "mgr-ads", href: "/manager/ads", label: "Шинэ зар ба санал", badge: pending },
           { key: "mgr", href: "/manager", label: "Менежерийн самбар" },
+          { key: "admin-reports", href: "/admin/reports", label: "Тайлангууд" },
           { key: "admin-notif", href: "/admin/notifications", label: "Мэдэгдэл" },
           { key: "admin-settings", href: "/admin/settings", label: "Тохиргоо" },
         ]
@@ -37,6 +38,7 @@ export function PanelShell({
           { key: "mgr-all", href: "/manager/all", label: "Бүх зар" },
           { key: "mgr-sold", href: "/manager/all?status=sold", label: "Зарагдсан машинууд" },
           { key: "mgr-users", href: "/manager/users", label: "Зар тавьсан хүмүүс" },
+          { key: "mgr-reports", href: "/manager/reports", label: "Тайлан илгээх" },
           ...(isAdmin ? [{ key: "admin", href: "/admin", label: "Админ панел" }] : []),
         ];
   return (

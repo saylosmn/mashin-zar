@@ -41,6 +41,7 @@ function RootStack() {
         <Stack.Screen name="panel/users" />
         <Stack.Screen name="panel/settings" />
         <Stack.Screen name="panel/broadcasts" />
+        <Stack.Screen name="panel/reports" />
       </Stack.Protected>
     </Stack>
   );

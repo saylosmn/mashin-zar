@@ -62,7 +62,8 @@ type PushData = { adId?: string | null; type?: string };
 
 function openFromPush(data: PushData | undefined) {
   if (!data) return;
-  if (data.adId) router.push(data.type === "staff_new_ad" ? `/panel/ad/${data.adId}` : `/ads/${data.adId}`);
+  if (data.type === "sale_report" || data.type === "report_reviewed") router.push("/panel/reports");
+  else if (data.adId) router.push(data.type === "staff_new_ad" ? `/panel/ad/${data.adId}` : `/ads/${data.adId}`);
   else router.push("/notifications");
 }
 

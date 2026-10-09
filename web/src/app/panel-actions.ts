@@ -195,3 +195,48 @@ export async function resendBroadcast(fd: FormData) {
   revalidatePath("/", "layout");
   redirect(back(fd, "/admin/notifications", error ? { err: error.message } : { ok: `Дахин илгээгдлээ (${data ?? 0} хэрэглэгч)` }));
 }
+
+// ---------- Борлуулалтын тайлан ----------
+/** "YYYY-MM-DD" → тухайн өдрийн Улаанбаатарын 12:00 (өнөөдөр бол одоо) */
+function soldAtFrom(d: string) {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ulaanbaatar" }).format(new Date());
+  if (!d || d === today) return new Date().toISOString();
+  return new Date(`${d}T12:00:00+08:00`).toISOString();
+}
+
+export async function submitSaleReport(fd: FormData) {
+  await requireStaff();
+  const supabase = await createClient();
+  const price = Number(String(fd.get("price") || "").replace(/\D/g, ""));
+  const { error } = await supabase.rpc("submit_sale_report", {
+    p_ad: String(fd.get("ad_id") || ""),
+    p_price: price || null,
+    p_sold_at: soldAtFrom(String(fd.get("sold_at") || "")),
+    p_buyer_name: String(fd.get("buyer_name") || "") || null,
+    p_buyer_phone: String(fd.get("buyer_phone") || "") || null,
+    p_note: String(fd.get("note") || "") || null,
+  });
+  revalidatePath("/", "layout");
+  redirect(back(fd, "/manager/reports", error ? { err: error.message } : { ok: "Тайлан админд илгээгдлээ" }));
+}
+
+export async function reviewSaleReport(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const approve = fd.get("approve") === "1";
+  await run(fd, "/admin/reports", approve ? "Тайлан батлагдаж, зар зарагдсан боллоо" : "Тайлан буцаагдлаа", () =>
+    supabase.rpc("review_sale_report", { p_id: String(fd.get("id")), p_approve: approve, p_note: String(fd.get("note") || "") || null }),
+  );
+}
+
+export async function saveContractSettings(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const n = (k: string) => Number(String(fd.get(k) || "").replace(",", "."));
+  const tiers = [1, 2, 3]
+    .map((i) => ({ days: n(`days${i}`), percent: n(`pct${i}`) }))
+    .filter((t) => t.days > 0 && t.percent >= 0);
+  await run(fd, "/admin/settings", "Гэрээний нөхцөл хадгалагдлаа", () =>
+    supabase.rpc("update_contract_settings", { p_company: String(fd.get("company") || ""), p_tiers: tiers, p_after: n("after") }),
+  );
+}

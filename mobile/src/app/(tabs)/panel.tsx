@@ -103,7 +103,8 @@ export default function Panel() {
           <T style={{ fontSize: 13, color: C.muted }}>{admin ? "Админ" : "Менежер"} · {profile?.full_name?.split(" ")[0] ?? ""}</T>
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <IconBtn icon="users" label="Хэрэглэгчид" onPress={() => router.push("/panel/users")} />
+          <IconBtn icon="file-text" label="Тайлан" onPress={() => router.push("/panel/reports")} />
+          {!admin && <IconBtn icon="users" label="Хэрэглэгчид" onPress={() => router.push("/panel/users")} />}
           {admin && <IconBtn icon="bell" label="Мэдэгдэл" onPress={() => router.push("/panel/broadcasts")} />}
           {admin && <IconBtn icon="settings" label="Тохиргоо" onPress={() => router.push("/panel/settings")} />}
         </View>

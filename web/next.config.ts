@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Гэрээний PDF-д кирилл фонт хэрэгтэй
+  outputFileTracingIncludes: { "/api/contracts/**": ["./src/fonts/**"] },
   turbopack: {
     rules: {
       "*.css": {
