@@ -128,7 +128,7 @@ export function AdCard({
   cy,
   onPress,
 }: {
-  ad: { brand: string; model: string; trim: string | null; plate_masked: string; year_made: number; year_imported: number | null; price: number; photos: string[]; category: Category };
+  ad: { brand: string; model: string; trim: string | null; plate_masked: string; year_made: number; year_imported: number | null; price: number; photos: string[]; category: Category; seller_shop?: string | null };
   cy: number;
   onPress: () => void;
 }) {
@@ -137,6 +137,12 @@ export function AdCard({
       <View>
         <Photo path={ad.photos[0]} style={{ height: 190, width: "100%" }} />
         <View style={{ position: "absolute", left: 12, top: 12 }}><CatChip c={ad.category} cy={cy} /></View>
+        {ad.seller_shop ? (
+          <View style={{ position: "absolute", left: 12, bottom: 12, maxWidth: "60%", backgroundColor: C.yellow, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2, flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Feather name="shopping-bag" size={11} color={C.ink} />
+            <T w="bold" style={{ fontSize: 11 }} numberOfLines={1}>{ad.seller_shop}</T>
+          </View>
+        ) : null}
         {ad.photos.length > 0 && (
           <View style={{ position: "absolute", right: 12, bottom: 12, backgroundColor: "rgba(17,19,23,.85)", borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 }}>
             <T w="mono" style={{ color: C.paper, fontSize: 11 }}>{ad.photos.length} зураг</T>

@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, FlatList, Linking, Pressable, RefreshControl, ScrollView, TextInput, View } from "react-native";
+import { Alert, FlatList, Linking, Modal, Pressable, RefreshControl, ScrollView, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useLiveSync } from "@/lib/live";
 import { C, F } from "@/lib/theme";
-import { errMsg, initial, timeAgo } from "@/lib/format";
+import { errMsg, initial, roleLabel, timeAgo } from "@/lib/format";
 import { confirm, digits, isAdmin, isStaff, staffRpc } from "@/lib/staff";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 import type { Profile } from "@/lib/types";
 
-type Filter = "all" | "staff" | "blocked";
+type Filter = "all" | "staff" | "dealer" | "blocked";
 type Row = Profile & { ads?: { count: number }[] };
 
 export default function Users() {
@@ -26,6 +26,9 @@ export default function Users() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sel, setSel] = useState<Row | null>(null);
+  const [dealerMode, setDealerMode] = useState(false);
+  const [shop, setShop] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -33,8 +36,9 @@ export default function Users() {
       let query = supabase.from("profiles").select("*, ads:ads!ads_user_id_fkey(count)", { count: "exact" });
       if (filter === "staff") query = query.in("role", ["manager", "admin"]);
       if (filter === "blocked") query = query.eq("is_blocked", true);
+      if (filter === "dealer") query = query.eq("role", "dealer");
       const term = q.trim().replace(/[,()%]/g, " ").trim();
-      if (term) query = query.or(`full_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`);
+      if (term) query = query.or(`full_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%,shop_name.ilike.%${term}%`);
       const { data, count, error: e } = await query.order("created_at", { ascending: false }).limit(200);
       if (e) throw e;
       setRows((data ?? []) as Row[]);
@@ -56,20 +60,26 @@ export default function Users() {
 
   function manage(u: Row) {
     if (!admin || u.id === profile?.id) return;
-    const name = u.full_name ?? u.email ?? "Хэрэглэгч";
-    const buttons: { text: string; style?: "cancel" | "destructive"; onPress?: () => void }[] = [];
-    if (u.role === "user") {
-      buttons.push({ text: "Менежер болгох", onPress: () => setRole(u, "manager") });
-    } else {
-      buttons.push({ text: "Эрх хасах", onPress: () => removeStaff(u) });
+    setShop(u.shop_name ?? "");
+    setDealerMode(false);
+    setSel(u);
+  }
+
+  async function makeDealer(u: Row) {
+    if (!u.email) return Alert.alert("И-мэйлгүй хэрэглэгч");
+    if (!shop.trim()) return Alert.alert("Авто худалдааны нэрийг оруулна уу");
+    const r = await staffRpc("invite_dealer", { p_email: u.email, p_shop: shop.trim(), p_phone: u.phone });
+    if (r.ok) {
+      setSel(null);
+      Alert.alert("Амжилттай", `${shop.trim()} авто худалдааны эрхтэй боллоо. Зар нь шууд нийтлэгдэнэ.`);
+      load();
     }
-    buttons.push({
-      text: u.is_blocked ? "Аккаунт нээх" : "Аккаунт хаах",
-      style: u.is_blocked ? undefined : "destructive",
-      onPress: () => toggleBlock(u),
-    });
-    buttons.push({ text: "Болих", style: "cancel" });
-    Alert.alert(name, `${u.email ?? ""}\nЭрх: ${roleLabel(u.role)}${u.is_blocked ? " · Хаагдсан" : ""}`, buttons);
+  }
+
+  async function removeDealer(u: Row) {
+    if (!(await confirm("Авто худалдааны эрх хасах уу?", `${u.shop_name ?? u.email} энгийн хэрэглэгч болно.`, "Хасах", true))) return;
+    const r = await staffRpc("remove_dealer", { p_user: u.id });
+    if (r.ok) load();
   }
 
   async function setRole(u: Row, role: "manager" | "admin") {
@@ -109,6 +119,7 @@ export default function Users() {
   const filters: { key: Filter; label: string }[] = [
     { key: "all", label: "Бүгд" },
     { key: "staff", label: "Менежер, админ" },
+    { key: "dealer", label: "Авто худалдаа" },
     { key: "blocked", label: "Хаагдсан" },
   ];
 
@@ -173,7 +184,7 @@ export default function Users() {
             </View>
             <View style={{ flex: 1, gap: 2 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <T w="semibold" style={{ fontSize: 15, flexShrink: 1 }} numberOfLines={1}>{u.full_name ?? "Нэргүй"}</T>
+                <T w="semibold" style={{ fontSize: 15, flexShrink: 1 }} numberOfLines={1}>{u.role === "dealer" && u.shop_name ? u.shop_name : u.full_name ?? "Нэргүй"}</T>
                 {u.role !== "user" && <Chip text={roleLabel(u.role)} bg={C.pendingBg} fg={C.pendingFg} />}
                 {u.is_blocked && <Chip text="Хаагдсан" bg={C.dangerBg} fg={C.danger} />}
               </View>
@@ -191,11 +202,43 @@ export default function Users() {
           </Pressable>
         )}
       />
+      <Modal visible={!!sel} transparent animationType="fade" onRequestClose={() => setSel(null)}>
+        <Pressable onPress={() => setSel(null)} style={{ flex: 1, backgroundColor: "rgba(17,19,23,.5)", justifyContent: "flex-end" }}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: C.card, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, gap: 10, paddingBottom: 34 }}>
+            {sel && (
+              <>
+                <View style={{ gap: 2, paddingBottom: 6 }}>
+                  <T w="bold" style={{ fontSize: 17 }}>{sel.role === "dealer" && sel.shop_name ? sel.shop_name : sel.full_name ?? sel.email}</T>
+                  <T style={{ fontSize: 13, color: C.muted }}>{sel.email} · {roleLabel(sel.role)}{sel.is_blocked ? " · Хаагдсан" : ""}</T>
+                </View>
+                {dealerMode ? (
+                  <>
+                    <Field label="Авто худалдааны нэр" hint="Зар дээр нь энэ нэр харагдана. Зар нь шууд нийтлэгдэж, өөрсдөө засаж, нууж чадна.">
+                      <Input value={shop} onChangeText={setShop} placeholder="Мега Авто" autoFocus />
+                    </Field>
+                    <Button title="Авто худалдаа болгох" icon="shopping-bag" variant="yellow" onPress={() => makeDealer(sel)} />
+                    <Button title="Буцах" variant="ghost" onPress={() => setDealerMode(false)} />
+                  </>
+                ) : (
+                  <>
+                    {sel.role === "user" && <Button title="Менежер болгох" icon="briefcase" variant="ghost" onPress={() => { const u = sel; setSel(null); setRole(u, "manager"); }} />}
+                    {sel.role === "user" && <Button title="Авто худалдаа болгох" icon="shopping-bag" variant="ghost" onPress={() => setDealerMode(true)} />}
+                    {sel.role === "dealer" && <Button title="Нэрийг өөрчлөх" icon="edit-2" variant="ghost" onPress={() => setDealerMode(true)} />}
+                    {sel.role === "dealer" && <Button title="Авто худалдааны эрх хасах" icon="user-x" variant="ghost" onPress={() => { const u = sel; setSel(null); removeDealer(u); }} />}
+                    {(sel.role === "manager" || sel.role === "admin") && <Button title="Менежерийн эрх хасах" icon="user-x" variant="ghost" onPress={() => { const u = sel; setSel(null); removeStaff(u); }} />}
+                    <Button title={sel.is_blocked ? "Аккаунт нээх" : "Аккаунт хаах"} icon={sel.is_blocked ? "unlock" : "lock"} variant={sel.is_blocked ? "ghost" : "danger"} onPress={() => { const u = sel; setSel(null); toggleBlock(u); }} />
+                    <Button title="Болих" variant="ghost" onPress={() => setSel(null)} />
+                  </>
+                )}
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
-const roleLabel = (r: string) => (r === "admin" ? "Админ" : r === "manager" ? "Менежер" : "Хэрэглэгч");
 
 function Chip({ text, bg, fg }: { text: string; bg: string; fg: string }) {
   return (
