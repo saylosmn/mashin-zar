@@ -26,21 +26,7 @@ export default async function AdminLeasing({ searchParams }: { searchParams: Pro
   const invites = ((invRes.data ?? []) as { email: string; partner_id: string | null; created_at: string }[]).filter((i) => !staffEmails.has(i.email.toLowerCase()));
   const reqs = (reqRes.data ?? []) as { partner_id: string; status: LoanStatus }[];
   const back = "/admin/leasing";
-  const in60 = new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10);
-
-  const PartnerFields = ({ p }: { p?: Partner }) => (
-    <>
-      <input type="hidden" name="back" value={back} />
-      {p && <input type="hidden" name="id" value={p.id} />}
-      <label className="label text-[13px] flex-[2_1_220px]">Компанийн нэр<input name="name" required defaultValue={p?.name ?? ""} className="input h-11" placeholder="Жишээ лизинг ББСБ" /></label>
-      <label className="label text-[13px] flex-[1_1_140px]">Утас<input name="phone" defaultValue={p?.phone ?? ""} className="input h-11 mono" placeholder="7700 1122" /></label>
-      <label className="label text-[13px] flex-[1_1_110px]">Жилийн хүү %<input name="rate" type="number" step="0.1" min={0} max={100} defaultValue={p ? Number(p.rate_annual) : 24} className="input h-11 mono" /></label>
-      <label className="label text-[13px] flex-[1_1_110px]">Мин урьдчилгаа %<input name="min_down" type="number" step="1" min={0} max={95} defaultValue={p ? Number(p.min_down_pct) : 30} className="input h-11 mono" /></label>
-      <label className="label text-[13px] flex-[1_1_110px]">Макс хугацаа (сар)<input name="max_term" type="number" min={1} max={120} defaultValue={p?.max_term_months ?? 36} className="input h-11 mono" /></label>
-      <label className="label text-[13px] flex-[1_1_150px]">Туршилт дуусах өдөр<input name="trial_until" type="date" defaultValue={p ? p.trial_until ?? "" : in60} className="input h-11 mono" /></label>
-      <label className="flex items-center gap-2 text-[14px] h-11"><input type="checkbox" name="active" defaultChecked={p ? p.active : true} className="w-5 h-5 accent-[#111317]" /> Идэвхтэй</label>
-    </>
-  );
+  const in60 = daysFromNow(60);
 
   return (
     <PanelShell profile={me} area="admin" active="admin-leasing" pending={pending}>
@@ -56,7 +42,7 @@ export default async function AdminLeasing({ searchParams }: { searchParams: Pro
       <form action={upsertPartner} className="bg-ink text-paper rounded-2xl p-5 flex flex-wrap gap-3 items-end max-w-[1000px] [&_.label]:text-paper">
         <span className="basis-full h-display text-[16px]">Шинэ лизингийн компани</span>
         <span className="basis-full text-[13px] text-pale -mt-1">Нэмсний дараа зарын хуудсанд тооцоолуур гарч, худалдан авагчид хүсэлт илгээж эхэлнэ. Туршилтын хугацааг анхдагчаар 60 хоног болгосон.</span>
-        <PartnerFields />
+        <PartnerFields back={back} in60={in60} />
         <button className="btn btn-yellow h-11">Нэмэх</button>
       </form>
 
@@ -85,7 +71,7 @@ export default async function AdminLeasing({ searchParams }: { searchParams: Pro
               <details>
                 <summary className="cursor-pointer text-[14px] font-semibold">Нөхцөл засах</summary>
                 <form action={upsertPartner} className="flex flex-wrap gap-3 items-end pt-3">
-                  <PartnerFields p={p} />
+                  <PartnerFields p={p} back={back} in60={in60} />
                   <button className="btn btn-ink h-11">Хадгалах</button>
                 </form>
               </details>
@@ -122,5 +108,27 @@ export default async function AdminLeasing({ searchParams }: { searchParams: Pro
         })}
       </div>
     </PanelShell>
+  );
+}
+
+/** "YYYY-MM-DD", өнөөдрөөс N хоногийн дараа */
+function daysFromNow(n: number) {
+  return new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+}
+
+/** Лизингийн компанийн маягтын талбарууд (шинэ ба засах маягтад хоёуланд) */
+function PartnerFields({ p, back, in60 }: { p?: Partner; back: string; in60: string }) {
+  return (
+    <>
+      <input type="hidden" name="back" value={back} />
+      {p && <input type="hidden" name="id" value={p.id} />}
+      <label className="label text-[13px] flex-[2_1_220px]">Компанийн нэр<input name="name" required defaultValue={p?.name ?? ""} className="input h-11" placeholder="Жишээ лизинг ББСБ" /></label>
+      <label className="label text-[13px] flex-[1_1_140px]">Утас<input name="phone" defaultValue={p?.phone ?? ""} className="input h-11 mono" placeholder="7700 1122" /></label>
+      <label className="label text-[13px] flex-[1_1_110px]">Жилийн хүү %<input name="rate" type="number" step="0.1" min={0} max={100} defaultValue={p ? Number(p.rate_annual) : 24} className="input h-11 mono" /></label>
+      <label className="label text-[13px] flex-[1_1_110px]">Мин урьдчилгаа %<input name="min_down" type="number" step="1" min={0} max={95} defaultValue={p ? Number(p.min_down_pct) : 30} className="input h-11 mono" /></label>
+      <label className="label text-[13px] flex-[1_1_110px]">Макс хугацаа (сар)<input name="max_term" type="number" min={1} max={120} defaultValue={p?.max_term_months ?? 36} className="input h-11 mono" /></label>
+      <label className="label text-[13px] flex-[1_1_150px]">Туршилт дуусах өдөр<input name="trial_until" type="date" defaultValue={p ? p.trial_until ?? "" : in60} className="input h-11 mono" /></label>
+      <label className="flex items-center gap-2 text-[14px] h-11"><input type="checkbox" name="active" defaultChecked={p ? p.active : true} className="w-5 h-5 accent-[#111317]" /> Идэвхтэй</label>
+    </>
   );
 }
