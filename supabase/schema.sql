@@ -2684,7 +2684,6 @@ revoke execute on function public.mz_broadcast() from public, anon, authenticate
 -- Хувийн сувгийг хэн сонсох вэ (realtime.messages дээрх RLS)
 do $$
 begin
-  execute 'alter table realtime.messages enable row level security';
   execute 'drop policy if exists "mz private channels" on realtime.messages';
   execute $p$
     create policy "mz private channels" on realtime.messages for select to authenticated
