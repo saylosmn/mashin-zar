@@ -21,7 +21,7 @@ function ProfileTabInner() {
         <View style={{ flex: 1, gap: 2 }}>
           <T w="semibold" style={{ fontSize: 17 }}>{profile?.full_name ?? "Нэр оруулаагүй"}</T>
           <T style={{ fontSize: 13, color: C.muted }} numberOfLines={1}>{profile?.email}</T>
-          {(staff || profile?.role === "dealer" || profile?.role === "leasing") && (
+          {(staff || profile?.role === "dealer" || profile?.role === "leasing" || profile?.role === "agent") && (
             <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>{roleLabel(profile?.role)}{profile?.role === "dealer" && profile?.shop_name ? ` · ${profile.shop_name}` : ""}</T>
           )}
         </View>
@@ -36,6 +36,10 @@ function ProfileTabInner() {
       </View>
       <Button title={profile?.profile_completed ? "Профайл засах" : "Профайл үүсгэх"} variant="ghost" icon="edit-2" onPress={() => router.push("/complete-profile")} />
       <Button title="Миний лизингийн хүсэлтүүд" variant="ghost" icon="percent" onPress={() => router.push("/loans")} />
+      <Button title="Машин харьцуулах" variant="ghost" icon="shuffle" onPress={() => router.push("/compare")} />
+      {profile?.role === "agent" && (
+        <Button title="Агентын самбар" icon="award" onPress={() => router.push("/agent")} />
+      )}
       {profile?.role === "leasing" && (
         <>
           <Button title="Лизингийн панел" icon="briefcase" onPress={() => router.push("/panel")} />
@@ -54,6 +58,10 @@ function ProfileTabInner() {
         </>
       )}
       <Button title="Гарах" variant="danger" icon="log-out" onPress={signOut} />
+      <View style={{ flexDirection: "row", justifyContent: "center", gap: 18, paddingVertical: 4 }}>
+        <T style={{ fontSize: 13, color: C.muted, textDecorationLine: "underline" }} onPress={() => openWebPanel("/terms")}>Үйлчилгээний нөхцөл</T>
+        <T style={{ fontSize: 13, color: C.muted, textDecorationLine: "underline" }} onPress={() => openWebPanel("/privacy")}>Нууцлалын бодлого</T>
+      </View>
     </ScrollView>
   );
 }

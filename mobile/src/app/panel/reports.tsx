@@ -8,6 +8,7 @@ import { useLiveSync } from "@/lib/live";
 import { C, F } from "@/lib/theme";
 import { errMsg, money, timeAgo } from "@/lib/format";
 import { termsFrom, type ContractTerms } from "@/lib/contract";
+import { agentAmount, commissionAmount, commissionFor } from "@/lib/commission";
 import { confirm, digits, isAdmin, isStaff, openContract, staffRpc } from "@/lib/staff";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 
@@ -17,10 +18,13 @@ type Report = {
   admin_note: string | null; created_at: string;
   ad: { id: string; brand: string; model: string; year_made: number; plate_number: string; contract_id: string | null } | null;
   manager: { full_name: string | null; email: string | null } | null;
+  agent_id?: string | null; agent_amount?: number | null; agent_share?: number | null; agent_paid_at?: string | null;
+  agent?: { full_name: string | null; agent_code: string | null } | null;
 };
-type AdOpt = { id: string; brand: string; model: string; year_made: number; plate_number: string; price: number; approved_at: string | null; created_at: string; terms: ContractTerms };
+type AdOpt = { id: string; brand: string; model: string; year_made: number; plate_number: string; price: number; approved_at: string | null; created_at: string; terms: ContractTerms; agent_id?: string | null };
+type AgentOpt = { id: string; full_name: string | null; agent_code: string | null };
 
-const SELECT = "*, ad:ads(id,brand,model,year_made,plate_number,contract_id), manager:profiles!sale_reports_manager_id_fkey(full_name,email)";
+const SELECT = "*, ad:ads(id,brand,model,year_made,plate_number,contract_id), manager:profiles!sale_reports_manager_id_fkey(full_name,email), agent:profiles!sale_reports_agent_id_fkey(full_name,agent_code)";
 const ST = {
   pending: { label: "Хүлээгдэж буй", bg: C.pendingBg, fg: C.pendingFg },
   approved: { label: "Батлагдсан", bg: C.activeBg, fg: C.activeFg },
@@ -72,6 +76,13 @@ export default function Reports() {
     );
     if (!ok) return;
     const res = await staffRpc("review_sale_report", { p_id: r.id, p_approve: approve, p_note: note.trim() || null });
+    if (res.ok) load();
+  }
+
+  async function markPaid(r: Report, paid: boolean) {
+    const ok = await confirm(paid ? "Агентад төлсөн үү?" : "Төлөөгүй болгох уу?", paid ? `${money(r.agent_amount ?? 0)} шилжүүлсэн гэж тэмдэглэнэ.` : "", "Тийм");
+    if (!ok) return;
+    const res = await staffRpc("set_agent_paid", { p_id: r.id, p_paid: paid });
     if (res.ok) load();
   }
 
@@ -127,13 +138,13 @@ export default function Reports() {
             </View>
           )
         }
-        renderItem={({ item }) => <ReportCard r={item} admin={admin} onReview={review} />}
+        renderItem={({ item }) => <ReportCard r={item} admin={admin} onReview={review} onPaid={markPaid} />}
       />
     </KeyboardAvoidingView>
   );
 }
 
-function ReportCard({ r, admin, onReview }: { r: Report; admin: boolean; onReview: (r: Report, approve: boolean, note: string) => void }) {
+function ReportCard({ r, admin, onReview, onPaid }: { r: Report; admin: boolean; onReview: (r: Report, approve: boolean, note: string) => void; onPaid: (r: Report, paid: boolean) => void }) {
   const [note, setNote] = useState("");
   const st = ST[r.status];
   return (
@@ -156,6 +167,17 @@ function ReportCard({ r, admin, onReview }: { r: Report; admin: boolean; onRevie
         <T style={{ fontSize: 13, color: C.body, lineHeight: 19 }}>
           {r.buyer_name || r.buyer_phone ? `Худалдан авагч: ${[r.buyer_name, r.buyer_phone].filter(Boolean).join(", ")}. ` : ""}{r.note ?? ""}
         </T>
+      ) : null}
+      {r.agent_id ? (
+        <View style={{ backgroundColor: C.paper, borderRadius: 8, padding: 8, gap: 6 }}>
+          <T style={{ fontSize: 13 }}>
+            Агент: <T w="semibold" style={{ fontSize: 13 }}>{r.agent?.full_name ?? "—"}</T>{r.agent?.agent_code ? ` · ${r.agent.agent_code}` : ""} · {money(r.agent_amount ?? 0)}
+            {r.status === "approved" ? (r.agent_paid_at ? " · Төлсөн" : " · Төлөөгүй") : ""}
+          </T>
+          {admin && r.status === "approved" ? (
+            <Button small variant={r.agent_paid_at ? "ghost" : "ink"} title={r.agent_paid_at ? "Төлөөгүй болгох" : "Агентад төлсөн гэж тэмдэглэх"} onPress={() => onPaid(r, !r.agent_paid_at)} />
+          ) : null}
+        </View>
       ) : null}
       {r.admin_note ? <T style={{ fontSize: 13, backgroundColor: C.paper, padding: 8, borderRadius: 8 }}>Админ: {r.admin_note}</T> : null}
       {r.ad?.contract_id ? <Button small title="Гэрээ (PDF)" icon="file-text" variant="ghost" onPress={() => openContract(r.ad!.contract_id!)} /> : null}
@@ -191,11 +213,19 @@ function NewReport({ defaultAd, fallback, onClose, onSent }: { defaultAd?: strin
   const [buyerPhone, setBuyerPhone] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [agents, setAgents] = useState<AgentOpt[]>([]);
+  const [agentId, setAgentId] = useState<string | null>(null);
+  const { settings } = useAuth();
+
+  useEffect(() => {
+    supabase.from("profiles").select("id,full_name,agent_code").eq("role", "agent").eq("is_blocked", false).order("full_name")
+      .then(({ data }) => setAgents((data ?? []) as AgentOpt[]), () => setAgents([]));
+  }, []);
 
   useEffect(() => {
     supabase
       .from("ads")
-      .select("id,brand,model,year_made,plate_number,price,approved_at,created_at,contract:contracts!ads_contract_id_fkey(terms)")
+      .select("id,brand,model,year_made,plate_number,price,approved_at,created_at,agent_id,contract:contracts!ads_contract_id_fkey(terms)")
       .eq("status", "active")
       .order("approved_at", { ascending: false })
       .limit(300)
@@ -206,7 +236,7 @@ function NewReport({ defaultAd, fallback, onClose, onSent }: { defaultAd?: strin
         });
         setAds(list);
         const d = list.find((x) => x.id === defaultAd);
-        if (d) setPrice(fmt(d.price));
+        if (d) { setPrice(fmt(d.price)); setAgentId(d.agent_id ?? null); }
       });
   }, [defaultAd, fallback]);
 
@@ -215,11 +245,10 @@ function NewReport({ defaultAd, fallback, onClose, onSent }: { defaultAd?: strin
     if (!ad) return null;
     const sold = date === ubToday() ? new Date() : new Date(`${date}T12:00:00+08:00`);
     if (isNaN(sold.getTime())) return null;
-    const hrs = Math.max(0, (sold.getTime() - new Date(ad.approved_at ?? ad.created_at).getTime()) / 36e5);
-    const tier = [...ad.terms.tiers].sort((a, b) => a.days - b.days).find((t) => hrs <= t.days * 24);
-    const pct = tier ? tier.percent : ad.terms.after;
-    return { days: Math.max(1, Math.ceil(hrs / 24)), pct, amount: ((Number(digits(price)) || 0) * pct) / 100 };
-  }, [ad, date, price]);
+    const c = commissionFor(ad.terms, ad.approved_at ?? ad.created_at, sold);
+    const amount = commissionAmount(Number(digits(price)) || 0, c.percent);
+    return { days: c.days, pct: c.percent, amount, agent: agentId ? agentAmount(amount, Number(settings.agent_share ?? 50)) : 0 };
+  }, [ad, date, price, agentId, settings.agent_share]);
 
   async function send() {
     if (!ad) return Alert.alert("Зар сонгоно уу");
@@ -228,7 +257,7 @@ function NewReport({ defaultAd, fallback, onClose, onSent }: { defaultAd?: strin
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return Alert.alert("Огноо буруу", "Жишээ: 2026-10-09");
     setBusy(true);
     const soldAt = date === ubToday() ? new Date().toISOString() : new Date(`${date}T12:00:00+08:00`).toISOString();
-    const r = await staffRpc("submit_sale_report", { p_ad: ad.id, p_price: p, p_sold_at: soldAt, p_buyer_name: buyer || null, p_buyer_phone: buyerPhone || null, p_note: note || null });
+    const r = await staffRpc("submit_sale_report", { p_ad: ad.id, p_price: p, p_sold_at: soldAt, p_buyer_name: buyer || null, p_buyer_phone: buyerPhone || null, p_note: note || null, p_agent: agentId });
     setBusy(false);
     if (r.ok) {
       Alert.alert("Илгээгдлээ", "Тайлан админд очлоо.");
@@ -253,7 +282,7 @@ function NewReport({ defaultAd, fallback, onClose, onSent }: { defaultAd?: strin
           </View>
           {ads === null ? <Skeleton style={{ height: 60, borderRadius: 10 }} /> : shown.length === 0 ? <T style={{ color: C.muted, fontSize: 13 }}>Идэвхтэй зар олдсонгүй</T> : null}
           {shown.map((a) => (
-            <Pressable key={a.id} onPress={() => { setAdId(a.id); setPrice(fmt(a.price)); }} style={({ pressed }) => ({ padding: 10, borderRadius: 10, borderWidth: 1, borderColor: C.line, backgroundColor: pressed ? C.paper : C.card })}>
+            <Pressable key={a.id} onPress={() => { setAdId(a.id); setPrice(fmt(a.price)); setAgentId(a.agent_id ?? null); }} style={({ pressed }) => ({ padding: 10, borderRadius: 10, borderWidth: 1, borderColor: C.line, backgroundColor: pressed ? C.paper : C.card })}>
               <T w="semibold" style={{ fontSize: 14 }}>{a.brand} {a.model} · {a.year_made}</T>
               <T style={{ fontSize: 12, color: C.muted }}>{a.plate_number} · {money(a.price)}</T>
             </Pressable>
@@ -281,11 +310,28 @@ function NewReport({ defaultAd, fallback, onClose, onSent }: { defaultAd?: strin
             <View style={{ flex: 1 }}><Field label="Утас"><Input value={buyerPhone} onChangeText={setBuyerPhone} keyboardType="phone-pad" placeholder="Заавал биш" /></Field></View>
           </View>
           <Field label="Тэмдэглэл"><Input value={note} onChangeText={setNote} placeholder="Заавал биш" /></Field>
+          {agents.length > 0 && (
+            <Field label="Агент (зарыг авчирсан / зарсан)">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                {[{ id: null as string | null, label: "Агентгүй" }, ...agents.map((g) => ({ id: g.id as string | null, label: `${g.full_name ?? "Агент"}${g.agent_code ? ` · ${g.agent_code}` : ""}` }))].map((o) => {
+                  const on = agentId === o.id;
+                  return (
+                    <Pressable key={o.id ?? "none"} onPress={() => setAgentId(o.id)} style={{ height: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: "center", backgroundColor: on ? C.ink : C.card, borderWidth: on ? 0 : 1, borderColor: C.line2 }}>
+                      <T w={on ? "semibold" : "body"} style={{ fontSize: 13, color: on ? C.yellow : C.ink }}>{o.label}</T>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </Field>
+          )}
           {calc && (
             <View style={{ backgroundColor: C.ink, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
               <T style={{ color: C.pale, fontSize: 12, flex: 1 }}>{calc.days} хоногт · шимтгэл <T w="bold" style={{ color: C.yellow, fontSize: 12 }}>{calc.pct}%</T></T>
               <T w="display" style={{ color: C.yellow, fontSize: 17 }}>{fmt(calc.amount)}₮</T>
             </View>
+          )}
+          {calc && calc.agent > 0 && (
+            <T style={{ fontSize: 12, color: C.muted }}>Үүнээс агентад {fmt(calc.agent)}₮ ({Number(settings.agent_share ?? 50)}%)</T>
           )}
           <Button title="Админд илгээх" icon="send" variant="yellow" loading={busy} onPress={send} />
         </View>

@@ -1,3 +1,4 @@
+import { openWebPanel } from "@/lib/staff";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -72,7 +73,11 @@ export default function CompleteProfile() {
           <View style={{ width: 22, height: 22, borderRadius: 5, borderWidth: 2, borderColor: C.ink, backgroundColor: consent ? C.ink : C.card, alignItems: "center", justifyContent: "center" }}>
             {consent && <Feather name="check" size={14} color={C.yellow} />}
           </View>
-          <T style={{ flex: 1, fontSize: 13, lineHeight: 20, color: "#2B2F35" }}>Менежер миний утсаар холбогдохыг зөвшөөрч байна</T>
+          <T style={{ flex: 1, fontSize: 13, lineHeight: 20, color: "#2B2F35" }}>
+            Менежер миний утсаар холбогдохыг зөвшөөрч,{" "}
+            <T style={{ fontSize: 13, textDecorationLine: "underline" }} onPress={() => openWebPanel("/terms")}>үйлчилгээний нөхцөл</T>,{" "}
+            <T style={{ fontSize: 13, textDecorationLine: "underline" }} onPress={() => openWebPanel("/privacy")}>нууцлалын бодлогыг</T> хүлээн зөвшөөрч байна
+          </T>
         </Pressable>
         {err && <View accessibilityRole="alert" style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}><T style={{ color: "#9B1C1C", fontSize: 14 }}>{err}</T></View>}
         <Button title={next === "post" ? "Профайл үүсгээд зар нэмэх" : "Хадгалах"} loading={busy} onPress={save} />

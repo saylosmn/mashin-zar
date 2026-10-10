@@ -1,0 +1,88 @@
+# Шалгалт: push болон pull request бүрт вэб, апп, өгөгдлийн сангийн кодыг автоматаар шалгана.
+#  - Вэб: TypeScript, unit тест (шимтгэл, хугацаа, харьцуулалт, лизинг…), production build
+#  - Апп: TypeScript
+#  - SQL: schema.sql-ийг хоосон Postgres-д 2 удаа ажиллуулж (дахин ажиллуулахад аюулгүй эсэх),
+#         supabase/tests/flows.sql-ийн урсгалын тестүүд (эрх, RLS, агент, гомдол, хугацаа…)
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Unit тест
+        run: npm test
+      - name: Lint (мэдээллийн зорилгоор)
+        run: npm run lint
+        continue-on-error: true
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-dummy
+          NEXT_TELEMETRY_DISABLED: "1"
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - name: TypeScript
+        run: npm run typecheck
+
+  sql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Supabase орлуулга
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/tests/stubs.sql
+      - name: schema.sql (2 удаа)
+        run: |
+          # pg_net нь зөвхөн Supabase-д байдаг; энд net.http_post-ийг орлуулсан
+          sed 's/^create extension if not exists pg_net;/-- pg_net (CI)/' supabase/schema.sql > /tmp/schema.sql
+          psql -v ON_ERROR_STOP=1 -q -f /tmp/schema.sql
+          psql -v ON_ERROR_STOP=1 -q -f /tmp/schema.sql
+      - name: Урсгалын тест
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/tests/flows.sql

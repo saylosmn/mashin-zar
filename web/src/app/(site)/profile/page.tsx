@@ -67,7 +67,9 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         </label>
         <label className="flex items-start gap-2.5 text-[13px] leading-snug text-[#2b2f35]">
           <input type="checkbox" name="consent" required defaultChecked={me.profile_completed} className="w-5 h-5 m-0 accent-ink shrink-0" />
-          Менежер миний утсаар холбогдохыг зөвшөөрч байна
+          <span>
+            Менежер миний утсаар холбогдохыг зөвшөөрч, <a href="/terms" target="_blank" className="underline">үйлчилгээний нөхцөл</a>, <a href="/privacy" target="_blank" className="underline">нууцлалын бодлогыг</a> хүлээн зөвшөөрч байна
+          </span>
         </label>
         <button className="btn btn-lg btn-ink mt-2">
           {creating && next === "/post" ? "Профайл үүсгээд зар нэмэх" : "Хадгалах"}

@@ -1,7 +1,8 @@
 import { getSettings, requireAdmin } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import { saveContractSettings, saveSettings } from "../../panel-actions";
+import { saveContractSettings, saveGrowthSettings, saveSettings } from "../../panel-actions";
+import { siteUrl } from "@/lib/site";
 import { termsFrom } from "@/lib/contract";
 
 export const metadata = { title: "Админ · Тохиргоо" };
@@ -50,6 +51,27 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
         </div>
         <div className="flex justify-end"><button className="btn btn-ink h-12">Хадгалах</button></div>
       </form>
+      <form action={saveGrowthSettings} className="card p-5.5 flex flex-col gap-4 max-w-[920px]">
+        <input type="hidden" name="back" value="/admin/settings" />
+        <h2 className="m-0 text-[17px] font-bold">Агент ба онцлох зар</h2>
+        <div className="flex flex-wrap gap-4">
+          <label className="label flex-[1_1_220px] text-[14px]">Агентад ногдох хувь (шимтгэлийн %)
+            <input name="agent_share" inputMode="decimal" required defaultValue={s.agent_share ?? 50} className="input mono" />
+            <span className="text-[12px] font-normal text-muted">Жишээ: шимтгэл 2%, энэ нь 50% бол агентад зарагдсан үнийн 1%.</span>
+          </label>
+          <label className="label flex-[1_1_180px] text-[14px]">Онцлох зарын үнэ (₮)
+            <input name="featured_price" inputMode="numeric" required defaultValue={s.featured_price ?? 50000} className="input mono" />
+          </label>
+          <label className="label flex-[1_1_140px] text-[14px]">Онцлох хугацаа (хоног)
+            <input name="featured_days" type="number" min={1} max={365} required defaultValue={s.featured_days ?? 7} className="input mono" />
+          </label>
+        </div>
+        <label className="label text-[14px]">Сайтын хаяг
+          <input name="site_url" required defaultValue={s.site_url ?? siteUrl()} className="input mono" placeholder="https://mashinzar.mn" />
+          <span className="text-[12px] font-normal text-muted">Push мэдэгдлийн холбоос энд заасан хаягаар явна. Домэйн солиход энд болон Vercel-ийн NEXT_PUBLIC_SITE_URL-д шинэ хаягаа бичнэ.</span>
+        </label>
+        <div className="flex justify-end"><button className="btn btn-ink h-12">Хадгалах</button></div>
+      </form>
       <form action={saveSettings} className="flex flex-col gap-4.5 max-w-[920px]">
         <input type="hidden" name="back" value="/admin/settings" />
         <section className="card p-5.5 flex flex-col gap-3.5">
@@ -92,7 +114,7 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
           <h2 className="m-0 text-[17px] font-bold basis-full">Зарын дүрэм</h2>
           <label className="label flex-[1_1_200px] text-[14px]">Хамгийн их зураг<input name="max_photos" type="number" min={1} max={16} defaultValue={s.max_photos} className="input mono" /></label>
           <label className="label flex-[1_1_200px] text-[14px]">Хамгийн бага зураг<input name="min_photos" type="number" min={1} max={16} defaultValue={s.min_photos} className="input mono" /></label>
-          <label className="label flex-[1_1_200px] text-[14px]">Зарын хугацаа (хоног)<input name="ad_days" type="number" min={1} defaultValue={s.ad_days} className="input mono" /></label>
+          <label className="label flex-[1_1_200px] text-[14px]">Зарын хугацаа (хоног)<input name="ad_days" type="number" min={1} defaultValue={s.ad_days} className="input mono" /><span className="text-[12px] font-normal text-muted">Дууссан зар нийтээс хасагдана, эзэн нь 3 хоногийн өмнө сануулга авч, нэг товшилтоор сунгана.</span></label>
         </section>
         <div className="flex justify-end gap-2.5">
           <button className="btn btn-lg btn-yellow">Хадгалах</button>

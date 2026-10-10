@@ -8,6 +8,7 @@ import { useLiveSync } from "@/lib/live";
 import { C } from "@/lib/theme";
 import { categoryLong, errMsg, money, timeAgo } from "@/lib/format";
 import { staffAdCache } from "@/lib/cache";
+import { isFeatured } from "@/lib/commission";
 import { STAFF_AD_SELECT, confirm, digits, isAdmin, isStaff, openContract, staffRpc, type StaffAd } from "@/lib/staff";
 import { Button, Field, Input, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 
@@ -238,6 +239,17 @@ export default function PanelAd() {
 
             {ad.status === "active" && (
               <Button title="Зарагдсан тайлан илгээх" icon="file-text" onPress={() => router.push({ pathname: "/panel/reports", params: { ad: ad.id } })} />
+            )}
+
+            {admin && ad.status === "active" && (
+              <View style={{ gap: 6 }}>
+                {ad.featured_requested_at ? <T w="semibold" style={{ fontSize: 13, color: C.pendingFg }}>⭐ Эзэн нь онцлох болгох хүсэлт илгээсэн</T> : null}
+                {isFeatured(ad.featured_until) ? (
+                  <Button title="Онцлохыг болиулах" icon="star" variant="ghost" loading={busy === "feat"} onPress={() => act("feat", () => staffRpc("set_featured", { p_ad: ad.id, p_days: 0 }), "Онцлох байдал цуцлагдлаа")} />
+                ) : (
+                  <Button title={`⭐ ${settings.featured_days ?? 7} хоног онцлох`} variant="yellow" loading={busy === "feat"} onPress={() => act("feat", () => staffRpc("set_featured", { p_ad: ad.id, p_days: settings.featured_days ?? 7 }), "Зар онцлох боллоо")} />
+                )}
+              </View>
             )}
 
             {ad.status === "sold" && (

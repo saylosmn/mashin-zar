@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { categoryLong, dateShort, money } from "@/lib/format";
 import { CarPhoto } from "./CarPhoto";
 import { StatusBadge } from "./StatusBadge";
-import { adminDeleteAd, approveAd, markSold } from "@/app/panel-actions";
+import { adminDeleteAd, approveAd, markSold, setFeatured } from "@/app/panel-actions";
+import { expiryInfo, isFeatured } from "@/lib/commission";
 import type { Ad, AdStatus } from "@/lib/types";
 
 const PAGE = 30;
@@ -14,11 +15,13 @@ export async function AdsTable({
   sp,
   admin,
   cutoff,
+  featuredDays = 7,
 }: {
   basePath: string;
   sp: Record<string, string | undefined>;
   admin: boolean;
   cutoff: number;
+  featuredDays?: number;
 }) {
   const supabase = await createClient();
   const page = Math.max(1, Number(sp.page) || 1);
@@ -32,6 +35,8 @@ export async function AdsTable({
     .order(status === "sold" ? "sold_at" : "created_at", { ascending: false })
     .range((page - 1) * PAGE, page * PAGE - 1);
   if (status) query = query.eq("status", status);
+  // Онцлох зар: хүсэлт ирсэн эсвэл одоо онцлох
+  if (sp.featured === "1") query = query.or(`featured_requested_at.not.is.null,featured_until.gt."${new Date().toISOString()}"`);
   if (cat) query = query.eq("category", cat);
   if (q) query = query.or(`brand.ilike.%${q}%,model.ilike.%${q}%,plate_number.ilike.%${q}%,vin.ilike.%${q}%,phone.ilike.%${q}%`);
   const { data, count } = await query;
@@ -60,6 +65,11 @@ export async function AdsTable({
           <option value="new">{categoryLong("new", cutoff)}</option>
           <option value="old">{categoryLong("old", cutoff)}</option>
         </select>
+        {admin && (
+          <label className="flex items-center gap-2 text-[14px] h-11 px-3 rounded-[10px] border border-line-2 bg-card">
+            <input type="checkbox" name="featured" value="1" defaultChecked={sp.featured === "1"} className="w-4 h-4 accent-ink" /> ⭐ Онцлох
+          </label>
+        )}
         <button className="btn btn-ink">Шүүх</button>
       </form>
 
@@ -82,7 +92,14 @@ export async function AdsTable({
                 <td className="text-body">{categoryLong(a.category, cutoff)}</td>
                 <td className="h-display text-[13px]">{money(a.status === "sold" ? a.sold_price ?? a.price : a.price)}</td>
                 <td>{a.owner?.full_name ?? "—"}</td>
-                <td><StatusBadge status={a.status} /></td>
+                <td>
+                  <div className="flex flex-col gap-1 items-start">
+                    <StatusBadge status={a.status} />
+                    {a.status === "active" && expiryInfo(a.expires_at).expired && <span className="text-[11px] font-semibold text-[#9b1c1c]">Хугацаа дууссан</span>}
+                    {isFeatured(a.featured_until) && <span className="text-[11px] font-semibold text-pending-fg">⭐ {dateShort(a.featured_until)} хүртэл</span>}
+                    {a.featured_requested_at && <span className="text-[11px] font-semibold text-[#c2410c]">⭐ хүсэлт ирсэн</span>}
+                  </div>
+                </td>
                 <td className="text-muted">{dateShort(a.status === "sold" ? a.sold_at : a.created_at)}</td>
                 <td>
                   <div className="flex gap-1.5">
@@ -98,6 +115,16 @@ export async function AdsTable({
                         <input type="hidden" name="id" value={a.id} />
                         <input type="hidden" name="back" value={self} />
                         <button className="btn btn-sm btn-ghost">Зарагдсан</button>
+                      </form>
+                    )}
+                    {admin && a.status === "active" && (
+                      <form action={setFeatured}>
+                        <input type="hidden" name="id" value={a.id} />
+                        <input type="hidden" name="back" value={self} />
+                        <input type="hidden" name="days" value={isFeatured(a.featured_until) ? 0 : featuredDays} />
+                        <button className="btn btn-sm btn-ghost whitespace-nowrap" title={isFeatured(a.featured_until) ? "Онцлохыг болиулах" : `${featuredDays} хоног онцлох`}>
+                          {isFeatured(a.featured_until) ? "⭐ Болиулах" : `⭐ ${featuredDays} хоног`}
+                        </button>
                       </form>
                     )}
                     {admin && (

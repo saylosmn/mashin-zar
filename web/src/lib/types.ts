@@ -1,4 +1,4 @@
-export type Role = "user" | "manager" | "admin" | "dealer" | "leasing";
+export type Role = "user" | "manager" | "admin" | "dealer" | "leasing" | "agent";
 export type AdStatus = "pending" | "active" | "sold" | "rejected" | "hidden";
 export type Category = "new" | "old";
 
@@ -13,6 +13,7 @@ export type Profile = {
   is_blocked: boolean;
   shop_name?: string | null;
   partner_id?: string | null;
+  agent_code?: string | null;
   profile_completed: boolean;
   notify_new_ads: boolean;
   notify_category: Category | null;
@@ -50,6 +51,10 @@ export type Ad = {
   sold_at: string | null;
   sold_price: number | null;
   contract_id?: string | null;
+  agent_id?: string | null;
+  expires_at?: string | null;
+  featured_until?: string | null;
+  featured_requested_at?: string | null;
   created_at: string;
 };
 
@@ -78,6 +83,8 @@ export type PublicAd = {
   seller_city: string | null;
   seller_ad_count: number;
   seller_shop?: string | null;
+  featured?: boolean;
+  expires_at?: string | null;
 };
 
 export type Settings = {
@@ -94,6 +101,10 @@ export type Settings = {
   company_name?: string;
   commission_tiers?: { days: number; percent: number }[];
   commission_after?: number;
+  agent_share?: number;
+  featured_price?: number;
+  featured_days?: number;
+  site_url?: string;
 };
 
 export type Notification = {

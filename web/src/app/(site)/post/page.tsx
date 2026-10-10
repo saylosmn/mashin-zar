@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { normAgentCode } from "@/lib/site";
 import { getSettings, requireUser } from "@/lib/data";
 import { PostForm } from "./PostForm";
 import { termsFrom } from "@/lib/contract";
@@ -8,7 +10,7 @@ export const metadata = { title: "Зар нэмэх" };
 export default async function PostPage() {
   const me = await requireUser("/post");
   if (!me.profile_completed) redirect("/profile?next=/post");
-  const settings = await getSettings();
+  const [settings, jar] = await Promise.all([getSettings(), cookies()]);
   return (
     <main className="max-w-[1280px] w-full mx-auto px-4 sm:px-6 pt-8 pb-16 flex flex-col gap-6">
       <div className="flex flex-col gap-1.5">
@@ -24,6 +26,7 @@ export default async function PostPage() {
         fullName={me.full_name ?? ""}
         contract={termsFrom(settings)}
         dealer={me.role === "dealer"}
+        defaultAgentCode={normAgentCode(jar.get("mz_ref")?.value) ?? ""}
       />
     </main>
   );

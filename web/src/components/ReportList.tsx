@@ -2,7 +2,7 @@ import Link from "next/link";
 import { dateShort, num } from "@/lib/format";
 import type { ReportRow } from "@/lib/reports";
 import { ConfirmButton } from "./ConfirmButton";
-import { reviewSaleReport } from "@/app/panel-actions";
+import { reviewSaleReport, setAgentPaid } from "@/app/panel-actions";
 
 const ST: Record<ReportRow["status"], { label: string; cls: string }> = {
   pending: { label: "Хүлээгдэж буй", cls: "bg-pending-bg text-pending-fg" },
@@ -40,6 +40,25 @@ export function ReportList({ rows, admin, back }: { rows: ReportRow[]; admin?: b
               {r.buyer_name || r.buyer_phone ? <>Худалдан авагч: {[r.buyer_name, r.buyer_phone].filter(Boolean).join(", ")}. </> : null}
               {r.note}
             </p>
+          )}
+          {r.agent_id && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-paper px-3 py-2 text-[13px]">
+              <span>Агент: <strong>{r.agent?.full_name ?? r.agent?.email ?? "—"}</strong>{r.agent?.agent_code ? <span className="mono text-muted"> · {r.agent.agent_code}</span> : null}</span>
+              <span>Хувь: <strong className="mono">{num(r.agent_amount ?? 0)}₮</strong>{r.agent_share != null ? <span className="text-muted"> ({Number(r.agent_share)}%)</span> : null}</span>
+              {r.status === "approved" && (r.agent_paid_at
+                ? <span className="badge bg-active-bg text-active-fg">Төлсөн · {dateShort(r.agent_paid_at)}</span>
+                : <span className="badge bg-pending-bg text-pending-fg">Төлөөгүй</span>)}
+              {admin && r.status === "approved" && (
+                <form action={setAgentPaid} className="ml-auto">
+                  <input type="hidden" name="id" value={r.id} />
+                  <input type="hidden" name="back" value={back} />
+                  <input type="hidden" name="paid" value={r.agent_paid_at ? "0" : "1"} />
+                  <ConfirmButton message={r.agent_paid_at ? "Төлөөгүй болгох уу?" : `Агентад ${num(r.agent_amount ?? 0)}₮ шилжүүлсэн гэж тэмдэглэх үү?`} className={`btn btn-sm ${r.agent_paid_at ? "btn-ghost" : "btn-ink"}`}>
+                    {r.agent_paid_at ? "Буцаах" : "Төлсөн гэж тэмдэглэх"}
+                  </ConfirmButton>
+                </form>
+              )}
+            </div>
           )}
           {r.admin_note && <p className="m-0 text-[13px] rounded-lg bg-paper px-3 py-2">Админ: {r.admin_note}</p>}
           <div className="flex flex-wrap gap-2 items-center">

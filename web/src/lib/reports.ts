@@ -1,26 +1,35 @@
 import "server-only";
 import { createClient } from "./supabase/server";
 import { termsFrom, type ContractTerms } from "./contract";
-import type { ReportAd } from "@/components/SaleReportForm";
+import type { AgentOption, ReportAd } from "@/components/SaleReportForm";
 import type { Settings } from "./types";
 
 export type ReportRow = {
   id: string; ad_id: string; sold_price: number; sold_at: string; buyer_name: string | null; buyer_phone: string | null;
   note: string | null; days_on_market: number; commission_percent: number; commission_amount: number;
   status: "pending" | "approved" | "rejected"; admin_note: string | null; reviewed_at: string | null; created_at: string;
+  agent_id?: string | null; agent_share?: number | null; agent_amount?: number | null; agent_paid_at?: string | null;
+  agent?: { full_name: string | null; email: string | null; agent_code?: string | null } | null;
   ad: { id: string; brand: string; model: string; year_made: number; plate_number: string; price: number; contract_id: string | null; status: string } | null;
   manager: { full_name: string | null; email: string | null } | null;
 };
 
 export const REPORT_SELECT =
-  "*, ad:ads(id,brand,model,year_made,plate_number,price,contract_id,status), manager:profiles!sale_reports_manager_id_fkey(full_name,email)";
+  "*, ad:ads(id,brand,model,year_made,plate_number,price,contract_id,status), manager:profiles!sale_reports_manager_id_fkey(full_name,email), agent:profiles!sale_reports_agent_id_fkey(full_name,email,agent_code)";
+
+/** Идэвхтэй агентууд (менежерийн тайлангийн маягтад) */
+export async function agentOptions(): Promise<AgentOption[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("profiles").select("id,full_name,email,agent_code").eq("role", "agent").eq("is_blocked", false).order("full_name");
+  return (data ?? []).map((p) => ({ id: p.id, name: `${p.full_name ?? p.email ?? "Агент"}${p.agent_code ? ` · ${p.agent_code}` : ""}` }));
+}
 
 /** Тайлагнах боломжтой (идэвхтэй) зарууд + тэдгээрийн гэрээний нөхцөл */
 export async function reportableAds(settings: Settings): Promise<ReportAd[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("ads")
-    .select("id,brand,model,year_made,plate_number,price,approved_at,created_at,contract:contracts!ads_contract_id_fkey(terms)")
+    .select("id,brand,model,year_made,plate_number,price,approved_at,created_at,agent_id,contract:contracts!ads_contract_id_fkey(terms)")
     .eq("status", "active")
     .order("approved_at", { ascending: false })
     .limit(300);
@@ -35,6 +44,7 @@ export async function reportableAds(settings: Settings): Promise<ReportAd[]> {
       approved_at: a.approved_at,
       created_at: a.created_at,
       terms,
+      agent_id: (a as { agent_id?: string | null }).agent_id ?? null,
     };
   });
 }

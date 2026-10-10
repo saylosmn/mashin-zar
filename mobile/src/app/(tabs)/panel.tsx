@@ -13,8 +13,8 @@ import { LeasingPanel } from "@/components/LeasingPanel";
 import { Button, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { AdStatus } from "@/lib/types";
 
-type Stats = { pending: number; active: number; soldMonth: number; soldMonthSum: number; users: number; offers: number };
-const EMPTY: Stats = { pending: 0, active: 0, soldMonth: 0, soldMonthSum: 0, users: 0, offers: 0 };
+type Stats = { pending: number; active: number; soldMonth: number; soldMonthSum: number; users: number; offers: number; flags: number };
+const EMPTY: Stats = { pending: 0, active: 0, soldMonth: 0, soldMonthSum: 0, users: 0, offers: 0, flags: 0 };
 
 const FILTERS: { key: AdStatus; label: string }[] = [
   { key: "pending", label: "Хүлээгдэж буй" },
@@ -48,12 +48,13 @@ function Panel() {
   const loadStats = useCallback(async () => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const [p, a, sold, u, o] = await Promise.all([
+    const [p, a, sold, u, o, f] = await Promise.all([
       supabase.from("ads").select("id", head).eq("status", "pending"),
       supabase.from("ads").select("id", head).eq("status", "active"),
       supabase.from("ads").select("sold_price,price").eq("status", "sold").gte("sold_at", monthStart),
       supabase.from("profiles").select("id", head),
       supabase.from("ads").select("id", head).not("offer_sent_at", "is", null),
+      supabase.from("ad_flags").select("id", head).eq("status", "open"),
     ]);
     const soldRows = (sold.data ?? []) as { sold_price: number | null; price: number }[];
     setStats({
@@ -63,6 +64,7 @@ function Panel() {
       soldMonthSum: soldRows.reduce((t, r) => t + (r.sold_price ?? r.price ?? 0), 0),
       users: u.count ?? 0,
       offers: o.count ?? 0,
+      flags: f.count ?? 0,
     });
   }, []);
 
@@ -94,7 +96,7 @@ function Panel() {
     const t = setTimeout(() => loadAds(), 350);
     return () => clearTimeout(t);
   }, [q, loadAds]);
-  useLiveSync(() => loadAll(), ["ads", "profiles"]);
+  useLiveSync(() => loadAll(), ["ads", "profiles", "ad_flags"]);
 
   if (!isStaff(profile))
     return (
@@ -128,6 +130,7 @@ function Panel() {
         ) : (
           <Kpi label="Илгээсэн санал" value={stats.offers} />
         )}
+        <Kpi label="Гомдол" value={stats.flags} sub={stats.flags ? "Шийдвэрлэх →" : "Алга"} onPress={() => router.push("/panel/flags")} />
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, borderRadius: 12, paddingHorizontal: 12, height: 46 }}>

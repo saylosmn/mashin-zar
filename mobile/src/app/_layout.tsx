@@ -16,8 +16,24 @@ import { setLiveIdentity } from "@/lib/live";
 import { C } from "@/lib/theme";
 import Splash from "@/components/Splash";
 import Blocked from "@/components/Blocked";
+import { installErrorLogging, logAppError } from "@/lib/log-error";
+import { Button, StateView } from "@/components/ui";
+import type { ErrorBoundaryProps } from "expo-router";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+installErrorLogging();
+
+/** Дэлгэц унасан үед: алдааг бүртгээд дахин оролдох товч харуулна */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    logAppError(error, "screen");
+  }, [error]);
+  return (
+    <StateView icon="warning" title="Алдаа гарлаа" text="Түр зуурын саатал гарлаа. Дахин оролдоно уу.">
+      <Button title="Дахин оролдох" icon="refresh-cw" onPress={retry} />
+    </StateView>
+  );
+}
 
 function RootStack() {
   const { ready, session, profile } = useAuth();
@@ -35,6 +51,7 @@ function RootStack() {
       {/* Нэвтрэлгүйгээр зар үзнэ; бусад дэлгэц нэвтэрсэн хэрэглэгчид */}
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="ads/[id]" />
+      <Stack.Screen name="compare" />
       <Stack.Screen name="login" options={{ animation: "slide_from_bottom" }} />
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="post" />
@@ -49,6 +66,8 @@ function RootStack() {
         <Stack.Screen name="loans" />
         <Stack.Screen name="loan/[id]" />
         <Stack.Screen name="panel/leasing" />
+        <Stack.Screen name="panel/flags" />
+        <Stack.Screen name="agent" />
       </Stack.Protected>
     </Stack>
   );

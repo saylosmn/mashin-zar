@@ -4,12 +4,16 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, getSettings } from "@/lib/data";
-import { categoryLabel, categoryLong, initial, money, timeAgo } from "@/lib/format";
+import { categoryLabel, categoryLong, initial, money, photoUrl, timeAgo } from "@/lib/format";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Gallery } from "./Gallery";
 import { ContactBox } from "./ContactBox";
 import { LoanCalculator } from "./LoanCalculator";
 import { ViewCounter } from "./ViewCounter";
+import { ReportAdButton } from "./ReportAdButton";
+import { CompareToggle } from "@/components/Compare";
+import { expiryInfo } from "@/lib/commission";
+import { SITE_NAME, siteUrl } from "@/lib/site";
 import type { Partner } from "@/lib/loan";
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
 
@@ -37,7 +41,24 @@ const load = cache(async (id: string) => {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const ad = await load((await params).id);
-  return { title: ad ? `${ad.brand} ${ad.model} ${ad.year_made}` : "Зар олдсонгүй" };
+  if (!ad) return { title: "Зар олдсонгүй", robots: { index: false } };
+  const title = `${ad.brand} ${ad.model} ${ad.year_made}${ad.trim ? ` ${ad.trim}` : ""} — ${money(ad.price)}`;
+  const description = [
+    `${ad.year_made} онд үйлдвэрлэсэн`,
+    ad.year_imported ? `${ad.year_imported} онд орж ирсэн` : null,
+    ad.seller_city,
+    ad.description?.replace(/\s+/g, " ").slice(0, 120),
+  ].filter(Boolean).join(" · ");
+  const img = photoUrl(ad.photos[0]);
+  const url = `${siteUrl()}/ads/${ad.id}`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    robots: ad.status === "active" ? undefined : { index: false },
+    openGraph: { type: "website", url, title, description, siteName: SITE_NAME, locale: "mn_MN", images: img ? [{ url: img, alt: `${ad.brand} ${ad.model}` }] : undefined },
+    twitter: { card: img ? "summary_large_image" : "summary", title, description, images: img ? [img] : undefined },
+  };
 }
 
 export default async function AdPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,9 +76,28 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
   ]);
   const partners = (partnerRows ?? []) as Partner[];
   const cy = settings.cutoff_year;
+  const exp = expiryInfo(ad.expires_at);
+  const loginHref = me ? null : `/login?next=${encodeURIComponent(`/ads/${ad.id}`)}`;
+  // Хайлтын системд зориулсан бүтэцтэй өгөгдөл (schema.org/Car)
+  const jsonLd = ad.status === "active" ? {
+    "@context": "https://schema.org",
+    "@type": "Car",
+    name: `${ad.brand} ${ad.model}${ad.trim ? ` ${ad.trim}` : ""}`,
+    brand: { "@type": "Brand", name: ad.brand },
+    model: ad.model,
+    vehicleModelDate: String(ad.year_made),
+    productionDate: String(ad.year_made),
+    image: ad.photos.slice(0, 5).map((p) => photoUrl(p)).filter(Boolean),
+    description: ad.description ?? undefined,
+    url: `${siteUrl()}/ads/${ad.id}`,
+    offers: { "@type": "Offer", price: ad.price, priceCurrency: "MNT", availability: "https://schema.org/InStock", url: `${siteUrl()}/ads/${ad.id}` },
+  } : null;
 
   return (
     <main className="max-w-[1280px] w-full mx-auto px-4 sm:px-6 pt-6 pb-16 flex flex-col gap-6">
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      )}
       <nav aria-label="Зам" className="flex gap-2 text-[13px] text-muted flex-wrap">
         <Link href="/" className="text-muted">Зарууд</Link>
         <span>/</span>
@@ -66,6 +106,13 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
         <span className="text-ink">{ad.brand} {ad.model}</span>
       </nav>
 
+      {ad.status === "active" && mine && exp.expired && (
+        <div role="status" className="card px-5 py-4 flex items-center gap-3 flex-wrap">
+          <span className="badge bg-danger-bg text-[#9b1c1c]">Хугацаа дууссан</span>
+          <span className="text-[14px] text-body">Энэ зар нийтэд харагдахаа больсон.</span>
+          <Link href="/my" className="btn btn-sm btn-ink ml-auto">Сунгах</Link>
+        </div>
+      )}
       {ad.status !== "active" && (
         <div role="status" className="card px-5 py-4 flex items-center gap-3 flex-wrap">
           <StatusBadge status={ad.status as AdStatus} />
@@ -110,8 +157,9 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
             ))}
           </dl>
           {!mine && ad.status === "active" && (
-            <ContactBox adId={ad.id} phone={ad.phone} favorite={Boolean(fav)} loginHref={me ? null : `/login?next=${encodeURIComponent(`/ads/${ad.id}`)}`} />
+            <ContactBox adId={ad.id} phone={ad.phone} favorite={Boolean(fav)} loginHref={loginHref} />
           )}
+          {ad.status === "active" && <CompareToggle adId={ad.id} />}
           {!mine && ad.status === "active" && <ViewCounter adId={ad.id} />}
           {!mine && ad.status === "active" && partners.length > 0 && (
             <LoanCalculator adId={ad.id} price={ad.price} partners={partners} />
@@ -119,6 +167,7 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
           {mine && (
             <Link href="/my" className="btn btn-lg btn-ghost">Миний зарууд руу</Link>
           )}
+          {!mine && ad.status === "active" && <ReportAdButton adId={ad.id} loginHref={loginHref} />}
           {ad.seller_name && (
             <div className="flex items-center gap-3 border-t border-[#ecede9] pt-4">
               <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold ${ad.seller_shop ? "bg-yellow text-ink" : "bg-ink text-yellow"}`}>

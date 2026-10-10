@@ -215,6 +215,7 @@ export async function submitSaleReport(fd: FormData) {
     p_buyer_name: String(fd.get("buyer_name") || "") || null,
     p_buyer_phone: String(fd.get("buyer_phone") || "") || null,
     p_note: String(fd.get("note") || "") || null,
+    p_agent: String(fd.get("agent_id") || "") || null,
   });
   revalidatePath("/", "layout");
   redirect(back(fd, "/manager/reports", error ? { err: error.message } : { ok: "Тайлан админд илгээгдлээ" }));
@@ -334,4 +335,82 @@ export async function removeLeasingStaff(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
   await run(fd, "/admin/leasing", "Лизингийн ажилтны эрх хасагдлаа", () => supabase.rpc("remove_leasing_staff", { p_user: String(fd.get("id")) }));
+}
+
+// ---------- Агент ----------
+export async function inviteAgent(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const email = String(fd.get("email") || "").trim();
+  await run(fd, "/admin/users?tab=agents", `${email} агентын эрхтэй боллоо. Нэвтэрмэгц өөрийн код, холбоосоо харна.`, () =>
+    supabase.rpc("invite_agent", { p_email: email, p_name: String(fd.get("name") || "") || null, p_phone: String(fd.get("phone") || "") || null }),
+  );
+}
+
+export async function removeAgent(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await run(fd, "/admin/users?tab=agents", "Агентын эрх хасагдлаа", () => supabase.rpc("remove_agent", { p_user: String(fd.get("id")) }));
+}
+
+export async function setAgentPaid(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const paid = fd.get("paid") === "1";
+  await run(fd, "/admin/reports?tab=approved", paid ? "Агентын шимтгэл төлсөн гэж тэмдэглэлээ" : "Төлөөгүй болголоо", () =>
+    supabase.rpc("set_agent_paid", { p_id: String(fd.get("id")), p_paid: paid }),
+  );
+}
+
+export async function setAdAgent(fd: FormData) {
+  await requireStaff();
+  const supabase = await createClient();
+  await run(fd, "/manager/ads", "Агент оноогдлоо", () =>
+    supabase.rpc("set_ad_agent", { p_ad: String(fd.get("id")), p_agent: String(fd.get("agent_id") || "") || null }),
+  );
+}
+
+// ---------- Гомдол ----------
+export async function resolveFlag(fd: FormData) {
+  await requireStaff();
+  const supabase = await createClient();
+  const action = String(fd.get("action"));
+  const msg = action === "hide" ? "Зар нуугдаж, эзэнд мэдэгдэл очлоо" : action === "dismiss" ? "Гомдол хаагдлаа" : "Шийдвэрлэсэн гэж тэмдэглэлээ";
+  await run(fd, "/manager/flags", msg, () =>
+    supabase.rpc("resolve_flag", { p_id: String(fd.get("id")), p_action: action, p_note: String(fd.get("note") || "") || null }),
+  );
+}
+
+// ---------- Онцлох зар ----------
+export async function setFeatured(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const days = Number(fd.get("days")) || 0;
+  await run(fd, "/admin/ads", days ? `Зар ${days} хоног онцлох боллоо` : "Онцлох байдал цуцлагдлаа", () =>
+    supabase.rpc("set_featured", { p_ad: String(fd.get("id")), p_days: days }),
+  );
+}
+
+export async function saveGrowthSettings(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const n = (k: string) => Number(String(fd.get(k) || "").replace(/[^\d.,]/g, "").replace(",", "."));
+  await run(fd, "/admin/settings", "Хадгалагдлаа", () =>
+    supabase.rpc("update_growth_settings", {
+      p_agent_share: n("agent_share"),
+      p_featured_price: Math.round(n("featured_price")),
+      p_featured_days: Math.round(n("featured_days")),
+      p_site_url: String(fd.get("site_url") || ""),
+    }),
+  );
+}
+
+// ---------- Алдааны бүртгэл ----------
+export async function clearErrors(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const id = String(fd.get("id") || "");
+  await run(fd, "/admin/errors", id ? "Устгагдлаа" : "Бүх бүртгэл цэвэрлэгдлээ", () =>
+    id ? supabase.from("error_logs").delete().eq("id", Number(id)) : supabase.from("error_logs").delete().gt("id", 0),
+  );
 }
