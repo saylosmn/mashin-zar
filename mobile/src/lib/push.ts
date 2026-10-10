@@ -76,12 +76,27 @@ export function usePushRouting(enabled: boolean) {
     const Notifications = notifications();
     if (!Notifications) return;
     let handled: string | null = null;
+    const clear = () => {
+      try {
+        if (typeof Notifications.clearLastNotificationResponse === "function") Notifications.clearLastNotificationResponse();
+        else if (typeof Notifications.clearLastNotificationResponseAsync === "function") Notifications.clearLastNotificationResponseAsync().catch(() => {});
+      } catch {
+        // ignore
+      }
+    };
     const go = (r: { notification: { request: { identifier: string; content: { data?: unknown } } } } | null) => {
       if (!r || r.notification.request.identifier === handled) return;
       handled = r.notification.request.identifier;
+      // Дахин нээхэд (жишээ нь апп дахин ачаалагдахад) ижил мэдэгдлийг дахин нээхгүйн тулд цэвэрлэнэ
+      clear();
       setTimeout(() => openFromPush(r.notification.request.content.data as PushData), 300);
     };
-    Notifications.getLastNotificationResponseAsync().then(go).catch(() => {});
+    try {
+      if (typeof Notifications.getLastNotificationResponse === "function") go(Notifications.getLastNotificationResponse());
+      else Notifications.getLastNotificationResponseAsync().then(go).catch(() => {});
+    } catch {
+      // ignore
+    }
     const sub = Notifications.addNotificationResponseReceivedListener(go);
     return () => sub.remove();
   }, [enabled]);

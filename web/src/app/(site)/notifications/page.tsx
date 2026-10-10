@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings, requireUser } from "@/lib/data";
 import { timeAgo } from "@/lib/format";
+import { notifyHref } from "@/lib/notify-href";
 import { BRANDS } from "@/lib/cars";
 import { IconBell, IconCheck } from "@/components/icons";
 import { markAllRead, saveNotifyPrefs } from "../actions";
@@ -36,7 +37,6 @@ export default async function NotificationsPage({ searchParams }: { searchParams
     .order("created_at", { ascending: false })
     .limit(100);
   const items = (data ?? []) as Notification[];
-  const staff = me.role !== "user";
   const cy = settings.cutoff_year;
 
   return (
@@ -57,10 +57,12 @@ export default async function NotificationsPage({ searchParams }: { searchParams
         ) : (
           <ul className="list-none p-0 m-0 flex flex-col gap-2">
             {items.map((n) => {
-              const href = n.type === "sale_report" ? "/admin/reports" : n.type === "report_reviewed" ? "/manager/reports" : n.type === "loan_request" ? "/leasing" : n.type === "loan_update" ? "/loans" : n.ad_id ? (n.type === "staff_new_ad" && staff ? `/manager/ads?id=${n.ad_id}` : `/ads/${n.ad_id}`) : "#";
+              // Уншаагүй бол /open маршрутаар дамжиж уншсан болгоод шилжинэ; уншсан бол шууд очно.
+              const cls = `flex gap-3 p-3.5 rounded-[14px] no-underline border ${n.read ? "border-transparent" : "bg-card border-line"}`;
+              const Tag = n.read ? Link : "a";
               return (
                 <li key={n.id}>
-                  <Link href={href} className={`flex gap-3 p-3.5 rounded-[14px] no-underline border ${n.read ? "border-transparent" : "bg-card border-line"}`}>
+                  <Tag href={n.read ? notifyHref(n, me.role) : `/notifications/${n.id}/open`} className={cls}>
                     <div className={`w-12 h-12 rounded-[10px] shrink-0 flex items-center justify-center ${n.type === "ad_approved" ? "bg-active-bg text-active-fg" : n.type === "offer" ? "bg-pending-bg text-pending-fg" : "bg-paper border border-line text-ink"}`}>
                       {n.type === "ad_approved" ? <IconCheck size={22} /> : <IconBell size={22} />}
                     </div>
@@ -73,7 +75,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
                       {n.body && <span className="text-[13px] text-body">{n.body}</span>}
                     </div>
                     {!n.read && <span className="w-2 h-2 rounded-full bg-[#e05a00] self-center shrink-0" aria-label="Уншаагүй" />}
-                  </Link>
+                  </Tag>
                 </li>
               );
             })}

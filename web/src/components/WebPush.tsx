@@ -12,7 +12,7 @@ export function PwaSetup() {
   return null;
 }
 
-function useePushState() {
+function usePushState() {
   const [state, setState] = useState<PushState | null>(null);
   useEffect(() => {
     pushState().then(setState).catch(() => setState("unsupported"));
@@ -22,7 +22,7 @@ function useePushState() {
 
 /** Мэдэгдлийн хуудас, профайл дээрх "Утсанд мэдэгдэл авах" хэсэг. */
 export function WebPushCard() {
-  const [state, setState] = useePushState();
+  const [state, setState] = usePushState();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   if (!state || state === "unsupported") return null;
@@ -70,7 +70,7 @@ export function WebPushCard() {
 
 /** Нүүр дэлгэцэнд суулгасан (standalone) апп дээр мэдэгдэл асаагаагүй бол дээд талд санал болгоно. */
 export function PushPrompt() {
-  const [state, setState] = useePushState();
+  const [state, setState] = usePushState();
   const [hide, setHide] = useState(false);
   const [busy, setBusy] = useState(false);
   if (hide || state !== "off" || !isStandalone()) return null;

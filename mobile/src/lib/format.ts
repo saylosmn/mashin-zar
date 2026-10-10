@@ -31,8 +31,24 @@ export function timeAgo(iso: string) {
 
 export const initial = (s?: string | null) => (s?.trim()?.[0] ?? "?").toUpperCase();
 
-export const errMsg = (e: unknown) =>
-  e && typeof e === "object" && "message" in e ? String((e as { message: unknown }).message) : "Алдаа гарлаа";
+const ERR_MAP: [RegExp, string][] = [
+  [/Network request failed|Failed to fetch|network/i, "Интернэт холболтоо шалгаад дахин оролдоно уу"],
+  [/row-level security|permission denied/i, "Энэ үйлдлийг хийх эрх байхгүй байна"],
+  [/JWT expired|invalid JWT|refresh token/i, "Нэвтрэлтийн хугацаа дууссан. Дахин нэвтэрнэ үү"],
+  [/duplicate key/i, "Энэ мэдээлэл аль хэдийн бүртгэгдсэн байна"],
+  [/Payload too large|exceeded the maximum allowed size/i, "Файл хэт том байна"],
+];
+
+/** Алдааны мессеж — техникийн англи алдааг монгол болгоно, бусдыг хэвээр нь үлдээнэ. */
+export const errMsg = (e: unknown) => {
+  const msg =
+    e && typeof e === "object" && "message" in e ? String((e as { message: unknown }).message)
+    : typeof e === "string" ? e
+    : "";
+  if (!msg) return "Алдаа гарлаа";
+  for (const [re, text] of ERR_MAP) if (re.test(msg)) return text;
+  return msg;
+};
 
 export const roleLabel = (r?: string | null) =>
   r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : r === "leasing" ? "Лизинг" : "Хэрэглэгч";

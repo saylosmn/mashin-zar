@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Logo } from "@/components/Logo";
 import { GoogleButton } from "./GoogleButton";
 import { getProfile } from "@/lib/data";
+import { safeNext } from "@/lib/safe-next";
+import { InAppNotice } from "./InAppNotice";
+
+/** Facebook, Messenger, Instagram, Line зэрэг апп доторх хөтөч (Google OAuth-ийг хаадаг). */
+const IN_APP_UA = /FBAN|FBAV|FB_IAB|FBIOS|Messenger|Instagram|\bLine\/|; wv\)/i;
 
 export const metadata: Metadata = { title: "Нэвтрэх" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
-  const { next, error } = await searchParams;
-  const profile = await getProfile();
-  if (profile) redirect(next && next.startsWith("/") ? next : "/");
+  const { next: rawNext, error } = await searchParams;
+  const next = safeNext(rawNext);
+  const [profile, h] = await Promise.all([getProfile(), headers()]);
+  if (profile) redirect(next);
+  const inApp = IN_APP_UA.test(h.get("user-agent") ?? "");
 
   return (
     <div className="min-h-dvh flex flex-wrap">
@@ -40,6 +48,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <h2 className="h-display m-0 text-[28px]">Нэвтрэх</h2>
             <p className="m-0 text-[15px] text-muted">Нэг товшилтоор нэвтэрч бүх зарыг үзнэ үү.</p>
           </div>
+          {inApp && <InAppNotice />}
           {error && (
             <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">
               Нэвтрэхэд алдаа гарлаа. Дахин оролдоно уу.

@@ -1,21 +1,24 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { cache } from "react";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getSettings, requireUser } from "@/lib/data";
+import { getProfile, getSettings } from "@/lib/data";
 import { categoryLabel, categoryLong, initial, money, timeAgo } from "@/lib/format";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Gallery } from "./Gallery";
 import { ContactBox } from "./ContactBox";
 import { LoanCalculator } from "./LoanCalculator";
+import { ViewCounter } from "./ViewCounter";
 import type { Partner } from "@/lib/loan";
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
 
 type View = PublicAd & { plate_full?: string; vin_full?: string };
 
-async function load(id: string) {
-  const supabase = await createClient();
+/** generateMetadata болон хуудас хоёр нэг хүсэлтэд дахин ачаалахгүйн тулд cache() */
+const load = cache(async (id: string) => {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const supabase = await createClient();
   const { data: pub } = await supabase.from("public_ads").select("*").eq("id", id).maybeSingle();
   if (pub) return pub as View;
   // Өөрийн эсвэл менежерийн харах хүлээгдэж буй зар
@@ -30,7 +33,7 @@ async function load(id: string) {
     seller_city: null,
     seller_ad_count: 0,
   } as View;
-}
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const ad = await load((await params).id);
@@ -39,15 +42,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function AdPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const me = await requireUser(`/ads/${id}`);
-  const ad = await load(id);
+  const [me, ad, settings] = await Promise.all([getProfile(), load(id), getSettings()]);
+  if (me?.is_blocked) redirect("/blocked");
   if (!ad) notFound();
-  const settings = await getSettings();
   const supabase = await createClient();
-  const mine = ad.user_id === me.id;
-  if (!mine && ad.status === "active") await supabase.rpc("increment_view", { p_ad: id });
+  const mine = Boolean(me && ad.user_id === me.id);
   const [{ data: fav }, { data: partnerRows }] = await Promise.all([
-    supabase.from("favorites").select("ad_id").eq("user_id", me.id).eq("ad_id", id).maybeSingle(),
+    me
+      ? supabase.from("favorites").select("ad_id").eq("user_id", me.id).eq("ad_id", id).maybeSingle()
+      : Promise.resolve({ data: null }),
     supabase.from("leasing_partners").select("*").eq("active", true).order("rate_annual"),
   ]);
   const partners = (partnerRows ?? []) as Partner[];
@@ -71,7 +74,9 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
               ? "Энэ зар менежерийн шалгалтыг хүлээж байна. Батлагдсаны дараа бусдад харагдана."
               : ad.status === "rejected"
                 ? "Энэ зар татгалзагдсан тул бусдад харагдахгүй."
-                : "Энэ машин зарагдсан."}
+                : ad.status === "hidden"
+                  ? "Энэ зарыг түр нуусан тул бусдад харагдахгүй."
+                  : "Энэ машин зарагдсан."}
           </span>
         </div>
       )}
@@ -104,7 +109,10 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
               </div>
             ))}
           </dl>
-          {!mine && ad.status === "active" && <ContactBox adId={ad.id} phone={ad.phone} favorite={Boolean(fav)} />}
+          {!mine && ad.status === "active" && (
+            <ContactBox adId={ad.id} phone={ad.phone} favorite={Boolean(fav)} loginHref={me ? null : `/login?next=${encodeURIComponent(`/ads/${ad.id}`)}`} />
+          )}
+          {!mine && ad.status === "active" && <ViewCounter adId={ad.id} />}
           {!mine && ad.status === "active" && partners.length > 0 && (
             <LoanCalculator adId={ad.id} price={ad.price} partners={partners} />
           )}

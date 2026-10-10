@@ -32,7 +32,8 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     rows = (data ?? []) as Profile[];
     const { data: inv } = await supabase.from("staff_invites").select("*").order("created_at", { ascending: false });
     const emails = new Set(rows.map((r) => r.email?.toLowerCase()));
-    invites = (inv ?? []).filter((i) => i.role !== "dealer" && !emails.has(i.email.toLowerCase()));
+    // Зөвхөн менежер/админы урилга (лизинг, авто худалдааны урилга өөр табд/хэсэгт)
+    invites = (inv ?? []).filter((i) => (i.role === "manager" || i.role === "admin") && !emails.has(i.email.toLowerCase()));
     const { data: managed } = await supabase.from("ads").select("manager_id,status").not("manager_id", "is", null);
     for (const a of managed ?? []) {
       const c = counts.get(a.manager_id!) ?? { approved: 0, sold: 0, ads: 0 };

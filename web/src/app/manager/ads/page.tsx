@@ -8,6 +8,7 @@ import { CarPhoto } from "@/components/CarPhoto";
 import { StatusBadge } from "@/components/StatusBadge";
 import { IconPhone } from "@/components/icons";
 import { approveAd, markContacted, rejectAd, saveNote, sendOffer } from "../../panel-actions";
+import { RejectForm } from "./RejectForm";
 import type { Ad, Profile } from "@/lib/types";
 
 export const metadata = { title: "Менежер · Шинэ зар ба санал" };
@@ -202,11 +203,7 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                 </form>
               )}
               {ad.status !== "rejected" && ad.status !== "sold" && (
-                <form action={rejectAd} className="flex-[1_1_160px] flex">
-                  <input type="hidden" name="id" value={ad.id} />
-                  <input type="hidden" name="back" value={`/manager/ads?tab=${tab}`} />
-                  <button className="btn btn-lg btn-danger flex-1">Татгалзах</button>
-                </form>
+                <RejectForm key={ad.id} id={ad.id} back={`/manager/ads?tab=${tab}`} action={rejectAd} />
               )}
               {(ad.status === "pending" || ad.status === "rejected") && (
                 <form action={approveAd} className="flex-[2_1_220px] flex">

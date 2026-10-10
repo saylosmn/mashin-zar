@@ -28,6 +28,13 @@ async function compress(file: File, max = 1600): Promise<Blob> {
   return new Promise((res) => canvas.toBlob((b) => res(b ?? file), "image/jpeg", 0.82));
 }
 
+/** Гэрээнд бичигдэх утгууд — эдгээрийн аль нэг өөрчлөгдвөл шинэ гэрээ зурна. */
+function contractKey(d: Draft, name: string) {
+  return JSON.stringify([d.plate_number, d.vin, d.brand, d.model, d.price, d.year_made, d.phone, name]);
+}
+
+const normCode = (v: FormDataEntryValue | null) => String(v ?? "").trim().replace(/\s+/g, " ").toUpperCase();
+
 export function PostForm({
   userId,
   defaultPhone,
@@ -61,6 +68,8 @@ export function PostForm({
   const [signature, setSignature] = useState<string | null>(null);
   const [agree, setAgree] = useState(false);
   const [signName, setSignName] = useState(fullName);
+  /** Амжилттай гарын үсэг зурсан гэрээ (дахин оролдоход ашиглана). key нь гэрээнд орсон утгууд. */
+  const contractRef = useRef<{ key: string; id: string } | null>(null);
 
   const models = BRANDS[brand] ?? [];
   const y = Number(yearMade);
@@ -97,8 +106,8 @@ export function PostForm({
       brand: String(fd.get("brand")).trim(),
       model: String(fd.get("model")).trim(),
       trim: String(fd.get("trim") || "").trim() || null,
-      plate_number: String(fd.get("plate_number")).trim().toUpperCase(),
-      vin: String(fd.get("vin")).trim().toUpperCase(),
+      plate_number: normCode(fd.get("plate_number")),
+      vin: normCode(fd.get("vin")),
       phone: String(fd.get("phone")).replace(/[^\d+]/g, ""),
       year_made: Number(fd.get("year_made")),
       year_imported: Number(fd.get("year_imported")) || null,
@@ -123,49 +132,83 @@ export function PostForm({
     await send(draft, signature);
   }
 
-  /** Зураг байршуулж зар үүсгэнэ. signature=null бол гэрээгүй (авто худалдаа). */
+  /**
+   * Зар үүсгэнэ: 1) зургуудыг байршуулна (3-аар зэрэг, дараалал хадгална) → 2) гэрээнд гарын үсэг (RPC)
+   * → 3) зар оруулна. signature=null бол гэрээгүй (авто худалдаа).
+   * Гэрээ амжилттай үүсээд дараагийн алхам унавал, мэдээлэл өөрчлөгдөөгүй бол дахин оролдоход тэр гэрээг ашиглана.
+   */
   async function send(draft: Draft, signature: string | null) {
     if (!navigator.onLine) return setError("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
     setError(null);
     const supabase = createClient();
+    const total = photos.length;
     setBusy({ step: 1, done: 0 });
-    const paths: string[] = [];
+    const uploaded: string[] = [];
     try {
+      // 1) Зураг: 3-аар зэрэг байршуулна, paths[i] нь i-р зурагтай таарна
+      const paths: string[] = new Array(total);
+      let cursor = 0;
+      let done = 0;
+      let stop = false;
+      const worker = async () => {
+        while (!stop && cursor < total) {
+          const i = cursor++;
+          try {
+            const blob = await compress(photos[i].file);
+            const path = `${userId}/${crypto.randomUUID()}.jpg`;
+            const { error: upErr } = await supabase.storage.from("ad-photos").upload(path, blob, { contentType: "image/jpeg" });
+            if (upErr) throw upErr;
+            uploaded.push(path);
+            paths[i] = path;
+            setBusy({ step: 1, done: ++done });
+          } catch (e) {
+            stop = true;
+            throw e;
+          }
+        }
+      };
+      const results = await Promise.allSettled([worker(), worker(), worker()]);
+      const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (failed) throw failed.reason;
+
+      // 2) Гэрээ (улсын/арлын дугаар нь зарынхтай яг ижил утгаар)
       let contractId: string | null = null;
       if (signature) {
-      const { data: cid, error: cErr } = await supabase.rpc("sign_contract", {
-        p_full_name: signName.trim(),
-        p_phone: draft.phone,
-        p_brand: draft.brand,
-        p_model: draft.model,
-        p_year: draft.year_made,
-        p_plate: draft.plate_number,
-        p_vin: draft.vin,
-        p_price: draft.price,
-        p_signature: signature,
-        p_ua: navigator.userAgent,
-      });
-      if (cErr) throw cErr;
-      contractId = cid as string;
+        setBusy({ step: 2, done: total });
+        const key = contractKey(draft, signName.trim());
+        if (contractRef.current?.key === key) {
+          contractId = contractRef.current.id;
+        } else {
+          contractRef.current = null;
+          const { data: cid, error: cErr } = await supabase.rpc("sign_contract", {
+            p_full_name: signName.trim(),
+            p_phone: draft.phone,
+            p_brand: draft.brand,
+            p_model: draft.model,
+            p_year: draft.year_made,
+            p_plate: draft.plate_number,
+            p_vin: draft.vin,
+            p_price: draft.price,
+            p_signature: signature,
+            p_ua: navigator.userAgent,
+          });
+          if (cErr) throw cErr;
+          contractId = cid as string;
+          contractRef.current = { key, id: contractId };
+        }
       }
-      setBusy({ step: 2, done: 0 });
-      for (const [i, p] of photos.entries()) {
-        const blob = await compress(p.file);
-        const path = `${userId}/${crypto.randomUUID()}.jpg`;
-        const { error: upErr } = await supabase.storage.from("ad-photos").upload(path, blob, { contentType: "image/jpeg" });
-        if (upErr) throw upErr;
-        paths.push(path);
-        setBusy({ step: 2, done: i + 1 });
-      }
-      setBusy({ step: 3, done: photos.length });
+
+      // 3) Зар
+      setBusy({ step: 3, done: total });
       const { error: insErr } = await supabase.from("ads").insert({ ...draft, user_id: userId, photos: paths, contract_id: contractId });
       if (insErr) throw insErr;
+      contractRef.current = null;
       // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
       if (contractId) fetch(`/api/contracts/${contractId}/pdf`, { method: "POST", keepalive: true }).catch(() => {});
       router.push("/my?created=1");
       router.refresh();
     } catch (err) {
-      if (paths.length) await supabase.storage.from("ad-photos").remove(paths);
+      if (uploaded.length) await supabase.storage.from("ad-photos").remove(uploaded).catch(() => {});
       setBusy(null);
       setError(navigator.onLine ? `Илгээж чадсангүй: ${errMsg(err)}` : "Интернэт холболт тасарлаа. Дахин оролдоно уу.");
     }
@@ -215,10 +258,22 @@ export function PostForm({
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.url} alt={`Зураг ${i + 1}`} className="w-full h-full object-cover" />
-                {i === 0 && <span className="mono absolute left-1.5 bottom-1.5 bg-ink text-yellow text-[9px] font-bold px-1.5 py-0.5 rounded">НҮҮР</span>}
+                {i === 0 ? (
+                  <span className="mono absolute left-1.5 bottom-1.5 bg-ink text-yellow text-[9px] font-bold px-1.5 py-0.5 rounded">НҮҮР</span>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!!busy}
+                    onClick={() => move(i, 0)}
+                    className="absolute left-1 bottom-1 text-[10px] font-semibold bg-ink/80 text-paper rounded px-1.5 py-1 border-0 cursor-pointer"
+                  >
+                    Нүүр болгох
+                  </button>
+                )}
                 <button
                   type="button"
                   aria-label={`Зураг ${i + 1} хасах`}
+                  disabled={!!busy}
                   onClick={() => setPhotos((ph) => ph.filter((x) => x.id !== p.id))}
                   className="absolute right-1 top-1 w-7 h-7 rounded-full bg-ink/80 text-paper flex items-center justify-center border-0 cursor-pointer"
                 >
@@ -248,7 +303,7 @@ export function PostForm({
             }}
           />
           <span className="text-[13px] text-muted">
-            Чирж оруулах эсвэл сонгох. Эхний зураг нүүр зураг болно, чирж дарааллыг өөрчилнө. {minPhotos}–{maxPhotos} зураг.
+            Чирж оруулах эсвэл сонгох. Эхний зураг нүүр зураг болно — «Нүүр болгох» товчоор эсвэл чирж солино. {minPhotos}–{maxPhotos} зураг.
           </span>
         </section>
 
@@ -364,7 +419,7 @@ export function PostForm({
             <div role="progressbar" aria-valuemin={0} aria-valuemax={photos.length} aria-valuenow={busy.done} className="h-3 rounded-md bg-ink-line overflow-hidden">
               <div className="h-full bg-yellow rounded-md transition-all" style={{ width: `${(busy.done / Math.max(photos.length, 1)) * 100}%` }} />
             </div>
-            <span className="text-[14px] text-pale">{busy.step === 3 ? (dealer ? "Нийтэлж байна…" : "Менежерт илгээж байна…") : ""}</span>
+            <span className="text-[14px] text-pale">{busy.step === 2 ? "Гэрээ баталгаажуулж байна…" : busy.step === 3 ? (dealer ? "Нийтэлж байна…" : "Менежерт илгээж байна…") : ""}</span>
           </div>
         ) : (
           <>
@@ -442,7 +497,7 @@ export function PostForm({
                 {busy ? (
                   <>
                     <IconSpinner size={20} />
-                    {busy.step === 1 ? "Гэрээ хадгалж байна…" : busy.step === 2 ? `Зураг ${busy.done} / ${photos.length}` : "Илгээж байна…"}
+                    {busy.step === 1 ? `Зураг ${busy.done} / ${photos.length}` : busy.step === 2 ? "Гэрээ хадгалж байна…" : "Илгээж байна…"}
                   </>
                 ) : (
                   "Зөвшөөрч, зар илгээх"

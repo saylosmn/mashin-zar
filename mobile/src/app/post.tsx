@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
-import { router } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { Image } from "expo-image";
@@ -20,6 +20,8 @@ import { termsFrom } from "@/lib/contract";
 import { WEB_URL } from "@/lib/staff";
 
 type Pic = { uri: string; id: string };
+/** Зэрэг байршуулах зургийн тоо */
+const PARALLEL = 3;
 
 async function compress(uri: string) {
   const ctx = ImageManipulator.manipulate(uri);
@@ -57,6 +59,30 @@ export default function Post() {
   const [drawing, setDrawing] = useState(false);
   const ct = termsFrom(settings);
   const dealer = profile?.role === "dealer";
+  // Гарын үсэг зурсан гэрээ — илгээх үед алдаа гарвал дахин оролдоход шинээр гэрээ үүсгэхгүй
+  const contractRef = useRef<string | null>(null);
+
+  // Гэрээнд орсон мэдээлэл өөрчлөгдвөл өмнөх гэрээг дахин ашиглахгүй
+  useEffect(() => {
+    contractRef.current = null;
+  }, [plate, vin, brand, model, price, yearMade, phone, signName]);
+
+  // Android-ын "буцах" товч: илгээж байхад хаахгүй, гэрээний алхмаас маягт руу буцна
+  const isBusy = !!busy;
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (isBusy) return true;
+        if (contractOpen) {
+          setContractOpen(false);
+          setErr(null);
+          return true;
+        }
+        return false;
+      });
+      return () => sub.remove();
+    }, [isBusy, contractOpen]),
+  );
 
   useEffect(() => {
     if (profile && !profile.profile_completed) router.replace({ pathname: "/complete-profile", params: { next: "post" } });
@@ -111,32 +137,55 @@ export default function Post() {
     const uploaded: string[] = [];
     setBusy({ done: 0, step: 1 });
     try {
+      // 1) Зургуудыг эхэлж байршуулна (зэрэг 3 хүртэл), дарааллыг хадгална
+      const paths: string[] = new Array(pics.length);
+      let nextIdx = 0;
+      let done = 0;
+      let failed = false;
+      const worker = async () => {
+        while (!failed && nextIdx < pics.length) {
+          const i = nextIdx++;
+          try {
+            const small = await compress(pics[i].uri);
+            const buf = await fetch(small).then((r) => r.arrayBuffer());
+            const path = `${uid}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+            const { error } = await supabase.storage.from("ad-photos").upload(path, buf, { contentType: "image/jpeg" });
+            if (error) throw error;
+            uploaded.push(path);
+            paths[i] = path;
+            done++;
+            setBusy({ done, step: 1 });
+          } catch (e) {
+            failed = true;
+            throw e;
+          }
+        }
+      };
+      const results = await Promise.allSettled(Array.from({ length: Math.min(PARALLEL, pics.length) }, worker));
+      const bad = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (bad) throw bad.reason;
+
+      // 2) Гэрээнд гарын үсэг зурна (өмнө нь амжилттай зурсан бол дахин ашиглана)
       let contractId: string | null = null;
       if (!noContract) {
-      const { data: cid, error: cErr } = await supabase.rpc("sign_contract", {
-        p_full_name: signName.trim(),
-        p_phone: phone.replace(/[^\d+]/g, ""),
-        p_brand: brand.trim(),
-        p_model: model.trim(),
-        p_year: y,
-        p_plate: plate.trim().toUpperCase(),
-        p_vin: vin.trim().toUpperCase(),
-        p_price: priceNum,
-        p_signature: signature,
-        p_ua: `Машин зар апп (${Platform.OS})`,
-      });
-      if (cErr) throw cErr;
-      contractId = cid as string;
-      }
-      setBusy({ done: 0, step: 2 });
-      for (const [i, p] of pics.entries()) {
-        const small = await compress(p.uri);
-        const buf = await fetch(small).then((r) => r.arrayBuffer());
-        const path = `${uid}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-        const { error } = await supabase.storage.from("ad-photos").upload(path, buf, { contentType: "image/jpeg" });
-        if (error) throw error;
-        uploaded.push(path);
-        setBusy({ done: i + 1, step: 2 });
+        setBusy({ done: pics.length, step: 2 });
+        if (!contractRef.current) {
+          const { data: cid, error: cErr } = await supabase.rpc("sign_contract", {
+            p_full_name: signName.trim(),
+            p_phone: phone.replace(/[^\d+]/g, ""),
+            p_brand: brand.trim(),
+            p_model: model.trim(),
+            p_year: y,
+            p_plate: plate.trim().toUpperCase(),
+            p_vin: vin.trim().toUpperCase(),
+            p_price: priceNum,
+            p_signature: signature,
+            p_ua: `Машин зар апп (${Platform.OS})`,
+          });
+          if (cErr) throw cErr;
+          contractRef.current = cid as string;
+        }
+        contractId = contractRef.current;
       }
       setBusy({ done: pics.length, step: 3 });
       const { error } = await supabase.from("ads").insert({
@@ -153,7 +202,7 @@ export default function Post() {
         modifications: mods.trim() || null,
         description: desc.trim() || null,
         price: priceNum,
-        photos: uploaded,
+        photos: paths,
         contract_id: contractId,
       });
       if (error) throw error;
@@ -161,9 +210,10 @@ export default function Post() {
       if (contractId && session?.access_token) {
         fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => {});
       }
-      router.replace({ pathname: "/success", params: { title: `${brand} ${model} · ${y}`, price: String(priceNum), cover: uploaded[0], dealer: dealer ? "1" : "0" } });
+      contractRef.current = null;
+      router.replace({ pathname: "/success", params: { title: `${brand} ${model} · ${y}`, price: String(priceNum), cover: paths[0], dealer: dealer ? "1" : "0" } });
     } catch (e) {
-      if (uploaded.length) await supabase.storage.from("ad-photos").remove(uploaded);
+      if (uploaded.length) await supabase.storage.from("ad-photos").remove(uploaded).catch(() => {});
       setBusy(null);
       setErr(`Илгээж чадсангүй: ${errMsg(e)}`);
     }
@@ -179,7 +229,7 @@ export default function Post() {
         </View>
         <View style={{ gap: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <T w="semibold" style={{ fontSize: 14 }}>Зураг байршуулж байна</T>
+            <T w="semibold" style={{ fontSize: 14 }}>{busy.step === 1 ? "Зураг байршуулж байна" : busy.step === 2 ? "Гэрээ баталгаажуулж байна" : "Зар илгээж байна"}</T>
             <T w="monoBold" style={{ fontSize: 14 }}>{busy.done} / {pics.length}</T>
           </View>
           <View accessibilityRole="progressbar" style={{ height: 12, borderRadius: 6, backgroundColor: C.line, overflow: "hidden" }}>
@@ -187,7 +237,7 @@ export default function Post() {
           </View>
         </View>
         <View style={[s.section, { gap: 14 }]}>
-          {[[dealer ? "Мэдээлэл шалгасан" : "Гэрээнд гарын үсэг зурсан", true], [`Зураг байршуулж байна`, busy.step >= 2], [dealer ? "Нийтлэх" : "Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
+          {[[`Зураг байршуулах`, true], [dealer ? "Мэдээлэл шалгах" : "Гэрээнд гарын үсэг зурах", busy.step >= 2], [dealer ? "Нийтлэх" : "Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
             <View key={String(t)} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
               <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: on ? C.ink : "transparent", borderWidth: on ? 0 : 2, borderColor: C.pale, alignItems: "center", justifyContent: "center" }}>
                 {on && <Feather name="check" size={14} color={C.yellow} />}
@@ -203,7 +253,7 @@ export default function Post() {
     return (
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.paper }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 }}>
-          <Pressable accessibilityLabel="Буцах" onPress={() => setContractOpen(false)} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>
+          <Pressable accessibilityLabel="Буцах" onPress={() => { setContractOpen(false); setErr(null); }} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>
             <Feather name="chevron-left" size={22} color={C.ink} />
           </Pressable>
           <View style={{ flex: 1 }}>
@@ -211,7 +261,7 @@ export default function Post() {
             <T w="display" style={{ fontSize: 19 }}>Зуучлалын гэрээ</T>
           </View>
         </View>
-        <ScrollView scrollEnabled={!drawing} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 150 }} keyboardShouldPersistTaps="handled">
+        <ScrollView scrollEnabled={!drawing} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: err ? 220 : 150 }} keyboardShouldPersistTaps="handled">
           <View style={[s.section, { backgroundColor: C.card }]}>
             <ContractView
               data={{
@@ -239,9 +289,9 @@ export default function Post() {
             </View>
             <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>Би гэрээг бүрэн уншиж танилцсан бөгөөд шимтгэлийн нөхцөлийг зөвшөөрч байна.</T>
           </Pressable>
-          {err && <View accessibilityRole="alert" style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}><T style={{ color: "#9B1C1C", fontSize: 14 }}>{err}</T></View>}
         </ScrollView>
         <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
+          <FooterError err={err} />
           <Button title="Зөвшөөрч, зар илгээх" variant="yellow" icon="check" disabled={!signature || !agree} onPress={() => send()} />
           <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>Гарын үсэгтэй гэрээний PDF “Миний зар” хэсэгт хадгалагдана</T>
         </View>
@@ -259,7 +309,7 @@ export default function Post() {
           <T style={{ fontSize: 12, color: C.muted }}>Алхам 2 / 2 · Машины мэдээлэл</T>
         </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 26, paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 20, gap: 26, paddingBottom: err ? 210 : 140 }} keyboardShouldPersistTaps="handled">
         <View style={{ gap: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <T w="bold" style={s.h2}>1 · Зураг</T>
@@ -360,13 +410,23 @@ export default function Post() {
             <T w="display" style={{ fontSize: 20 }}>₮</T>
           </View>
         </View>
-
-        {err && <View accessibilityRole="alert" style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}><T style={{ color: "#9B1C1C", fontSize: 14 }}>{err}</T></View>}
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
+        <FooterError err={err} />
         <Button title={dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Гэрээ"} variant="yellow" icon={dealer ? "check" : "arrow-right"} onPress={submit} />
         <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>{dealer ? "Авто худалдааны зар шууд нийтлэгдэнэ" : "Дараа нь гэрээнд гарын үсэг зурна · Нийтлэхээс өмнө менежер шалгана"}</T>
       </View>
     </KeyboardAvoidingView>
+  );
+}
+
+/** Доод хэсэгт (илгээх товчны дээр) алдааг харуулна — урт маягтын төгсгөлд нуугдахгүй */
+function FooterError({ err }: { err: string | null }) {
+  if (!err) return null;
+  return (
+    <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ flexDirection: "row", gap: 8, alignItems: "flex-start", backgroundColor: C.dangerBg, borderRadius: 12, padding: 10 }}>
+      <Feather name="alert-circle" size={16} color="#9B1C1C" style={{ marginTop: 2 }} />
+      <T style={{ color: "#9B1C1C", fontSize: 13.5, lineHeight: 19, flex: 1 }}>{err}</T>
+    </View>
   );
 }

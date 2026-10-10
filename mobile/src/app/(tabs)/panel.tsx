@@ -155,7 +155,7 @@ function Panel() {
               key={f.key}
               accessibilityRole="tab"
               accessibilityState={{ selected: on }}
-              onPress={() => { setLoading(true); setStatus(f.key); }}
+              onPress={() => { if (on) return; setLoading(true); setStatus(f.key); }}
               style={{ height: 36, paddingHorizontal: 14, borderRadius: 18, backgroundColor: on ? C.ink : C.card, borderWidth: on ? 0 : 1, borderColor: C.line2, justifyContent: "center" }}
             >
               <T w={on ? "semibold" : "body"} style={{ fontSize: 13, color: on ? C.yellow : C.ink }}>

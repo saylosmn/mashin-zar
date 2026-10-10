@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, BackHandler, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
@@ -10,8 +10,8 @@ import { C } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
 import { CITIES } from "@/lib/cars";
 import {
-  DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, MARITAL, ageFrom, docLabel, fmtNum, minDown, monthlyPayment, previewChecks,
-  rdBirthDate, termOptions, type Applicant, type Partner,
+  DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, MARITAL, MAX_DOC_PAGES, ageFrom, docBase, docLabel, docPage, docPageKeys, fmtNum, minDown,
+  monthlyPayment, previewChecks, rdBirthDate, termOptions, type Applicant, type Partner,
 } from "@/lib/loan";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 
@@ -22,6 +22,52 @@ const num = (v: string) => Number(digits(v)) || 0;
 const rid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 type AdLite = { id: string; user_id: string; brand: string; model: string; year_made: number; price: number; status: string };
+
+const LATIN_RD = "Регистрийн үсгийг кирилл үсгээр бичнэ үү (жишээ: УБ99112233)";
+const hasLatin = (v: string) => /[A-Za-z]/.test(v);
+
+/** Нэг төрлийн баримтын хуудсуудыг цоорхойгүй болгож kind, kind_2 … дарааллаар дахин дугаарлана */
+function packDocs(docs: Record<string, string>): Record<string, string> {
+  const groups = new Map<string, { page: number; path: string }[]>();
+  for (const [k, path] of Object.entries(docs)) {
+    if (!path) continue;
+    const { base, page } = docPage(k);
+    if (!groups.has(base)) groups.set(base, []);
+    groups.get(base)!.push({ page, path });
+  }
+  const out: Record<string, string> = {};
+  for (const [base, list] of groups) {
+    const keys = docPageKeys(base);
+    list.sort((a, b) => a.page - b.page).slice(0, MAX_DOC_PAGES).forEach((x, i) => { out[keys[i]] = x.path; });
+  }
+  return out;
+}
+
+/** Анкетын ноорог (апп хаагдсан ч бөглөсөн мэдээлэл алга болохгүй) */
+type Draft = {
+  v: 1;
+  step: number; batch: string; reused: string[]; docs: Record<string, string>;
+  f: Record<string, string | boolean | null>;
+};
+const draftKey = (adId: string, partnerId: string) => `loan-draft:${adId}:${partnerId}`;
+function readDraft(key: string): Draft | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Draft;
+    return d && d.v === 1 && d.f ? d : null;
+  } catch {
+    return null;
+  }
+}
+function writeDraft(key: string, d: Draft | null) {
+  try {
+    if (d) localStorage.setItem(key, JSON.stringify(d));
+    else localStorage.removeItem(key);
+  } catch {
+    // хадгалж чадахгүй бол чимээгүй алгасна
+  }
+}
 
 /** Лизингийн хүсэлтийн анкет: 5 алхам, баримтыг зургаар хавсаргана */
 export default function LoanApplication() {
@@ -34,6 +80,13 @@ export default function LoanApplication() {
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const batch = useRef(rid());
   const scroll = useRef<ScrollView>(null);
+  // Өмнөх хүсэлтээс дахин ашиглаж буй файлууд — storage-аас хэзээ ч устгахгүй
+  const reused = useRef<Set<string>>(new Set());
+  const dKey = draftKey(params.id ?? "", params.partner ?? "");
+  const [hydrated, setHydrated] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -72,16 +125,25 @@ export default function LoanApplication() {
   useEffect(() => {
     (async () => {
       try {
-        const [a, p, last] = await Promise.all([
+        const [a, p, last, open] = await Promise.all([
           supabase.from("public_ads").select("id,user_id,brand,model,year_made,price,status").eq("id", params.id).maybeSingle(),
           supabase.from("leasing_partners").select("*").eq("id", params.partner ?? "").eq("active", true).maybeSingle(),
-          supabase.from("loan_requests").select("full_name,phone,applicant").eq("user_id", uid).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+          supabase.from("loan_requests").select("full_name,phone,applicant,docs").eq("user_id", uid).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+          supabase.from("loan_requests").select("id").eq("user_id", uid).eq("ad_id", params.id).eq("partner_id", params.partner ?? "")
+            .in("status", ["new", "contacted"]).limit(1).maybeSingle(),
         ]);
         if (a.error) throw a.error;
         setAd(a.data as AdLite | null);
         setPartner(p.data as Partner | null);
-        // Өмнөх хүсэлтээс анкетыг урьдчилан бөглөнө (баримтыг биш)
-        const l = last.data as { full_name: string; phone: string; applicant: Applicant } | null;
+        setExistingId((open.data as { id: string } | null)?.id ?? null);
+        // Өмнөх хүсэлтээс анкет, баримтыг урьдчилан бөглөнө
+        const l = last.data as { full_name: string; phone: string; applicant: Applicant; docs?: Record<string, string> | null } | null;
+        if (l?.docs) {
+          const kinds = new Set(LOAN_DOCS.map((d) => d.kind));
+          const prev = packDocs(Object.fromEntries(Object.entries(l.docs).filter(([k, v]) => kinds.has(docBase(k)) && typeof v === "string" && v)));
+          Object.values(prev).forEach((v) => reused.current.add(v));
+          setDocs(prev);
+        }
         if (l?.applicant) {
           const d = l.applicant;
           setFullName(l.full_name); setPhone(l.phone);
@@ -92,13 +154,67 @@ export default function LoanApplication() {
           setRefName(d.ref_name ?? ""); setRefPhone(d.ref_phone ?? ""); setRefRel(d.ref_relation ?? "");
           if (d.cosigner) { setHasCos(true); setCosName(d.cosigner.name); setCosPhone(d.cosigner.phone); setCosRel(d.cosigner.relation ?? ""); setCosRd(d.cosigner.register_no ?? ""); setCosIncome(d.cosigner.monthly_income ? fmtNum(d.cosigner.monthly_income) : ""); }
         }
+        // Ноорог байвал урьдчилан бөглөснөөс давуу
+        const dr = readDraft(dKey);
+        if (dr) {
+          const f = dr.f;
+          const str = (k: string) => (typeof f[k] === "string" ? (f[k] as string) : "");
+          const bool = (k: string) => (typeof f[k] === "boolean" ? (f[k] as boolean) : null);
+          setFullName(str("fullName")); setPhone(str("phone")); setRd(str("rd")); setCity(str("city") || "Улаанбаатар"); setDistrict(str("district"));
+          setAddress(str("address")); setMarital(str("marital")); setHousehold(str("household")); setLicense(bool("license"));
+          setEmp(str("emp")); setEmployer(str("employer")); setPosition(str("position")); setWork(str("work")); setIncome(str("income"));
+          setOther(str("other")); setDebt(str("debt")); setOverdue(bool("overdue")); setRefName(str("refName")); setRefPhone(str("refPhone"));
+          setRefRel(str("refRel")); setHasCos(f.hasCos === true); setCosName(str("cosName")); setCosPhone(str("cosPhone")); setCosRel(str("cosRel"));
+          setCosRd(str("cosRd")); setCosIncome(str("cosIncome")); setNote(str("note"));
+          setDocs(packDocs(dr.docs ?? {}));
+          reused.current = new Set(dr.reused ?? []);
+          if (dr.batch) batch.current = dr.batch;
+          setStep(Math.min(Math.max(Number(dr.step) || 0, 0), STEPS.length - 1));
+          setRestored(true);
+        }
       } catch (e) {
         setLoadErr(errMsg(e));
       } finally {
         setLoading(false);
+        setHydrated(true);
       }
     })();
-  }, [params.id, params.partner, uid]);
+  }, [params.id, params.partner, uid, dKey]);
+
+  // Ноорог хадгалах (бичих бүрт биш, 400мс завсарлагатай)
+  useEffect(() => {
+    if (!hydrated || submitted || existingId) return;
+    const t = setTimeout(() => {
+      writeDraft(dKey, {
+        v: 1, step, batch: batch.current, reused: [...reused.current], docs,
+        f: {
+          fullName, phone, rd, city, district, address, marital, household, license, emp, employer, position, work, income, other, debt,
+          overdue, refName, refPhone, refRel, hasCos, cosName, cosPhone, cosRel, cosRd, cosIncome, note,
+        },
+      });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [
+    hydrated, submitted, existingId, dKey, step, docs, fullName, phone, rd, city, district, address, marital, household, license, emp, employer,
+    position, work, income, other, debt, overdue, refName, refPhone, refRel, hasCos, cosName, cosPhone, cosRel, cosRd, cosIncome, note,
+  ]);
+
+  // Android-ын "буцах" товч: эхний алхам биш бол өмнөх алхам руу
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (busy) return true;
+        if (step > 0) {
+          setError(null);
+          setStep(step - 1);
+          scroll.current?.scrollTo({ y: 0, animated: true });
+          return true;
+        }
+        return false;
+      });
+      return () => sub.remove();
+    }, [step, busy]),
+  );
 
   const terms = partner ? termOptions(partner.max_term_months) : [];
   const reqTerm = Number(params.term);
@@ -114,6 +230,13 @@ export default function LoanApplication() {
 
   if (loading) return <View style={{ padding: 16, gap: 12, backgroundColor: C.paper, flex: 1 }}>{[0, 1, 2].map((i) => <Skeleton key={i} style={{ height: 120, borderRadius: 14 }} />)}</View>;
   if (loadErr) return <StateView icon="warning" title="Алдаа гарлаа" text={loadErr}><Button title="Буцах" onPress={() => router.back()} /></StateView>;
+  if (existingId && !submitted)
+    return (
+      <StateView icon="check-circle" title="Хүсэлт аль хэдийн илгээсэн" text="Та энэ машинд энэ компанид лизингийн хүсэлт илгээсэн байна. Хариу ирэхийг хүлээнэ үү, явцыг “Лизингийн хүсэлт” хэсгээс харна.">
+        <Button title="Хүсэлтээ харах" icon="list" onPress={() => router.replace("/loans")} />
+        <Button title="Буцах" variant="ghost" onPress={() => router.back()} />
+      </StateView>
+    );
   if (!ad || ad.status !== "active") return <StateView icon="slash" title="Зар идэвхтэй биш" text="Энэ зар зарагдсан эсвэл нуугдсан байж магадгүй."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
   if (ad.user_id === uid) return <StateView icon="slash" title="Өөрийн зар" text="Өөрийн зарт лизингийн хүсэлт илгээх боломжгүй."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
   if (!partner) return <StateView icon="briefcase" title="Лизингийн компани олдсонгүй" text="Зарын дэлгэцээс компаниа дахин сонгоно уу."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
@@ -131,6 +254,7 @@ export default function LoanApplication() {
     if (st === 0) {
       if (!fullName.trim()) return "Овог нэрээ оруулна уу";
       if (digits(phone).length < 8) return "Утасны дугаараа зөв оруулна уу";
+      if (hasLatin(rd)) return LATIN_RD;
       if (!birth) return "Регистрийн дугаараа зөв оруулна уу (жишээ: УБ99112233)";
       if (!city || !address.trim()) return "Оршин суугаа хаягаа бөглөнө үү";
       if (!marital) return "Гэрлэлтийн байдлаа сонгоно уу";
@@ -147,6 +271,7 @@ export default function LoanApplication() {
     if (st === 2) {
       if (!refName.trim() || digits(refPhone).length < 8) return "Яаралтай үед холбоо барих хүний нэр, утсыг оруулна уу";
       if (hasCos && (!cosName.trim() || digits(cosPhone).length < 8)) return "Хамтран зээлдэгчийн нэр, утсыг оруулна уу";
+      if (hasCos && hasLatin(cosRd)) return LATIN_RD;
       if (hasCos && cosRd.trim() && !rdBirthDate(cosRd)) return "Хамтран зээлдэгчийн регистр буруу байна";
     }
     if (st === 3) {
@@ -168,8 +293,13 @@ export default function LoanApplication() {
     go(step + 1);
   }
 
+  /** Тухайн төрлийн хавсаргасан хуудсуудын түлхүүр (дарааллаар) */
+  const pagesOf = (kind: string) => docPageKeys(kind).filter((k) => docs[k]);
+
   async function pickDoc(kind: string) {
-    Alert.alert(docLabel(kind), "Баримтаа хэрхэн оруулах вэ?", [
+    const key = docPageKeys(kind).find((k) => !docs[k]);
+    if (!key) return;
+    Alert.alert(docLabel(key), "Баримтаа хэрхэн оруулах вэ?", [
       { text: "Болих", style: "cancel" },
       { text: "Галерей", onPress: () => upload(kind, false) },
       { text: "Зураг авах", onPress: () => upload(kind, true) },
@@ -194,9 +324,14 @@ export default function LoanApplication() {
       const path = `${uid}/${batch.current}/${kind}-${Date.now()}.jpg`;
       const { error: e } = await supabase.storage.from("loan-docs").upload(path, buf, { contentType: "image/jpeg" });
       if (e) throw e;
-      const old = docs[kind];
-      setDocs((x) => ({ ...x, [kind]: path }));
-      if (old) supabase.storage.from("loan-docs").remove([old]).then(() => {});
+      setDocs((x) => {
+        const key = docPageKeys(kind).find((k) => !x[k]);
+        if (!key) {
+          supabase.storage.from("loan-docs").remove([path]).then(() => {}, () => {});
+          return x;
+        }
+        return { ...x, [key]: path };
+      });
     } catch (e) {
       setError(`Хавсаргаж чадсангүй: ${errMsg(e)}`);
     } finally {
@@ -204,13 +339,15 @@ export default function LoanApplication() {
     }
   }
 
-  function removeDoc(kind: string) {
-    const old = docs[kind];
-    setDocs((x) => { const y = { ...x }; delete y[kind]; return y; });
-    if (old) supabase.storage.from("loan-docs").remove([old]).then(() => {});
+  function removeDoc(key: string) {
+    const old = docs[key];
+    setDocs((x) => { const y = { ...x }; delete y[key]; return packDocs(y); });
+    // Өмнөх хүсэлтийн файлыг устгавал тэр хүсэлтийн баримт алга болно — зөвхөн жагсаалтаас хасна
+    if (old && !reused.current.has(old)) supabase.storage.from("loan-docs").remove([old]).then(() => {}, () => {});
   }
 
   async function submit() {
+    if (submitted || busy) return;
     for (let st = 0; st < 4; st++) {
       const e = validate(st);
       if (e) { go(st); setError(e); return; }
@@ -225,10 +362,15 @@ export default function LoanApplication() {
       has_overdue: overdue, has_license: license, ref_name: refName, ref_phone: refPhone, ref_relation: refRel, note,
       cosigner: hasCos ? { name: cosName, phone: cosPhone, relation: cosRel, register_no: cosRd, monthly_income: String(num(cosIncome)) } : null,
     };
-    const p_docs = Object.fromEntries(Object.entries(docs).filter(([k]) => k !== "cosigner_id" || hasCos));
+    const p_docs = Object.fromEntries(Object.entries(packDocs(docs)).filter(([k]) => docBase(k) !== "cosigner_id" || hasCos));
     const { error: e } = await supabase.rpc("submit_loan_request", { p_ad: ad!.id, p_partner: p.id, p_down: down, p_term: term, p_app, p_docs, p_consent: true });
     setBusy(false);
-    if (e) return setError(errMsg(e));
+    if (e) {
+      // "… дутуу байна: ndsh" → баримтын нэрээр
+      return setError(errMsg(e).replace(/дутуу байна: (\w+)/, (_m, k: string) => `дутуу байна: ${docLabel(k)}`));
+    }
+    setSubmitted(true);
+    writeDraft(dKey, null);
     Alert.alert("Хүсэлт илгээгдлээ", `${p.name} тантай удахгүй холбогдоно. Явцыг “Лизингийн хүсэлт” хэсгээс харна.`);
     router.replace("/loans");
   }
@@ -245,6 +387,14 @@ export default function LoanApplication() {
             <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>{p.name} · {ad.brand} {ad.model} {ad.year_made}</T>
           </View>
         </View>
+
+        {restored ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.activeBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
+            <Feather name="rotate-ccw" size={14} color={C.activeFg} />
+            <T style={{ fontSize: 12.5, color: C.activeFg, flex: 1 }}>Өмнө бөглөсөн мэдээллийг сэргээлээ</T>
+            <Pressable accessibilityLabel="Хаах" hitSlop={10} onPress={() => setRestored(false)}><Feather name="x" size={14} color={C.activeFg} /></Pressable>
+          </View>
+        ) : null}
 
         <View style={{ backgroundColor: C.ink, borderRadius: 14, padding: 14, flexDirection: "row", flexWrap: "wrap", rowGap: 10 }}>
           <Sum k="Урьдчилгаа" v={`${fmtNum(down)}₮`} />
@@ -268,7 +418,7 @@ export default function LoanApplication() {
               <T w="bold" style={s.h2}>Хувийн мэдээлэл</T>
               <Field label="Овог нэр"><Input value={fullName} onChangeText={setFullName} autoComplete="name" /></Field>
               <Field label="Утас"><Input mono value={phone} onChangeText={setPhone} keyboardType="phone-pad" /></Field>
-              <Field label="Регистрийн дугаар" hint={birth ? `Төрсөн: ${birth.toISOString().slice(0, 10)} · ${age} нас` : "Жишээ: УБ99112233"}>
+              <Field label="Регистрийн дугаар" error={hasLatin(rd) ? LATIN_RD : null} hint={birth ? `Төрсөн: ${birth.toISOString().slice(0, 10)} · ${age} нас` : "Жишээ: УБ99112233"}>
                 <Input mono value={rd} onChangeText={(v) => setRd(v.toUpperCase())} autoCapitalize="characters" maxLength={12} style={rd && !birth ? { borderColor: C.danger } : undefined} />
               </Field>
               <Field label="Хот / аймаг"><Chips value={city} onChange={setCity} options={Object.fromEntries(CITIES.map((c) => [c, c]))} /></Field>
@@ -329,7 +479,7 @@ export default function LoanApplication() {
                   <Field label="Нэр"><Input value={cosName} onChangeText={setCosName} /></Field>
                   <Field label="Утас"><Input mono value={cosPhone} onChangeText={setCosPhone} keyboardType="phone-pad" /></Field>
                   <Field label="Таны хэн болох"><Input value={cosRel} onChangeText={setCosRel} placeholder="Эхнэр, нөхөр…" /></Field>
-                  <Field label="Регистр (заавал биш)"><Input mono value={cosRd} onChangeText={(v) => setCosRd(v.toUpperCase())} autoCapitalize="characters" maxLength={12} /></Field>
+                  <Field label="Регистр (заавал биш)" error={hasLatin(cosRd) ? LATIN_RD : null}><Input mono value={cosRd} onChangeText={(v) => setCosRd(v.toUpperCase())} autoCapitalize="characters" maxLength={12} /></Field>
                   <Field label="Хамтран зээлдэгчийн сарын орлого (₮)"><Input mono value={cosIncome} onChangeText={(v) => setCosIncome(money(v))} keyboardType="number-pad" /></Field>
                 </>
               )}
@@ -343,9 +493,16 @@ export default function LoanApplication() {
                 Баримтынхаа зургийг авч эсвэл галерейгаас оруулна. Лавлагааг e-mongolia.mn-ээс татаж, дэлгэцийн зураг (screenshot) хэлбэрээр оруулж болно. Файлууд зөвхөн {p.name}-д харагдана.
               </T>
               <Button small title="e-mongolia.mn нээх" icon="external-link" variant="ghost" onPress={() => Linking.openURL("https://e-mongolia.mn")} />
+              {Object.values(docs).some((v) => reused.current.has(v)) ? (
+                <View style={{ backgroundColor: C.activeBg, borderRadius: 10, padding: 10 }}>
+                  <T style={{ fontSize: 12.5, color: C.activeFg, lineHeight: 18 }}>Өмнөх хүсэлтэд хавсаргасан баримтуудыг автоматаар орууллаа. Хуучирсан бол хасаад шинээр оруулна уу.</T>
+                </View>
+              ) : null}
               {LOAN_DOCS.filter((x) => x.kind !== "cosigner_id" || hasCos).map((x) => {
                 const req = required.includes(x.kind);
-                const have = !!docs[x.kind];
+                const pages = pagesOf(x.kind);
+                const have = pages.length > 0;
+                const busyKind = uploading === x.kind;
                 return (
                   <View key={x.kind} style={{ borderWidth: 1, borderColor: have ? "#9BD3AE" : C.line, backgroundColor: have ? "#F1FAF4" : C.card, borderRadius: 12, padding: 12, gap: 8 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -354,11 +511,20 @@ export default function LoanApplication() {
                         <View style={{ backgroundColor: C.pendingBg, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}><T w="semibold" style={{ fontSize: 11, color: C.pendingFg }}>заавал</T></View>
                       ) : <T style={{ fontSize: 11, color: C.muted }}>заавал биш</T>}
                     </View>
-                    {have ? <T style={{ fontSize: 12, color: "#1D6B3A" }}>✓ Хавсаргасан</T> : x.hint ? <T style={{ fontSize: 12, color: C.muted }}>{x.hint}</T> : null}
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <Button small title={have ? "Солих" : "Хавсаргах"} icon="paperclip" variant={have ? "ghost" : "ink"} loading={uploading === x.kind} disabled={!!uploading} style={{ flex: 1 }} onPress={() => pickDoc(x.kind)} />
-                      {have && <Button small title="Хасах" variant="danger" disabled={!!uploading} onPress={() => removeDoc(x.kind)} />}
-                    </View>
+                    {!have && x.hint ? <T style={{ fontSize: 12, color: C.muted, lineHeight: 17 }}>{x.hint}</T> : null}
+                    {pages.map((k, i) => (
+                      <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <T style={{ fontSize: 13, color: "#1D6B3A", flex: 1 }}>✓ {i + 1}-р хуудас{reused.current.has(docs[k]) ? " · өмнөх хүсэлтээс" : ""}</T>
+                        <Button small title="Хасах" variant="danger" disabled={!!uploading} onPress={() => removeDoc(k)} />
+                      </View>
+                    ))}
+                    {!have ? (
+                      <Button small title="Хавсаргах" icon="paperclip" variant="ink" loading={busyKind} disabled={!!uploading} onPress={() => pickDoc(x.kind)} />
+                    ) : pages.length < MAX_DOC_PAGES ? (
+                      <Button small title="Хуудас нэмэх" icon="plus" variant="ghost" loading={busyKind} disabled={!!uploading} onPress={() => pickDoc(x.kind)} />
+                    ) : (
+                      <T style={{ fontSize: 12, color: C.muted }}>Хамгийн ихдээ {MAX_DOC_PAGES} хуудас</T>
+                    )}
                   </View>
                 );
               })}
@@ -400,11 +566,11 @@ export default function LoanApplication() {
           ) : null}
 
           <View style={{ flexDirection: "row", gap: 8 }}>
-            {step > 0 && <Button title="Буцах" variant="ghost" disabled={busy} style={{ flex: 1 }} onPress={() => go(step - 1)} />}
+            {step > 0 && <Button title="Буцах" variant="ghost" disabled={busy || submitted} style={{ flex: 1 }} onPress={() => go(step - 1)} />}
             {step < 4 ? (
               <Button title="Үргэлжлүүлэх" icon="arrow-right" disabled={!!uploading} style={{ flex: 2 }} onPress={next} />
             ) : (
-              <Button title="Хүсэлт илгээх" icon="send" variant="yellow" loading={busy} disabled={!consent} style={{ flex: 2 }} onPress={submit} />
+              <Button title={submitted ? "Илгээгдсэн" : "Хүсэлт илгээх"} icon={submitted ? "check" : "send"} variant="yellow" loading={busy} disabled={!consent || submitted} style={{ flex: 2 }} onPress={submit} />
             )}
           </View>
         </View>

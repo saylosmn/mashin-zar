@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireLeasing } from "@/lib/data";
 import { dateShort, num, timeAgo } from "@/lib/format";
-import { DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, LOAN_STATUS, MARITAL, docLabel, type LoanRequest, type LoanStatus, type Partner } from "@/lib/loan";
+import { DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, LOAN_STATUS, MARITAL, docLabel, sortDocKeys, type LoanRequest, type LoanStatus, type Partner } from "@/lib/loan";
 import { Flash, Kpi, PanelShell } from "@/components/PanelShell";
 import { savePartnerTerms, updateLoanRequest } from "../panel-actions";
 
@@ -24,7 +24,10 @@ export default async function LeasingPanel({ searchParams }: { searchParams: Pro
 
   const { data: partnerRows } = await supabase.from("leasing_partners").select("*").order("name");
   const partners = (partnerRows ?? []) as Partner[];
+  // Админ: анхдагчаар бүх компанийн хүсэлт ("all"), эсвэл нэг компани
+  const allMode = isAdmin && partners.length > 0 && (!sp.partner || sp.partner === "all") && sp.tab !== "terms";
   const partner = isAdmin ? partners.find((p) => p.id === sp.partner) ?? partners[0] : partners.find((p) => p.id === me.partner_id);
+  const partnerName = new Map(partners.map((p) => [p.id, p.name]));
 
   if (!partner)
     return (
@@ -39,40 +42,39 @@ export default async function LeasingPanel({ searchParams }: { searchParams: Pro
   const tab = sp.tab === "terms" ? "terms" : TABS.some((t) => t.key === sp.tab) ? (sp.tab as LoanStatus | "all") : "new";
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  let q = supabase.from("loan_requests").select("*").eq("partner_id", partner.id).order("created_at", { ascending: false }).limit(200);
+  let q = supabase.from("loan_requests").select("*").order("created_at", { ascending: false }).limit(200);
+  let qs = supabase.from("loan_requests").select("status,price,down_payment,created_at").limit(5000);
+  if (!allMode) { q = q.eq("partner_id", partner.id); qs = qs.eq("partner_id", partner.id); }
   if (tab !== "all" && tab !== "terms") q = q.eq("status", tab);
-  const [list, all] = await Promise.all([
-    q,
-    supabase.from("loan_requests").select("status,price,down_payment,created_at").eq("partner_id", partner.id),
-  ]);
+  const [list, all] = await Promise.all([tab === "terms" ? Promise.resolve({ data: [], error: null }) : q, qs]);
   const rows = (list.data ?? []) as LoanRequest[];
-  // Баримтын түр холбоос (1 цаг) — RLS: зөвхөн энэ компанид ирсэн хүсэлтийн файл
-  const paths = tab === "terms" ? [] : rows.flatMap((r) => Object.values(r.docs ?? {}));
-  const signed = new Map<string, string>();
-  if (paths.length) {
-    const { data: urls } = await supabase.storage.from("loan-docs").createSignedUrls(paths, 3600);
-    for (const u of urls ?? []) if (u.path && u.signedUrl) signed.set(u.path, u.signedUrl);
+  // Үйл явдлын түүх (илгээсэн, төлөв, баримт хэн нээсэн) — RLS: админ бүгдийг, компани өөрийнхийг
+  const events = new Map<string, LoanEvent[]>();
+  if (rows.length) {
+    const { data: ev } = await supabase.from("loan_events").select("request_id,actor_name,kind,detail,created_at").in("request_id", rows.map((r) => r.id)).order("created_at");
+    for (const e of (ev ?? []) as (LoanEvent & { request_id: string })[]) events.set(e.request_id, [...(events.get(e.request_id) ?? []), e]);
   }
   const stats = (all.data ?? []) as { status: LoanStatus; price: number; down_payment: number; created_at: string }[];
   const month = stats.filter((r) => r.created_at >= monthStart);
   const approved = stats.filter((r) => r.status === "approved");
   const decided = stats.filter((r) => r.status === "approved" || r.status === "rejected").length;
   const count = (k: LoanStatus) => stats.filter((r) => r.status === k).length;
-  const trialDays = partner.trial_until ? Math.ceil((new Date(partner.trial_until).getTime() - now.getTime()) / 864e5) : null;
-  const q2 = isAdmin ? `&partner=${partner.id}` : "";
+  const trialDays = allMode ? null : partner.trial_until ? Math.ceil((new Date(partner.trial_until).getTime() - now.getTime()) / 864e5) : null;
+  const q2 = isAdmin ? `&partner=${allMode ? "all" : partner.id}` : "";
   const back = `/leasing?tab=${tab}${q2}`;
 
   return (
-    <PanelShell profile={me} area="leasing" active={tab === "terms" ? "leasing-terms" : "leasing"}>
+    <PanelShell profile={me} area="leasing" active={tab === "terms" ? "leasing-terms" : "leasing"} partner={isAdmin ? (allMode ? "all" : partner.id) : undefined}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="h-display m-0 text-[28px]">{partner.name}</h1>
-          <span className="text-[14px] text-muted">Машин зарын худалдан авагчдын лизингийн хүсэлтүүд</span>
+          <h1 className="h-display m-0 text-[28px]">{allMode ? "Лизингийн бүх хүсэлт" : partner.name}</h1>
+          <span className="text-[14px] text-muted">{allMode ? "Бүх лизингийн компанид очсон хүсэлт, тэдний шийдвэр, баримт хэн хэзээ нээсэн" : "Машин зарын худалдан авагчдын лизингийн хүсэлтүүд"}</span>
         </div>
-        {isAdmin && partners.length > 1 && (
+        {isAdmin && (
           <form className="flex gap-2 items-center">
-            <input type="hidden" name="tab" value={tab} />
-            <select name="partner" defaultValue={partner.id} className="input h-10">
+            <input type="hidden" name="tab" value={tab === "terms" ? "terms" : tab} />
+            <select name="partner" defaultValue={allMode ? "all" : partner.id} className="input h-10">
+              {tab !== "terms" && <option value="all">Бүх компани</option>}
               {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <button className="btn btn-ghost h-10">Харах</button>
@@ -150,7 +152,7 @@ export default async function LeasingPanel({ searchParams }: { searchParams: Pro
                 <li key={r.id} className="card p-4 flex flex-col gap-3">
                   <div className="flex flex-wrap justify-between gap-2">
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-bold text-[16px]">{r.full_name}</span>
+                      <span className="font-bold text-[16px]">{r.full_name}{allMode && <span className="badge bg-soft text-body ml-2 align-middle">{partnerName.get(r.partner_id) ?? "—"}</span>}</span>
                       <span className="text-[13px] text-muted">
                         <a href={`tel:${r.phone.replace(/\s/g, "")}`} className="mono font-semibold text-ink">{r.phone}</a> · {timeAgo(r.created_at)}
                         {r.income ? ` · Орлого: ${r.income}` : ""}
@@ -179,14 +181,17 @@ export default async function LeasingPanel({ searchParams }: { searchParams: Pro
                   )}
                   {r.applicant && Object.keys(r.applicant).length > 0 && <ApplicantDetails r={r} />}
                   {r.docs && Object.keys(r.docs).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {Object.entries(r.docs).map(([k, path]) => signed.get(path) ? (
-                        <a key={k} href={signed.get(path)} target="_blank" rel="noreferrer" className="text-[12px] px-2.5 py-1.5 rounded-md border border-line-2 bg-card no-underline text-ink">📎 {docLabel(k)}</a>
-                      ) : (
-                        <span key={k} className="text-[12px] px-2.5 py-1.5 rounded-md bg-soft text-muted">📎 {docLabel(k)} (нээгдсэнгүй)</span>
-                      ))}
-                    </div>
+                    r.status === "cancelled" && !isAdmin ? (
+                      <span className="text-[12px] text-muted">Цуцлагдсан тул баримтууд хаагдсан.</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {sortDocKeys(Object.keys(r.docs)).map((k) => (
+                          <a key={k} href={`/api/loan-docs/${r.id}/${k}`} target="_blank" rel="noreferrer" className="text-[12px] px-2.5 py-1.5 rounded-md border border-line-2 bg-card no-underline text-ink">📎 {docLabel(k)}</a>
+                        ))}
+                      </div>
+                    )
                   )}
+                  {(events.get(r.id)?.length ?? 0) > 0 && <History events={events.get(r.id)!} />}
                   {r.note && <p className="m-0 text-[13px] text-body">Худалдан авагч: {r.note}</p>}
                   {r.partner_note && <p className="m-0 text-[13px] rounded-lg bg-paper px-3 py-2">Тэмдэглэл: {r.partner_note}</p>}
                   {r.status !== "cancelled" ? (
@@ -259,6 +264,35 @@ function ApplicantDetails({ r }: { r: LoanRequest }) {
           </div>
         ))}
       </dl>
+    </details>
+  );
+}
+
+type LoanEvent = { actor_name: string | null; kind: "submitted" | "status" | "doc_view" | "cancelled"; detail: string | null; created_at: string };
+
+const STATUS_WORD: Record<string, string> = { new: "Шинэ", contacted: "Холбогдсон", approved: "Зөвшөөрсөн", rejected: "Татгалзсан", cancelled: "Цуцалсан" };
+
+function History({ events }: { events: LoanEvent[] }) {
+  const views = events.filter((e) => e.kind === "doc_view").length;
+  const text = (e: LoanEvent) => {
+    if (e.kind === "submitted") return "Хүсэлт илгээсэн";
+    if (e.kind === "cancelled") return "Худалдан авагч цуцалсан";
+    if (e.kind === "doc_view") return `Баримт нээсэн: ${docLabel(e.detail ?? "")}`;
+    const [st, ...note] = (e.detail ?? "").split(": ");
+    const [from, to] = st.split(" → ");
+    return `Төлөв: ${STATUS_WORD[from] ?? from} → ${STATUS_WORD[to] ?? to}${note.length ? ` · “${note.join(": ")}”` : ""}`;
+  };
+  return (
+    <details className="rounded-lg border border-line px-3 py-2">
+      <summary className="cursor-pointer text-[13px] font-semibold">Түүх · {events.length} үйлдэл{views ? ` · баримт ${views} удаа нээсэн` : ""}</summary>
+      <ol className="list-none p-0 m-0 mt-2 flex flex-col gap-1.5 text-[13px]">
+        {events.map((e, i) => (
+          <li key={i} className="flex gap-3">
+            <span className="text-muted shrink-0 w-[92px]">{timeAgo(e.created_at)}</span>
+            <span className="min-w-0"><strong>{e.actor_name ?? "—"}</strong> · {text(e)}</span>
+          </li>
+        ))}
+      </ol>
     </details>
   );
 }

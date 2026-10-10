@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { IconHeart, IconPhone } from "@/components/icons";
 import { toggleFavorite } from "../../actions";
 
-export function ContactBox({ adId, phone, favorite }: { adId: string; phone: string; favorite: boolean }) {
+/** loginHref өгөгдсөн бол (нэвтрээгүй) хадгалах товч нэвтрэх хуудас руу үсэрнэ. */
+export function ContactBox({ adId, phone, favorite, loginHref = null }: { adId: string; phone: string; favorite: boolean; loginHref?: string | null }) {
   const [show, setShow] = useState(false);
   const [fav, setFav] = useState(favorite);
   const [pending, start] = useTransition();
@@ -19,6 +21,11 @@ export function ContactBox({ adId, phone, favorite }: { adId: string; phone: str
           <IconPhone /> Дугаар харах
         </button>
       )}
+      {loginHref ? (
+        <Link href={loginHref} aria-label="Нэвтэрч хадгалах" title="Нэвтэрч хадгалах" className="btn btn-lg btn-ghost w-[52px] px-0">
+          <IconHeart size={22} />
+        </Link>
+      ) : (
       <button
         type="button"
         aria-label={fav ? "Хадгалснаас хасах" : "Хадгалах"}
@@ -33,6 +40,7 @@ export function ContactBox({ adId, phone, favorite }: { adId: string; phone: str
       >
         <IconHeart filled={fav} size={22} />
       </button>
+      )}
     </div>
   );
 }

@@ -11,20 +11,23 @@ export function PanelShell({
   area,
   active,
   pending,
+  partner,
   children,
 }: {
   profile: Profile;
   area: "manager" | "admin" | "leasing";
   active: string;
   pending?: number;
+  /** Админ лизингийн панелд аль компанийг харж байгаа (цэсний холбоосонд дамжуулна) */
+  partner?: string;
   children: React.ReactNode;
 }) {
   const isAdmin = profile.role === "admin";
   const nav: NavItem[] =
     area === "leasing"
       ? [
-          { key: "leasing", href: "/leasing", label: "Хүсэлтүүд" },
-          { key: "leasing-terms", href: "/leasing?tab=terms", label: "Нөхцөл, шаардлага" },
+          { key: "leasing", href: isAdmin && partner ? `/leasing?partner=${partner}` : "/leasing", label: isAdmin ? "Лизингийн хүсэлтүүд" : "Хүсэлтүүд" },
+          ...(!isAdmin || (partner && partner !== "all") ? [{ key: "leasing-terms", href: isAdmin ? `/leasing?tab=terms&partner=${partner}` : "/leasing?tab=terms", label: "Нөхцөл, шаардлага" }] : []),
           ...(isAdmin ? [{ key: "admin-leasing", href: "/admin/leasing", label: "← Админ: Лизинг" }] : []),
         ]
       : area === "admin"
@@ -35,7 +38,8 @@ export function PanelShell({
           { key: "mgr-ads", href: "/manager/ads", label: "Шинэ зар ба санал", badge: pending },
           { key: "mgr", href: "/manager", label: "Менежерийн самбар" },
           { key: "admin-reports", href: "/admin/reports", label: "Тайлангууд" },
-          { key: "admin-leasing", href: "/admin/leasing", label: "Лизинг" },
+          { key: "admin-leasing", href: "/admin/leasing", label: "Лизинг: компаниуд" },
+          { key: "leasing", href: "/leasing?partner=all", label: "Лизинг: хүсэлтүүд" },
           { key: "admin-notif", href: "/admin/notifications", label: "Мэдэгдэл" },
           { key: "admin-settings", href: "/admin/settings", label: "Тохиргоо" },
         ]

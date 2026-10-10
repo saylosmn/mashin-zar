@@ -111,7 +111,19 @@ export const LOAN_DOCS: { kind: string; label: string; hint?: string }[] = [
   { kind: "photo", label: "Цээж зураг (сүүлийн 6 сар)" },
   { kind: "cosigner_id", label: "Хамтран зээлдэгчийн иргэний үнэмлэх" },
 ];
-export const docLabel = (k: string) => LOAN_DOCS.find((d) => d.kind === k)?.label ?? k;
+export const MAX_DOC_PAGES = 5;
+/** "bank_statement_2" → "bank_statement" */
+export const docBase = (k: string) => k.replace(/_[2-5]$/, "");
+/** Хуудасны дугаар: "bank_statement_2" → 2, "bank_statement" → 1 */
+export const docPage = (k: string) => (/_([2-5])$/.test(k) ? Number(k.slice(-1)) : 1);
+export const docPageKeys = (kind: string) => [kind, ...[2, 3, 4, 5].map((n) => `${kind}_${n}`)];
+export const docLabel = (k: string) => {
+  const label = LOAN_DOCS.find((d) => d.kind === docBase(k))?.label ?? k;
+  return docPage(k) > 1 ? `${label} (${docPage(k)}-р хуудас)` : label;
+};
+/** Баримтын түлхүүрүүдийг LOAN_DOCS дарааллаар, хуудсаар нь эрэмбэлнэ */
+export const sortDocKeys = (keys: string[]) =>
+  [...keys].sort((a, b) => LOAN_DOCS.findIndex((d) => d.kind === docBase(a)) - LOAN_DOCS.findIndex((d) => d.kind === docBase(b)) || docPage(a) - docPage(b));
 export const DEFAULT_REQUIRED_DOCS = ["id_front", "id_back", "ndsh", "bank_statement"];
 
 export const MARITAL: Record<string, string> = { single: "Ганц бие", married: "Гэрлэсэн", divorced: "Салсан", widowed: "Бэлэвсэн" };
