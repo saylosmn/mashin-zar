@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * APK нь GitHub Release-д "mashin-zar.apk" нэртэй хавсралт болж байрлана (GitHub Actions автоматаар хийнэ).
  * Repo public бол токен хэрэггүй. Private бол Vercel дээр GH_RELEASE_TOKEN (Contents: Read-only) тохируулна.
