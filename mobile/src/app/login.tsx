@@ -1,17 +1,35 @@
-import { useState } from "react";
-import { Linking, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Linking, Pressable, View } from "react-native";
+import { router, useLocalSearchParams, type Href } from "expo-router";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
 import { Button, T } from "@/components/ui";
 
 export default function Login() {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, session } = useAuth();
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const done = useRef(false);
+
+  // Нэвтэрмэгц хүссэн дэлгэц рүү (эсвэл буцаж) шилжинэ
+  useEffect(() => {
+    if (!session || done.current) return;
+    done.current = true;
+    const target = typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : null;
+    if (target) router.replace(target as Href);
+    else if (router.canGoBack()) router.back();
+    else router.replace("/");
+  }, [session, next]);
+
+  const skip = () => (router.canGoBack() ? router.back() : router.replace("/"));
   return (
     <View style={{ flex: 1, backgroundColor: C.ink, paddingHorizontal: 24, paddingTop: 40, paddingBottom: 32 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Нэвтрэлгүйгээр үзэх" onPress={skip} hitSlop={12} style={{ position: "absolute", right: 0, paddingVertical: 6 }}>
+          <T style={{ color: C.pale, fontSize: 14 }}>Алгасах ✕</T>
+        </Pressable>
         <View style={{ width: 44, height: 30, borderWidth: 2, borderColor: C.paper, borderRadius: 6, alignItems: "center", justifyContent: "center" }}>
           <T w="monoBold" style={{ color: C.paper, fontSize: 13 }}>МЗ</T>
         </View>
@@ -39,6 +57,7 @@ export default function Login() {
         )}
         <Button
           title="Google-ээр нэвтрэх"
+          accessibilityHint="Зар тавих, хадгалах, лизингийн хүсэлт илгээхэд нэвтэрнэ"
           icon="log-in"
           loading={busy}
           style={{ backgroundColor: C.paper }}
@@ -55,6 +74,7 @@ export default function Login() {
             }
           }}
         />
+        <Button title="Нэвтрэлгүйгээр зар үзэх" variant="darkGhost" onPress={skip} />
         <T style={{ textAlign: "center", fontSize: 13, color: "#9AA0A9", lineHeight: 20 }}>
           Нэвтэрснээр{" "}
           <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL("https://web-mu-fawn-45.vercel.app")}>үйлчилгээний нөхцөл</T>{" "}

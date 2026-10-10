@@ -13,7 +13,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <SiteHeader profile={profile} unread={unread} />
       {profile && <PushPrompt />}
       <OfflineBanner />
-      <LiveSync userId={profile?.id} />
+      <LiveSync userId={profile?.id} role={profile?.role} partnerId={profile?.partner_id} />
       <div className="flex-1 flex flex-col">{children}</div>
       <footer className={`border-t border-line mt-8 sm:pb-0 ${profile ? "pb-[84px]" : ""}`}>
         <div className="max-w-[1280px] mx-auto px-6 py-6 flex flex-wrap justify-between gap-3 text-[13px] text-muted">

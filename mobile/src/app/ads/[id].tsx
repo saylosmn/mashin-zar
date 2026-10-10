@@ -13,6 +13,7 @@ import { useLiveSync } from "@/lib/live";
 import { adCache } from "@/lib/cache";
 import type { Partner } from "@/lib/loan";
 import { LoanCalculator } from "@/components/LoanCalculator";
+import { requireLogin } from "@/lib/guest";
 
 const W = Dimensions.get("window").width;
 
@@ -61,6 +62,7 @@ export default function AdDetail() {
   useLiveSync((e) => { if (e.table === "leasing_partners" || !e.id || e.id === id) load(); }, ["ads", "leasing_partners"]);
 
   async function toggleFav() {
+    if (!uid) return requireLogin(`/ads/${id}`);
     const next = !fav;
     setFav(next);
     if (next) await supabase.from("favorites").upsert({ user_id: uid, ad_id: id });

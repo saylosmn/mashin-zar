@@ -1,13 +1,14 @@
 import { ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/auth";
+import { GuestGate } from "@/components/GuestGate";
 import { C } from "@/lib/theme";
 import { initial, roleLabel } from "@/lib/format";
 import { Button, T, s } from "@/components/ui";
 import { openWebPanel } from "@/lib/staff";
 
 
-export default function ProfileTab() {
+function ProfileTabInner() {
   const { profile, signOut } = useAuth();
   const staff = profile?.role === "manager" || profile?.role === "admin";
   return (
@@ -54,5 +55,13 @@ export default function ProfileTab() {
       )}
       <Button title="Гарах" variant="danger" icon="log-out" onPress={signOut} />
     </ScrollView>
+  );
+}
+
+export default function ProfileTab() {
+  return (
+    <GuestGate icon="user" title="Профайл" text="Нэвтэрч профайлаа үүсгээд зар тавьж, лизингийн хүсэлт илгээнэ." next="/profile">
+      <ProfileTabInner />
+    </GuestGate>
   );
 }
