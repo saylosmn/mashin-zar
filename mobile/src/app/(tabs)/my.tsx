@@ -3,6 +3,7 @@ import { Alert, FlatList, Pressable, RefreshControl, ScrollView, View } from "re
 import { router, useFocusEffect } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { GuestGate } from "@/components/GuestGate";
 import { C } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
 import { Button, CardSkeleton, Photo, StateView, StatusBadge, T, s } from "@/components/ui";
@@ -12,7 +13,7 @@ import { confirm, openContract, staffRpc } from "@/lib/staff";
 
 type Tab = "all" | AdStatus | "saved";
 
-export default function MyAds() {
+function MyAdsInner() {
   const { session, profile } = useAuth();
   const dealer = profile?.role === "dealer";
   const uid = session?.user.id;
@@ -154,5 +155,13 @@ export default function MyAds() {
         />
       )}
     </View>
+  );
+}
+
+export default function MyAds() {
+  return (
+    <GuestGate icon="list" title="Миний зар" text="Нэвтэрч зараа тавих, хадгалсан машинуудаа харна." next="/my">
+      <MyAdsInner />
+    </GuestGate>
   );
 }

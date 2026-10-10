@@ -90,7 +90,7 @@ export function PanelShell({
       </nav>
       <main className="flex-1 min-w-0 px-4 sm:px-[clamp(16px,3vw,40px)] pt-5 lg:pt-7 pb-12 flex flex-col gap-5">
         <OfflineBanner />
-        <LiveSync userId={profile.id} />
+        <LiveSync userId={profile.id} role={profile.role} partnerId={profile.partner_id} />
         {children}
       </main>
     </div>

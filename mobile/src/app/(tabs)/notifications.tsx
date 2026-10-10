@@ -4,6 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { GuestGate } from "@/components/GuestGate";
 import { C } from "@/lib/theme";
 import { errMsg, timeAgo } from "@/lib/format";
 import { Button, StateView, T } from "@/components/ui";
@@ -11,7 +12,7 @@ import type { Notification } from "@/lib/types";
 
 const LABEL: Record<string, string> = { new_ad: "Шинэ зар", ad_approved: "Таны зар", ad_rejected: "Таны зар", offer: "Санал", sold: "Таны зар", staff_new_ad: "Менежерт", broadcast: "Зарлал", sale_report: "Тайлан", report_reviewed: "Тайлан", loan_request: "Лизинг", loan_update: "Лизинг" };
 
-export default function Notifications() {
+function NotificationsInner() {
   const { profile, refreshProfile, settings, session } = useAuth();
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,5 +119,13 @@ export default function Notifications() {
         </Pressable>
       )}
     />
+  );
+}
+
+export default function Notifications() {
+  return (
+    <GuestGate icon="bell" title="Мэдэгдэл" text="Нэвтэрвэл таны зар батлагдах, санал ирэх, шинэ зар гарахад мэдэгдэл ирнэ." next="/notifications">
+      <NotificationsInner />
+    </GuestGate>
   );
 }

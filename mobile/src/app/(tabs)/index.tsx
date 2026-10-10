@@ -17,7 +17,8 @@ type Cat = "all" | "new" | "old";
 type Sort = "new" | "price_asc" | "price_desc";
 
 export default function Home() {
-  const { settings } = useAuth();
+  const { settings, session } = useAuth();
+  const signedIn = !!session;
   const cy = settings.cutoff_year;
   const [cat, setCat] = useState<Cat>("all");
   const [q, setQ] = useState("");
@@ -67,20 +68,16 @@ export default function Home() {
     load(0);
   }, [load]);
 
-  useEffect(() => {
-    supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("read", false)
-      .then(({ count: c }) => setUnread(c ?? 0));
-  }, []);
 
   // Шинэ зар батлагдах, зарагдах, устгагдахад жагсаалт шууд шинэчлэгдэнэ.
   // Одоо ачаалсан хэмжээгээрээ чимээгүй дахин татна — 1-р хуудас руу үсрэхгүй, гүйлгэсэн байрлал хадгалагдана.
   useLiveSync(() => load(0, Math.max(PAGE, loadedRef.current)), ["ads"]);
+  // Уншаагүй мэдэгдлийн тоо (зөвхөн нэвтэрсэн үед)
   const loadUnread = useCallback(() => {
+    if (!signedIn) return setUnread(0);
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("read", false).then(({ count: c }) => setUnread(c ?? 0));
-  }, []);
+  }, [signedIn]);
+  useEffect(() => { loadUnread(); }, [loadUnread]);
   useLiveSync(loadUnread, ["ads", "*"]);
 
   const tabs: { key: Cat; label: string }[] = [

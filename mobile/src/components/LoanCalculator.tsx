@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { router } from "expo-router";
+import { useAuth } from "@/lib/auth";
+import { requireLogin } from "@/lib/guest";
 import { Feather } from "@expo/vector-icons";
 import { C } from "@/lib/theme";
 import { DEFAULT_REQUIRED_DOCS, docLabel, fmtNum, minDown, monthlyPayment, requirementLines, termOptions, type Partner } from "@/lib/loan";
@@ -8,6 +10,7 @@ import { Button, Field, Input, T } from "./ui";
 
 /** Зарын дэлгэц дээрх лизингийн тооцоолуур + "Лизингээр авах" хүсэлт (вэбийн LoanCalculator-тай ижил) */
 export function LoanCalculator({ adId, price, partners }: { adId: string; price: number; partners: Partner[] }) {
+  const { session } = useAuth();
   const [pid, setPid] = useState(partners[0].id);
   const p = partners.find((x) => x.id === pid) ?? partners[0];
   const [down, setDown] = useState(() => fmtNum(minDown(price, p.min_down_pct)));
@@ -107,7 +110,11 @@ export function LoanCalculator({ adId, price, partners }: { adId: string; price:
         icon="arrow-right"
         variant="yellow"
         disabled={!!downErr}
-        onPress={() => router.push({ pathname: "/loan/[id]", params: { id: adId, partner: p.id, down: String(downNum), term: String(term) } })}
+        onPress={() =>
+          session
+            ? router.push({ pathname: "/loan/[id]", params: { id: adId, partner: p.id, down: String(downNum), term: String(term) } })
+            : requireLogin(`/loan/${adId}?partner=${p.id}&down=${downNum}&term=${term}`)
+        }
       />
       <T style={{ fontSize: 12, color: C.muted, marginTop: -6 }}>Дараагийн алхамд анкет бөглөж, баримтаа хавсаргана (5–10 минут).</T>
     </View>

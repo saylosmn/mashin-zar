@@ -7,6 +7,7 @@ import { C } from "@/lib/theme";
 import { T } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { isStaff } from "@/lib/staff";
+import { requireLogin } from "@/lib/guest";
 
 const ITEMS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap }> = {
   index: { label: "Зарууд", icon: "home" },
@@ -18,7 +19,7 @@ const ITEMS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const staff = isStaff(profile) || profile?.role === "leasing";
   return (
     <Tabs
@@ -50,7 +51,7 @@ export default function TabsLayout() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Зар нэмэх"
-                onPress={() => router.push("/post")}
+                onPress={() => (session ? router.push("/post") : requireLogin("/post"))}
                 style={{ width: 56, height: 56, marginTop: -28, borderRadius: 18, backgroundColor: C.yellow, borderWidth: 4, borderColor: C.paper, alignItems: "center", justifyContent: "center" }}
               >
                 <Feather name="plus" size={26} color={C.ink} />

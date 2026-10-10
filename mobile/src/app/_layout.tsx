@@ -12,6 +12,7 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { AppVersionBanner } from "@/components/AppVersionBanner";
 import { usePushRouting } from "@/lib/push";
+import { setLiveIdentity } from "@/lib/live";
 import { C } from "@/lib/theme";
 import Splash from "@/components/Splash";
 import Blocked from "@/components/Blocked";
@@ -24,16 +25,18 @@ function RootStack() {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
   usePushRouting(!!session && ready);
+  useEffect(() => {
+    if (ready) setLiveIdentity(session?.user.id, profile?.role, profile?.partner_id);
+  }, [ready, session?.user.id, profile?.role, profile?.partner_id]);
   if (!ready) return <Splash />;
   if (session && profile?.is_blocked) return <Blocked />;
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.paper }, animation: "fade_from_bottom", animationDuration: 180 }}>
-      <Stack.Protected guard={!session}>
-        <Stack.Screen name="login" />
-      </Stack.Protected>
+      {/* Нэвтрэлгүйгээр зар үзнэ; бусад дэлгэц нэвтэрсэн хэрэглэгчид */}
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="ads/[id]" />
+      <Stack.Screen name="login" options={{ animation: "slide_from_bottom" }} />
       <Stack.Protected guard={!!session}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="ads/[id]" />
         <Stack.Screen name="post" />
         <Stack.Screen name="complete-profile" />
         <Stack.Screen name="success" options={{ gestureEnabled: false }} />
