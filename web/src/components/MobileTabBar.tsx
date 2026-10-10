@@ -4,8 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconBell, IconHome, IconList, IconPlus, IconUser } from "./icons";
 
-/** Утсан дээр доод талд байрлах апп шиг цэс (sm-ээс том дэлгэц дээр нуугдана). */
-export function MobileTabBar({ unread, staffHref }: { unread: number; staffHref?: string | null }) {
+/**
+ * Утсан дээр доод талд байрлах апп шиг цэс (sm-ээс том дэлгэц дээр нуугдана).
+ * Менежер/админ/лизингийн панел руу орох товч толгой хэсэгт (SiteHeader) байнга харагддаг тул
+ * энд Профайл таб бүх хэрэглэгчид үлдэнэ.
+ */
+export function MobileTabBar({ unread }: { unread: number }) {
   const path = usePathname();
   const is = (p: string) => (p === "/" ? path === "/" || path.startsWith("/ads") : path.startsWith(p));
   const items = [
@@ -13,9 +17,7 @@ export function MobileTabBar({ unread, staffHref }: { unread: number; staffHref?
     { href: "/notifications", label: "Мэдэгдэл", icon: <IconBell size={22} />, on: is("/notifications"), badge: unread },
     null,
     { href: "/my", label: "Миний зар", icon: <IconList size={22} />, on: is("/my") },
-    staffHref
-      ? { href: staffHref, label: "Панел", icon: <ShieldIcon />, on: false }
-      : { href: "/profile", label: "Профайл", icon: <IconUser size={22} />, on: is("/profile") },
+    { href: "/profile", label: "Профайл", icon: <IconUser size={22} />, on: is("/profile") },
   ];
   return (
     <nav
@@ -51,13 +53,5 @@ export function MobileTabBar({ unread, staffHref }: { unread: number; staffHref?
         ),
       )}
     </nav>
-  );
-}
-
-function ShieldIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
   );
 }

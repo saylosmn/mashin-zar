@@ -33,10 +33,15 @@ export const roleLabel = (r?: string | null) =>
 const MONTHS = ["1-р сар", "2-р сар", "3-р сар", "4-р сар", "5-р сар", "6-р сар", "7-р сар", "8-р сар", "9-р сар", "10-р сар", "11-р сар", "12-р сар"];
 export const monthLabel = (d: Date) => MONTHS[d.getMonth()];
 
+const UB_DATE = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ulaanbaatar", year: "numeric", month: "numeric", day: "numeric" });
+
+/** "2026 оны 10-р сарын 09" — Улаанбаатарын цагаар (сервер UTC дээр ажилладаг тул). */
 export function dateShort(iso: string | null | undefined) {
   if (!iso) return "—";
   const d = new Date(iso);
-  return `${d.getMonth() + 1}-р сарын ${String(d.getDate()).padStart(2, "0")}`;
+  if (Number.isNaN(d.getTime())) return "—";
+  const p = Object.fromEntries(UB_DATE.formatToParts(d).map((x) => [x.type, x.value]));
+  return `${p.year} оны ${Number(p.month)}-р сарын ${String(p.day).padStart(2, "0")}`;
 }
 
 export function timeAgo(iso: string) {

@@ -45,20 +45,15 @@ export default function MyAds() {
   // Менежер батлах, санал илгээх, зарагдсан болгоход төлөв шууд солигдоно
   useLiveSync(() => load(), ["ads"]);
 
-  function remove(a: Ad) {
-    Alert.alert("Зар устгах уу?", `${a.brand} ${a.model} зарыг бүр мөсөн устгана.`, [
-      { text: "Болих", style: "cancel" },
-      {
-        text: "Устгах",
-        style: "destructive",
-        onPress: async () => {
-          const { error: e } = await supabase.from("ads").delete().eq("id", a.id);
-          if (e) return Alert.alert("Устгаж чадсангүй", errMsg(e));
-          if (a.photos.length) await supabase.storage.from("ad-photos").remove(a.photos);
-          setAds((x) => x.filter((y) => y.id !== a.id));
-        },
-      },
-    ]);
+  async function remove(a: Ad) {
+    const ok = await confirm("Зар устгах уу?", `${a.brand} ${a.model} зарыг бүр мөсөн устгана. Энэ үйлдлийг буцаах боломжгүй.`, "Устгах", true);
+    if (!ok) return;
+    const { data, error: e } = await supabase.from("ads").delete().eq("id", a.id).select("id");
+    if (e) return Alert.alert("Устгаж чадсангүй", errMsg(e));
+    // RLS: борлуулалтын тайлантай зарыг устгахгүй — алдаагүй ч 0 мөр устана
+    if (!data || data.length === 0) return Alert.alert("Устгах боломжгүй", "Энэ зарт борлуулалтын тайлан бүртгэгдсэн тул устгах боломжгүй");
+    setAds((x) => x.filter((y) => y.id !== a.id));
+    if (a.photos.length) supabase.storage.from("ad-photos").remove(a.photos).then(() => {}, () => {});
   }
 
   const count = (t: Tab) => (t === "all" ? ads.length : t === "saved" ? saved.length : ads.filter((a) => a.status === t).length);

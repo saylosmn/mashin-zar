@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, FlatList, KeyboardAvoidingView, Linking, Platform, Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useLiveSync } from "@/lib/live";
 import { C } from "@/lib/theme";
 import { errMsg, timeAgo } from "@/lib/format";
-import { openWebPanel, staffRpc } from "@/lib/staff";
-import { DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, LOAN_STATUS, MARITAL, docLabel, fmtNum, requirementLines, type LoanRequest, type LoanStatus, type Partner } from "@/lib/loan";
+import { confirm, openWebPanel, staffRpc } from "@/lib/staff";
+import { DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, LOAN_STATUS, MARITAL, docLabel, docPage, fmtNum, requirementLines, type LoanRequest, type LoanStatus, type Partner } from "@/lib/loan";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "./ui";
 
 type Tab = LoanStatus | "all" | "terms";
@@ -21,6 +22,16 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "terms", label: "Нөхцөл" },
 ];
 type Stat = { status: LoanStatus; price: number; down_payment: number; created_at: string };
+/** Админ бүх түншийн хүсэлтийг нэг дор харах сонголт */
+const ALL = "all";
+type LoanEvent = { id: number | string; request_id: string; actor_id: string | null; actor_name: string | null; kind: "submitted" | "status" | "doc_view" | "cancelled"; detail: string | null; created_at: string };
+
+/** Баримтын түлхүүрүүдийг LOAN_DOCS-ийн дараалал, хуудсаар эрэмбэлнэ */
+const docOrder = (k: string) => {
+  const { base, page } = docPage(k);
+  const i = LOAN_DOCS.findIndex((d) => d.kind === base);
+  return (i < 0 ? 99 : i) * 10 + page;
+};
 
 /** Лизингийн түншийн панел: хүсэлтүүд, төлөв, зээлийн нөхцөл. Админ бүх түншийг сонгож харна. */
 export function LeasingPanel({ withBack }: { withBack?: boolean }) {
@@ -35,8 +46,10 @@ export function LeasingPanel({ withBack }: { withBack?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const allMode = admin && pid === ALL;
   const partner = partners ? (admin ? partners.find((p) => p.id === pid) ?? partners[0] : partners.find((p) => p.id === profile?.partner_id)) : undefined;
-  const partnerId = partner?.id;
+  // "Бүгд" горимд түншээр шүүхгүй (зөвхөн админ)
+  const partnerId = allMode ? ALL : partner?.id;
 
   const loadPartners = useCallback(async () => {
     const { data, error: e } = await supabase.from("leasing_partners").select("*").order("name");
@@ -48,12 +61,12 @@ export function LeasingPanel({ withBack }: { withBack?: boolean }) {
     if (!partnerId) { setLoading(false); return; }
     try {
       setError(null);
-      let q = supabase.from("loan_requests").select("*").eq("partner_id", partnerId).order("created_at", { ascending: false }).limit(200);
+      const everyone = partnerId === ALL;
+      let q = supabase.from("loan_requests").select("*").order("created_at", { ascending: false }).limit(200);
+      let sq = supabase.from("loan_requests").select("status,price,down_payment,created_at");
+      if (!everyone) { q = q.eq("partner_id", partnerId); sq = sq.eq("partner_id", partnerId); }
       if (tab !== "all" && tab !== "terms") q = q.eq("status", tab);
-      const [list, all] = await Promise.all([
-        q,
-        supabase.from("loan_requests").select("status,price,down_payment,created_at").eq("partner_id", partnerId),
-      ]);
+      const [list, all] = await Promise.all([q, sq]);
       if (list.error) throw list.error;
       setRows((list.data ?? []) as LoanRequest[]);
       setStats((all.data ?? []) as Stat[]);
@@ -96,20 +109,30 @@ export function LeasingPanel({ withBack }: { withBack?: boolean }) {
   const month = stats.filter((r) => r.created_at >= monthStart);
   const approved = stats.filter((r) => r.status === "approved");
   const decided = approved.length + count("rejected");
-  const trialDays = partner.trial_until ? Math.ceil((new Date(partner.trial_until).getTime() - now.getTime()) / 864e5) : null;
+  const trialDays = !allMode && partner.trial_until ? Math.ceil((new Date(partner.trial_until).getTime() - now.getTime()) / 864e5) : null;
+  const partnerName = (id: string) => partners.find((p) => p.id === id)?.name ?? "—";
+  const tabs = allMode ? TABS.filter((t) => t.key !== "terms") : TABS;
+  const pickTab = (k: Tab) => { if (k !== tab) { setLoading(k !== "terms"); setTab(k); } };
+  const pickPartner = (id: string) => {
+    if (id === (allMode ? ALL : partner.id)) return;
+    setLoading(true);
+    if (id === ALL && tab === "terms") setTab("new");
+    setPid(id);
+  };
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 6 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         {backBtn}
         <View style={{ flex: 1, gap: 2 }}>
-          <T w="display" style={{ fontSize: 20 }} numberOfLines={1}>{partner.name}</T>
+          <T w="display" style={{ fontSize: 20 }} numberOfLines={1}>{allMode ? "Бүх компани" : partner.name}</T>
           <T style={{ fontSize: 12, color: C.muted }}>Лизингийн хүсэлтүүд{admin ? " · Админ" : ""}</T>
         </View>
       </View>
       {admin && partners.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-          {partners.map((p) => <Chip key={p.id} on={p.id === partner.id} text={p.name} onPress={() => { setLoading(true); setPid(p.id); }} />)}
+          <Chip on={allMode} text="Бүгд" onPress={() => pickPartner(ALL)} />
+          {partners.map((p) => <Chip key={p.id} on={!allMode && p.id === partner.id} text={p.name} onPress={() => pickPartner(p.id)} />)}
         </ScrollView>
       )}
       {trialDays !== null && (
@@ -120,36 +143,36 @@ export function LeasingPanel({ withBack }: { withBack?: boolean }) {
         </View>
       )}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-        <Kpi dark label="Шинэ хүсэлт" value={String(count("new"))} onPress={() => { setLoading(true); setTab("new"); }} />
+        <Kpi dark label="Шинэ хүсэлт" value={String(count("new"))} onPress={() => pickTab("new")} />
         <Kpi label="Энэ сар" value={String(month.length)} sub={`${fmtNum(month.reduce((t, r) => t + (r.price - r.down_payment), 0))}₮ зээл`} />
         <Kpi label="Зөвшөөрсөн" value={String(approved.length)} sub={`${fmtNum(approved.reduce((t, r) => t + (r.price - r.down_payment), 0))}₮`} />
         <Kpi label="Хөрвөлт" value={decided ? `${Math.round((approved.length / decided) * 100)}%` : "—"} sub="Шийдвэрлэснээс" />
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <Chip
             key={t.key}
             on={t.key === tab}
             text={`${t.label}${t.key !== "all" && t.key !== "terms" ? ` · ${count(t.key)}` : ""}`}
-            onPress={() => { if (t.key !== tab) { setLoading(t.key !== "terms"); setTab(t.key); } }}
+            onPress={() => pickTab(t.key)}
           />
         ))}
       </ScrollView>
-      {tab === "terms" && <Terms partner={partner} editable={admin || profile?.partner_id === partner.id} onSaved={loadPartners} />}
+      {tab === "terms" && !allMode && <Terms partner={partner} editable={admin || profile?.partner_id === partner.id} onSaved={loadPartners} />}
     </View>
   );
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.paper }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <FlatList
-        data={loading || tab === "terms" ? [] : rows}
+        data={loading || (tab === "terms" && !allMode) ? [] : rows}
         keyExtractor={(r) => r.id}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, paddingTop: withBack ? 8 : 12, gap: 10, paddingBottom: 48 }}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => { loadPartners(); }} tintColor={C.ink} />}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          tab === "terms" ? null : loading ? (
+          tab === "terms" && !allMode ? null : loading ? (
             <View style={{ gap: 10 }}>{[0, 1].map((i) => <Skeleton key={i} style={{ height: 170, borderRadius: 14 }} />)}</View>
           ) : error ? (
             <View style={{ alignItems: "center", gap: 12, paddingVertical: 30 }}>
@@ -163,18 +186,27 @@ export function LeasingPanel({ withBack }: { withBack?: boolean }) {
             </View>
           )
         }
-        renderItem={({ item }) => <RequestCard r={item} onDone={loadRows} />}
+        renderItem={({ item }) => <RequestCard r={item} onDone={loadRows} partnerName={allMode ? partnerName(item.partner_id) : undefined} />}
       />
     </KeyboardAvoidingView>
   );
 }
 
-function RequestCard({ r, onDone }: { r: LoanRequest; onDone: () => void }) {
+function RequestCard({ r, onDone, partnerName }: { r: LoanRequest; onDone: () => void; partnerName?: string }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const st = LOAN_STATUS[r.status];
 
   async function setStatus(status: LoanStatus) {
+    if (status === "approved" || status === "rejected") {
+      const ok = await confirm(
+        status === "approved" ? "Хүсэлтийг зөвшөөрөх үү?" : "Хүсэлтээс татгалзах уу?",
+        `${r.full_name} · ${r.car}\n\nХудалдан авагчид ${status === "approved" ? "зөвшөөрсөн" : "татгалзсан"} тухай мэдэгдэл очно.`,
+        status === "approved" ? "Зөвшөөрөх" : "Татгалзах",
+        status === "rejected",
+      );
+      if (!ok) return;
+    }
     setBusy(status);
     const res = await staffRpc("update_loan_request", { p_id: r.id, p_status: status, p_note: note.trim() || null });
     setBusy(null);
@@ -186,6 +218,7 @@ function RequestCard({ r, onDone }: { r: LoanRequest; onDone: () => void }) {
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
         <View style={{ flex: 1, gap: 2 }}>
           <T w="bold" style={{ fontSize: 16 }}>{r.full_name}</T>
+          {partnerName ? <T w="semibold" style={{ fontSize: 12, color: C.ink }} numberOfLines={1}>🏦 {partnerName}</T> : null}
           <T style={{ fontSize: 12, color: C.muted }}>{timeAgo(r.created_at)}{r.income ? ` · Орлого: ${r.income}` : ""}</T>
         </View>
         <View style={{ backgroundColor: st.bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: "flex-start" }}>
@@ -212,14 +245,11 @@ function RequestCard({ r, onDone }: { r: LoanRequest; onDone: () => void }) {
           ))}
         </View>
       ) : null}
-      {r.applicant && Object.keys(r.applicant).length > 0 ? <ApplicantDetails r={r} /> : null}
+      <ApplicantDetails r={r} />
       {r.docs && Object.keys(r.docs).length > 0 ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-          {Object.entries(r.docs).map(([k, path]) => (
-            <Pressable key={k} onPress={() => openDoc(path)} style={{ flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: C.line2, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6 }}>
-              <Feather name="paperclip" size={12} color={C.ink} />
-              <T style={{ fontSize: 12 }}>{docLabel(k)}</T>
-            </Pressable>
+          {Object.keys(r.docs).sort((a, b) => docOrder(a) - docOrder(b)).map((k) => (
+            <DocChip key={k} requestId={r.id} docKey={k} />
           ))}
         </View>
       ) : null}
@@ -258,10 +288,15 @@ function Terms({ partner, editable, onSaved }: { partner: Partner; editable: boo
   const [saved, setSaved] = useState(false);
   const set = (k: keyof TermsForm) => (v: string) => setF((x) => ({ ...x, [k]: v }));
 
+  // Зөвхөн өөр түнш сонгогдох эсвэл хадгалагдсан үед (updated_at өөрчлөгдөхөд) формыг шинэчилнэ —
+  // live шинэчлэлтээр шинэ объект ирэхэд бичиж буй утгыг арилгахгүй.
+  const partnerRef = useRef(partner);
+  partnerRef.current = partner;
   useEffect(() => {
-    setF(termsFrom(partner));
-    setDocs(partner.required_docs ?? DEFAULT_REQUIRED_DOCS);
-  }, [partner]);
+    const p = partnerRef.current;
+    setF(termsFrom(p));
+    setDocs(p.required_docs ?? DEFAULT_REQUIRED_DOCS);
+  }, [partner.id, partner.updated_at]);
 
   async function save() {
     setSaved(false);
@@ -370,16 +405,82 @@ function Kpi({ label, value, sub, dark, onPress }: { label: string; value: strin
   );
 }
 
-/** Баримтыг 10 минутын түр холбоосоор нээнэ (RLS: зөвхөн тухайн компанийн ажилтан, админ) */
-async function openDoc(path: string) {
-  const { data, error } = await supabase.storage.from("loan-docs").createSignedUrl(path, 600);
-  if (error || !data?.signedUrl) return Alert.alert("Нээж чадсангүй", error ? errMsg(error) : "Файл олдсонгүй");
-  Linking.openURL(data.signedUrl).catch((e) => Alert.alert("Нээж чадсангүй", errMsg(e)));
+/** Баримтыг нээнэ: loan_doc_open RPC эрхийг шалгаж, хэн нээснийг бүртгээд замыг буцаана → 2 минутын түр холбоос */
+async function openDoc(requestId: string, key: string) {
+  try {
+    const { data: path, error } = await supabase.rpc("loan_doc_open", { p_request: requestId, p_key: key });
+    if (error) throw error;
+    if (!path || typeof path !== "string") throw new Error("Файл олдсонгүй");
+    const { data, error: e2 } = await supabase.storage.from("loan-docs").createSignedUrl(path, 120);
+    if (e2) throw e2;
+    if (!data?.signedUrl) throw new Error("Файл олдсонгүй");
+    await WebBrowser.openBrowserAsync(data.signedUrl, { toolbarColor: "#111317", controlsColor: "#F5B800" });
+  } catch (e) {
+    Alert.alert("Нээж чадсангүй", errMsg(e));
+  }
+}
+
+function DocChip({ requestId, docKey }: { requestId: string; docKey: string }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${docLabel(docKey)} нээх`}
+      disabled={busy}
+      onPress={async () => { setBusy(true); await openDoc(requestId, docKey); setBusy(false); }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: C.line2, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, maxWidth: "100%", opacity: busy ? 0.5 : 1 }}
+    >
+      <Feather name={busy ? "loader" : "paperclip"} size={12} color={C.ink} />
+      <T style={{ fontSize: 12, flexShrink: 1 }}>{docLabel(docKey)}</T>
+    </Pressable>
+  );
+}
+
+function eventText(e: LoanEvent) {
+  switch (e.kind) {
+    case "submitted": return "Хүсэлт илгээсэн";
+    case "status": return `Төлөв: ${e.detail ? LOAN_STATUS[e.detail as LoanStatus]?.label ?? e.detail : "—"}`;
+    case "doc_view": return `Баримт нээсэн: ${e.detail ? docLabel(e.detail) : "—"}`;
+    case "cancelled": return "Цуцалсан";
+    default: return e.detail ?? String(e.kind);
+  }
+}
+
+/** Хүсэлтийн түүх (хэн, хэзээ, юу хийсэн) — зөвхөн админ, тухайн компанийн ажилтанд RLS зөвшөөрнө */
+function History({ requestId, version }: { requestId: string; version: string }) {
+  const [events, setEvents] = useState<LoanEvent[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    supabase.from("loan_events").select("*").eq("request_id", requestId).order("created_at", { ascending: true }).then(({ data, error }) => {
+      if (!alive) return;
+      if (error) setErr(errMsg(error));
+      else { setErr(null); setEvents((data ?? []) as LoanEvent[]); }
+    });
+    return () => { alive = false; };
+  }, [requestId, version]);
+  return (
+    <View style={{ gap: 6, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 8 }}>
+      <T w="semibold" style={{ fontSize: 13 }}>Түүх</T>
+      {err ? <T style={{ fontSize: 12, color: C.danger }}>{err}</T>
+        : !events ? <Skeleton style={{ height: 36, borderRadius: 8 }} />
+        : events.length === 0 ? <T style={{ fontSize: 12, color: C.muted }}>Бүртгэл алга</T>
+        : events.map((e) => (
+          <View key={String(e.id)} style={{ flexDirection: "row", gap: 10 }}>
+            <T style={{ fontSize: 12, color: C.muted, width: 80 }} numberOfLines={1}>{timeAgo(e.created_at)}</T>
+            <T style={{ fontSize: 12, flex: 1 }}>
+              <T w="semibold" style={{ fontSize: 12 }}>{e.actor_name || "Систем"}</T> — {eventText(e)}
+            </T>
+          </View>
+        ))}
+    </View>
+  );
 }
 
 function ApplicantDetails({ r }: { r: LoanRequest }) {
   const [open, setOpen] = useState(false);
-  const a = r.applicant!;
+  const a = r.applicant ?? {};
+  const hasApplicant = Object.keys(a).length > 0;
   const m = (n?: number) => (n == null ? "—" : `${fmtNum(n)}₮`);
   const rows: [string, string][] = [
     ["Регистр", `${a.register_no ?? "—"}${a.age != null ? ` · ${a.age} нас` : ""}`],
@@ -400,17 +501,18 @@ function ApplicantDetails({ r }: { r: LoanRequest }) {
   return (
     <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 10 }}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 10 }}>
-        <T w="semibold" style={{ fontSize: 13 }}>Анкет харах</T>
+        <T w="semibold" style={{ fontSize: 13 }}>{hasApplicant ? "Анкет, түүх харах" : "Түүх харах"}</T>
         <Feather name={open ? "chevron-up" : "chevron-down"} size={18} color={C.ink} />
       </Pressable>
       {open && (
         <View style={{ paddingHorizontal: 10, paddingBottom: 10, gap: 6 }}>
-          {rows.map(([k, v]) => (
+          {hasApplicant && rows.map(([k, v]) => (
             <View key={k} style={{ flexDirection: "row", gap: 10 }}>
               <T style={{ fontSize: 12, color: C.muted, width: 120 }}>{k}</T>
               <T w="medium" style={{ fontSize: 12, flex: 1 }}>{v}</T>
             </View>
           ))}
+          <History requestId={r.id} version={r.updated_at} />
         </View>
       )}
     </View>

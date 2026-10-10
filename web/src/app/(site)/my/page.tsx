@@ -21,7 +21,7 @@ const TABS: { key?: AdStatus | "saved"; label: string }[] = [
   { key: "saved", label: "Хадгалсан" },
 ];
 
-export default async function MyAdsPage({ searchParams }: { searchParams: Promise<{ tab?: string; created?: string; deleted?: string; error?: string; ok?: string; err?: string }> }) {
+export default async function MyAdsPage({ searchParams }: { searchParams: Promise<{ tab?: string; created?: string; deleted?: string; ok?: string; err?: string }> }) {
   const sp = await searchParams;
   const me = await requireUser("/my");
   const settings = await getSettings();
@@ -60,7 +60,6 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
           Та <strong className="text-ink">{me.shop_name ?? "Авто худалдаа"}</strong> эрхтэй: зар тань шууд нийтлэгдэх бөгөөд засах, түр нуух, зарагдсан болгох боломжтой.
         </p>
       )}
-      {sp.error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">Устгаж чадсангүй. Зарагдсан зарыг устгах боломжгүй.</p>}
 
       <div className="flex justify-between items-center gap-3 flex-wrap">
         <div className="flex items-baseline gap-3 flex-wrap">
@@ -98,69 +97,102 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
           <Link href="/post" className="btn btn-lg btn-ink">Зар нэмэх</Link>
         </div>
       ) : (
-        <div className="table-wrap">
-          <table className="table min-w-[820px]">
-            <thead>
-              <tr><th>Машин</th><th>Ангилал</th><th>Үнэ</th><th>Төлөв</th><th>Үзэлт</th><th>Огноо</th><th><span className="sr-only">Үйлдэл</span></th></tr>
-            </thead>
-            <tbody>
-              {shown.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <Link href={`/ads/${a.id}`} className="flex items-center gap-3 no-underline">
-                      <CarPhoto path={a.photos[0]} alt="" className="w-16 h-12 rounded-lg" label="IMG" />
-                      <span className="font-semibold">{a.brand} {a.model} · {a.year_made}</span>
-                    </Link>
-                  </td>
-                  <td><span className="cat-chip">{categoryLabel(a.category, settings.cutoff_year)}</span></td>
-                  <td className="h-display text-[14px]">{money(a.price)}</td>
-                  <td>
-                    <div className="flex flex-col gap-1 items-start">
-                      <StatusBadge status={a.status} />
-                      {a.status === "pending" && <span className="text-[12px] text-muted">Менежер удахгүй холбогдоно</span>}
-                      {a.offer_amount && <span className="text-[12px] text-pending-fg font-semibold">Санал: {money(a.offer_amount)}</span>}
-                    </div>
-                  </td>
-                  <td className="mono">{a.status === "pending" ? "—" : num(a.views)}</td>
-                  <td className="text-muted">{dateShort(a.created_at)}</td>
-                  <td className="text-right">
-                    <div className="flex gap-2 justify-end items-center">
-                    {a.contract_id && (
-                      <a href={`/api/contracts/${a.contract_id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Гэрээ</a>
-                    )}
-                    {dealer && a.status !== "sold" && (
-                      <>
-                        <Link href={`/my/${a.id}/edit`} className="btn btn-sm btn-ghost">Засах</Link>
-                        {(a.status === "active" || a.status === "hidden") && (
-                          <form action={dealerSetStatus}>
-                            <input type="hidden" name="id" value={a.id} />
-                            <input type="hidden" name="back" value="/my" />
-                            <input type="hidden" name="status" value={a.status === "active" ? "hidden" : "active"} />
-                            <button className="btn btn-sm btn-ghost">{a.status === "active" ? "Нуух" : "Гаргах"}</button>
-                          </form>
-                        )}
-                        <form action={dealerSetStatus}>
-                          <input type="hidden" name="id" value={a.id} />
-                          <input type="hidden" name="back" value="/my" />
-                          <input type="hidden" name="status" value="sold" />
-                          <ConfirmButton message={`${a.brand} ${a.model}-ийг зарагдсан гэж тэмдэглэх үү? Зар нийтээс хасагдана.`} className="btn btn-sm btn-ink">Зарагдсан</ConfirmButton>
-                        </form>
-                      </>
-                    )}
-                    {a.status !== "sold" && (
-                      <form action={deleteMyAd}>
-                        <input type="hidden" name="id" value={a.id} />
-                        <button className="btn btn-sm btn-danger">Устгах</button>
-                      </form>
-                    )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Утсан дээр: карт жагсаалт (хүснэгт хэт өргөн тул товчнууд дэлгэцээс гардаг) */}
+          <ul className="sm:hidden list-none p-0 m-0 flex flex-col gap-3">
+            {shown.map((a) => (
+              <li key={a.id} className="card p-3.5 flex flex-col gap-3">
+                <Link href={`/ads/${a.id}`} className="flex items-center gap-3 no-underline min-w-0">
+                  <CarPhoto path={a.photos[0]} alt="" className="w-[88px] h-[66px] rounded-lg shrink-0" label="IMG" />
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className="font-semibold text-[15px] truncate">{a.brand} {a.model} · {a.year_made}</span>
+                    <span className="h-display text-[15px]">{money(a.price)}</span>
+                    <span className="text-[12px] text-muted">
+                      {categoryLabel(a.category, settings.cutoff_year)} · {dateShort(a.created_at)}
+                      {a.status !== "pending" ? ` · ${num(a.views)} үзэлт` : ""}
+                    </span>
+                  </div>
+                </Link>
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  <StatusBadge status={a.status} />
+                  {a.status === "pending" && <span className="text-[12px] text-muted">Менежер удахгүй холбогдоно</span>}
+                  {a.offer_amount && <span className="text-[12px] text-pending-fg font-semibold">Санал: {money(a.offer_amount)}</span>}
+                </div>
+                <AdActions a={a} dealer={dealer} className="flex flex-wrap gap-2 [&>*]:flex-[1_1_auto] [&_.btn]:w-full" />
+              </li>
+            ))}
+          </ul>
+          <div className="table-wrap hidden sm:block">
+            <table className="table min-w-[820px]">
+              <thead>
+                <tr><th>Машин</th><th>Ангилал</th><th>Үнэ</th><th>Төлөв</th><th>Үзэлт</th><th>Огноо</th><th><span className="sr-only">Үйлдэл</span></th></tr>
+              </thead>
+              <tbody>
+                {shown.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <Link href={`/ads/${a.id}`} className="flex items-center gap-3 no-underline">
+                        <CarPhoto path={a.photos[0]} alt="" className="w-16 h-12 rounded-lg" label="IMG" />
+                        <span className="font-semibold">{a.brand} {a.model} · {a.year_made}</span>
+                      </Link>
+                    </td>
+                    <td><span className="cat-chip">{categoryLabel(a.category, settings.cutoff_year)}</span></td>
+                    <td className="h-display text-[14px]">{money(a.price)}</td>
+                    <td>
+                      <div className="flex flex-col gap-1 items-start">
+                        <StatusBadge status={a.status} />
+                        {a.status === "pending" && <span className="text-[12px] text-muted">Менежер удахгүй холбогдоно</span>}
+                        {a.offer_amount && <span className="text-[12px] text-pending-fg font-semibold">Санал: {money(a.offer_amount)}</span>}
+                      </div>
+                    </td>
+                    <td className="mono">{a.status === "pending" ? "—" : num(a.views)}</td>
+                    <td className="text-muted">{dateShort(a.created_at)}</td>
+                    <td className="text-right">
+                      <AdActions a={a} dealer={dealer} className="flex gap-2 justify-end items-center" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </main>
+  );
+}
+
+/** Зарын үйлдлүүд (гэрээ, засах, нуух, зарагдсан, устгах) — хүснэгт ба утасны картад хоёуланд нь. */
+function AdActions({ a, dealer, className }: { a: Ad; dealer: boolean; className?: string }) {
+  return (
+    <div className={className}>
+      {a.contract_id && (
+        <a href={`/api/contracts/${a.contract_id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Гэрээ</a>
+      )}
+      {dealer && a.status !== "sold" && (
+        <>
+          <Link href={`/my/${a.id}/edit`} className="btn btn-sm btn-ghost">Засах</Link>
+          {(a.status === "active" || a.status === "hidden") && (
+            <form action={dealerSetStatus}>
+              <input type="hidden" name="id" value={a.id} />
+              <input type="hidden" name="back" value="/my" />
+              <input type="hidden" name="status" value={a.status === "active" ? "hidden" : "active"} />
+              <button className="btn btn-sm btn-ghost">{a.status === "active" ? "Нуух" : "Гаргах"}</button>
+            </form>
+          )}
+          <form action={dealerSetStatus}>
+            <input type="hidden" name="id" value={a.id} />
+            <input type="hidden" name="back" value="/my" />
+            <input type="hidden" name="status" value="sold" />
+            <ConfirmButton message={`${a.brand} ${a.model}-ийг зарагдсан гэж тэмдэглэх үү? Зар нийтээс хасагдана.`} className="btn btn-sm btn-ink">Зарагдсан</ConfirmButton>
+          </form>
+        </>
+      )}
+      {a.status !== "sold" && (
+        <form action={deleteMyAd}>
+          <input type="hidden" name="id" value={a.id} />
+          <ConfirmButton message="Зараа устгах уу? Буцаах боломжгүй." className="btn btn-sm btn-danger">Устгах</ConfirmButton>
+        </form>
+      )}
+    </div>
   );
 }

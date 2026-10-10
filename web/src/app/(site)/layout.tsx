@@ -15,20 +15,17 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <OfflineBanner />
       <LiveSync userId={profile?.id} />
       <div className="flex-1 flex flex-col">{children}</div>
-      <footer className="border-t border-line mt-8 pb-[84px] sm:pb-0">
+      <footer className={`border-t border-line mt-8 sm:pb-0 ${profile ? "pb-[84px]" : ""}`}>
         <div className="max-w-[1280px] mx-auto px-6 py-6 flex flex-wrap justify-between gap-3 text-[13px] text-muted">
           <span>© {new Date().getFullYear()} Машин зар · <a href="/app" className="underline">Android апп татах</a></span>
-          <form action="/auth/signout" method="post">
-            <button className="underline cursor-pointer bg-transparent border-0 text-muted p-0">Гарах</button>
-          </form>
+          {profile && (
+            <form action="/auth/signout" method="post">
+              <button className="underline cursor-pointer bg-transparent border-0 text-muted p-0">Гарах</button>
+            </form>
+          )}
         </div>
       </footer>
-      {profile && (
-        <MobileTabBar
-          unread={unread}
-          staffHref={profile.role === "admin" ? "/admin" : profile.role === "manager" ? "/manager" : profile.role === "leasing" ? "/leasing" : null}
-        />
-      )}
+      {profile && <MobileTabBar unread={unread} />}
     </>
   );
 }

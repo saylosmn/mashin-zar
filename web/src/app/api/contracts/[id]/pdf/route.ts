@@ -30,8 +30,9 @@ async function signedUrl(request: Request, id: string): Promise<{ url?: string; 
       c.signature_svg,
     );
     filePath = `${c.user_id}/${c.id}.pdf`;
-    const up = await supabase.storage.from("contracts").upload(filePath, pdf, { contentType: "application/pdf", upsert: true });
-    if (up.error) return { error: `PDF хадгалж чадсангүй: ${up.error.message}`, status: 500 };
+    // Гарын үсэгтэй PDF-ийг нэг л удаа хадгална (дараа нь солих боломжгүй)
+    const up = await supabase.storage.from("contracts").upload(filePath, pdf, { contentType: "application/pdf", upsert: false });
+    if (up.error && !/exist|duplicate/i.test(up.error.message)) return { error: `PDF хадгалж чадсангүй: ${up.error.message}`, status: 500 };
     await supabase.rpc("set_contract_pdf", { p_id: c.id, p_path: filePath });
   }
   const s = await supabase.storage.from("contracts").createSignedUrl(filePath, 600, { download: `geree-${shortNo(c.id)}.pdf` });

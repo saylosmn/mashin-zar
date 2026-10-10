@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, ScrollView, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -32,8 +32,12 @@ export default function Home() {
   const [unread, setUnread] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
+  const loadedRef = useRef(0);
+  loadedRef.current = ads.length;
+
+  /** offset-оос эхлэн size ширхэг зар ачаална. offset=0 бол жагсаалтыг бүхэлд нь солино. */
   const load = useCallback(
-    async (offset = 0) => {
+    async (offset = 0, size = PAGE) => {
       try {
         setError(null);
         let req = supabase.from("public_ads").select("*", { count: "exact" });
@@ -44,7 +48,7 @@ export default function Home() {
         if (sort === "price_asc") req = req.order("price", { ascending: true });
         else if (sort === "price_desc") req = req.order("price", { ascending: false });
         else req = req.order("approved_at", { ascending: false, nullsFirst: false });
-        const { data, error: e, count: c } = await req.range(offset, offset + PAGE - 1);
+        const { data, error: e, count: c } = await req.range(offset, offset + size - 1);
         if (e) throw e;
         setCount(c ?? 0);
         setAds((prev) => (offset ? [...prev, ...((data ?? []) as PublicAd[])] : ((data ?? []) as PublicAd[])));
@@ -71,8 +75,9 @@ export default function Home() {
       .then(({ count: c }) => setUnread(c ?? 0));
   }, []);
 
-  // Шинэ зар батлагдах, зарагдах, устгагдахад жагсаалт шууд шинэчлэгдэнэ
-  useLiveSync(() => load(0), ["ads"]);
+  // Шинэ зар батлагдах, зарагдах, устгагдахад жагсаалт шууд шинэчлэгдэнэ.
+  // Одоо ачаалсан хэмжээгээрээ чимээгүй дахин татна — 1-р хуудас руу үсрэхгүй, гүйлгэсэн байрлал хадгалагдана.
+  useLiveSync(() => load(0, Math.max(PAGE, loadedRef.current)), ["ads"]);
   const loadUnread = useCallback(() => {
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("read", false).then(({ count: c }) => setUnread(c ?? 0));
   }, []);

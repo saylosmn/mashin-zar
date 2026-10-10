@@ -37,7 +37,9 @@ export async function proxy(request: NextRequest) {
   const user = data?.claims;
   const path = request.nextUrl.pathname;
 
-  if (!user && !PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
+  // Нүүр хуудас болон зарын дэлгэрэнгүйг нэвтрээгүй хүн ч үзэж болно.
+  const isPublic = path === "/" || path.startsWith("/ads/") || PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = path !== "/" ? `?next=${encodeURIComponent(path + request.nextUrl.search)}` : "";

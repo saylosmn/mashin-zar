@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/data";
+import { safeNext } from "@/lib/safe-next";
 
 export async function saveFilterAlert(fd: FormData) {
   const me = await requireUser();
@@ -35,11 +36,17 @@ export async function deleteMyAd(fd: FormData) {
   const me = await requireUser();
   const id = String(fd.get("id"));
   const supabase = await createClient();
-  const { data: ad } = await supabase.from("ads").select("photos,user_id").eq("id", id).maybeSingle();
-  const { error } = await supabase.from("ads").delete().eq("id", id).eq("user_id", me.id);
-  if (!error && ad?.photos?.length) await supabase.storage.from("ad-photos").remove(ad.photos);
+  const { data: ad } = await supabase.from("ads").select("photos,status").eq("id", id).eq("user_id", me.id).maybeSingle();
+  const flash = (k: "ok" | "err", m: string) => `/my?${k}=${encodeURIComponent(m)}`;
+  if (!ad) redirect(flash("err", "Зар олдсонгүй."));
+  if (ad.status === "sold") redirect(flash("err", "Зарагдсан зарыг устгах боломжгүй."));
+  // RLS нь борлуулалтын тайлантай зарыг устгахыг хориглодог: алдаа өгөхгүй, 0 мөр устгана.
+  const { data: gone, error } = await supabase.from("ads").delete().eq("id", id).eq("user_id", me.id).select("id");
+  if (error) redirect(flash("err", `Устгаж чадсангүй: ${error.message}`));
+  if (!gone?.length) redirect(flash("err", "Энэ зарт борлуулалтын тайлан бүртгэгдсэн тул устгах боломжгүй"));
+  if (ad.photos?.length) await supabase.storage.from("ad-photos").remove(ad.photos);
   revalidatePath("/my");
-  redirect(error ? "/my?error=delete" : "/my?deleted=1");
+  redirect(flash("ok", "Зар устгагдлаа."));
 }
 
 export async function markAllRead() {
@@ -73,7 +80,7 @@ export async function saveProfile(fd: FormData) {
   const full_name = String(fd.get("full_name") || "").trim();
   const phone = String(fd.get("phone") || "").replace(/[^\d+]/g, "");
   const city = String(fd.get("city") || "");
-  const next = String(fd.get("next") || "");
+  const next = safeNext(String(fd.get("next") || ""), "");
   if (!full_name || phone.length < 8 || fd.get("consent") !== "on") {
     redirect(`/profile?error=1${next ? `&next=${encodeURIComponent(next)}` : ""}`);
   }
@@ -83,5 +90,5 @@ export async function saveProfile(fd: FormData) {
     .eq("id", me.id);
   if (error) redirect(`/profile?error=2${next ? `&next=${encodeURIComponent(next)}` : ""}`);
   revalidatePath("/", "layout");
-  redirect(next && next.startsWith("/") ? next : "/profile?saved=1");
+  redirect(next || "/profile?saved=1");
 }

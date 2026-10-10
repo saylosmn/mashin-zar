@@ -194,12 +194,12 @@ export function CardSkeleton() {
   );
 }
 
-export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+export function Field({ label, children, hint, error }: { label: string; children: ReactNode; hint?: string; error?: string | null }) {
   return (
     <View style={{ gap: 6 }}>
       <T w="semibold" style={{ fontSize: 13 }}>{label}</T>
       {children}
-      {hint && <T style={{ fontSize: 12, color: C.muted }}>{hint}</T>}
+      {error ? <T style={{ fontSize: 12, color: C.danger }}>{error}</T> : hint ? <T style={{ fontSize: 12, color: C.muted }}>{hint}</T> : null}
     </View>
   );
 }

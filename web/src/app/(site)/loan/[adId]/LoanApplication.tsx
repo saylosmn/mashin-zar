@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { errMsg } from "@/lib/format";
 import { CITIES } from "@/lib/cars";
 import {
-  DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, MARITAL, ageFrom, docLabel, monthlyPayment, previewChecks, rdBirthDate,
+  DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, MARITAL, MAX_DOC_PAGES, ageFrom, docBase, docLabel, docPage, docPageKeys, monthlyPayment, previewChecks, rdBirthDate,
   type Applicant, type Partner,
 } from "@/lib/loan";
 import { IconCheck, IconSpinner } from "@/components/icons";
@@ -29,7 +29,8 @@ async function compress(file: File, max = 2000): Promise<Blob> {
   return new Promise((res) => canvas.toBlob((b) => res(b ?? file), "image/jpeg", 0.85));
 }
 
-type Doc = { path: string; name: string };
+type Doc = { path: string; name: string; reused?: boolean };
+const hasLatin = (v: string) => /[A-Za-z]/.test(v);
 
 export function LoanApplication({
   userId, ad, partner, down, term, defaults,
@@ -39,7 +40,7 @@ export function LoanApplication({
   partner: Partner;
   down: number;
   term: number;
-  defaults: { full_name: string; phone: string; city: string; applicant: Applicant | null };
+  defaults: { full_name: string; phone: string; city: string; applicant: Applicant | null; docs: Record<string, string> };
 }) {
   const router = useRouter();
   const d = defaults.applicant ?? {};
@@ -77,12 +78,55 @@ export function LoanApplication({
   const [cosRd, setCosRd] = useState(d.cosigner?.register_no ?? "");
   const [cosIncome, setCosIncome] = useState(d.cosigner?.monthly_income ? fmt(d.cosigner.monthly_income) : "");
   // 4. Баримт
-  const [docs, setDocs] = useState<Record<string, Doc>>({});
+  // Өмнөх хүсэлтийн баримтыг дахин ашиглана (дахин хуулах шаардлагагүй). Тэдгээрийг сангаас устгахгүй.
+  const [docs, setDocs] = useState<Record<string, Doc>>(() =>
+    Object.fromEntries(Object.entries(defaults.docs ?? {}).filter(([k]) => LOAN_DOCS.some((x) => x.kind === docBase(k))).map(([k, path]) => [k, { path, name: "Өмнөх хүсэлтээс", reused: true }])),
+  );
+  const [done, setDone] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const draftKey = `loan-draft:${ad.id}:${partner.id}`;
   const [uploading, setUploading] = useState<string | null>(null);
   // 5.
   const [note, setNote] = useState("");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // ---- Ноорог: хуудас хаагдах / утас камер нээхэд дахин ачаалагдвал бөглөсөн мэдээлэл алдагдахгүй ----
+  const snapshot = {
+    step, fullName, phone, rd, city, district, address, marital, household, license, emp, employer, position, work, income, other, debt,
+    overdue, refName, refPhone, refRel, hasCos, cosName, cosPhone, cosRel, cosRd, cosIncome, docs, note, batch: batch.current,
+  };
+  const restoredOnce = useRef(false);
+  useEffect(() => {
+    if (restoredOnce.current) return;
+    restoredOnce.current = true;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const v = JSON.parse(raw) as Partial<typeof snapshot> & { at?: number };
+      if (!v.at || Date.now() - v.at > 7 * 864e5) { localStorage.removeItem(draftKey); return; }
+      const str = (x: unknown, f: (s: string) => void) => { if (typeof x === "string") f(x); };
+      str(v.fullName, setFullName); str(v.phone, setPhone); str(v.rd, setRd); str(v.city, setCity); str(v.district, setDistrict);
+      str(v.address, setAddress); str(v.marital, setMarital); str(v.household, setHousehold); str(v.emp, setEmp); str(v.employer, setEmployer);
+      str(v.position, setPosition); str(v.work, setWork); str(v.income, setIncome); str(v.other, setOther); str(v.debt, setDebt);
+      str(v.refName, setRefName); str(v.refPhone, setRefPhone); str(v.refRel, setRefRel); str(v.cosName, setCosName); str(v.cosPhone, setCosPhone);
+      str(v.cosRel, setCosRel); str(v.cosRd, setCosRd); str(v.cosIncome, setCosIncome); str(v.note, setNote);
+      if (typeof v.license === "boolean" || v.license === null) setLicense(v.license);
+      if (typeof v.overdue === "boolean" || v.overdue === null) setOverdue(v.overdue);
+      if (typeof v.hasCos === "boolean") setHasCos(v.hasCos);
+      if (v.docs && typeof v.docs === "object") setDocs(v.docs as Record<string, Doc>);
+      if (typeof v.batch === "string") batch.current = v.batch;
+      if (typeof v.step === "number" && v.step >= 0 && v.step <= 4) setStep(v.step);
+      setRestored(true);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const snapJson = JSON.stringify(snapshot);
+  useEffect(() => {
+    if (!restoredOnce.current || done) return;
+    const t = setTimeout(() => { try { localStorage.setItem(draftKey, JSON.stringify({ ...JSON.parse(snapJson), at: Date.now() })); } catch {} }, 400);
+    return () => clearTimeout(t);
+  }, [snapJson, draftKey, done]);
 
   const required = useMemo(() => (partner.required_docs ?? DEFAULT_REQUIRED_DOCS).filter((k) => k !== "cosigner_id" || hasCos), [partner.required_docs, hasCos]);
   const loan = ad.price - down;
@@ -100,6 +144,7 @@ export function LoanApplication({
     if (s === 0) {
       if (!fullName.trim()) return "Овог нэрээ оруулна уу";
       if (digits(phone).length < 8) return "Утасны дугаараа зөв оруулна уу";
+      if (hasLatin(rd)) return "Регистрийн үсгийг кирилл үсгээр бичнэ үү (жишээ: УБ99112233)";
       if (!birth) return "Регистрийн дугаараа зөв оруулна уу (жишээ: УБ99112233)";
       if (!city || !address.trim()) return "Оршин суугаа хаягаа бөглөнө үү";
       if (!marital) return "Гэрлэлтийн байдлаа сонгоно уу";
@@ -146,9 +191,9 @@ export function LoanApplication({
       const supabase = createClient();
       const { error: e } = await supabase.storage.from("loan-docs").upload(path, body, { contentType: isPdf ? "application/pdf" : "image/jpeg" });
       if (e) throw e;
-      const old = docs[kind]?.path;
+      const old = docs[kind];
       setDocs((x) => ({ ...x, [kind]: { path, name: file.name } }));
-      if (old) supabase.storage.from("loan-docs").remove([old]).then(() => {});
+      if (old && !old.reused) supabase.storage.from("loan-docs").remove([old.path]).then(() => {});
     } catch (e) {
       setError(`Хавсаргаж чадсангүй: ${errMsg(e)}`);
     } finally {
@@ -156,11 +201,20 @@ export function LoanApplication({
     }
   }
 
-  function removeDoc(kind: string) {
-    const old = docs[kind]?.path;
-    setDocs((x) => { const y = { ...x }; delete y[kind]; return y; });
-    if (old) createClient().storage.from("loan-docs").remove([old]).then(() => {});
+  /** Хуудас хасаад үлдсэн хуудсуудыг дахин дугаарлана (эхний хуудас үргэлж үндсэн түлхүүр дээр) */
+  function removeDoc(key: string) {
+    const old = docs[key];
+    setDocs((x) => {
+      const base = docBase(key);
+      const pages = docPageKeys(base).filter((k) => x[k] && k !== key).map((k) => x[k]);
+      const y = { ...x };
+      for (const k of docPageKeys(base)) delete y[k];
+      pages.forEach((d, i) => { y[docPageKeys(base)[i]] = d; });
+      return y;
+    });
+    if (old && !old.reused) createClient().storage.from("loan-docs").remove([old.path]).then(() => {});
   }
+  const nextFreeKey = (kind: string) => docPageKeys(kind).find((k) => !docs[k]);
 
   async function submit() {
     for (let s = 0; s < 4; s++) {
@@ -177,12 +231,17 @@ export function LoanApplication({
       has_overdue: overdue, has_license: license, ref_name: refName, ref_phone: refPhone, ref_relation: refRel, note,
       cosigner: hasCos ? { name: cosName, phone: cosPhone, relation: cosRel, register_no: cosRd, monthly_income: String(num(cosIncome)) } : null,
     };
-    const p_docs = Object.fromEntries(Object.entries(docs).filter(([k]) => k !== "cosigner_id" || hasCos).map(([k, v]) => [k, v.path]));
+    const p_docs = Object.fromEntries(Object.entries(docs).filter(([k]) => docBase(k) !== "cosigner_id" || hasCos).map(([k, v]) => [k, v.path]));
     const { error: e } = await createClient().rpc("submit_loan_request", {
       p_ad: ad.id, p_partner: partner.id, p_down: down, p_term: term, p_app, p_docs, p_consent: true,
     });
-    setBusy(false);
-    if (e) return setError(errMsg(e));
+    if (e) {
+      setBusy(false);
+      const m = errMsg(e).replace(/дутуу байна: ([a-z_0-9]+)/, (_x, k: string) => `дутуу байна: ${docLabel(k)}`);
+      return setError(m);
+    }
+    setDone(true);
+    try { localStorage.removeItem(draftKey); } catch {}
     router.push(`/loans?ok=${encodeURIComponent(`${partner.name}-д хүсэлт илгээгдлээ`)}`);
   }
 
@@ -203,6 +262,7 @@ export function LoanApplication({
         ))}
       </ol>
 
+      {restored && <p role="status" className="m-0 rounded-xl bg-active-bg text-active-fg px-4 py-2.5 text-[13px]">Өмнө бөглөсөн мэдээллийг сэргээлээ.</p>}
       <section className="card p-5 flex flex-col gap-4">
         {step === 0 && (
           <>
@@ -211,7 +271,7 @@ export function LoanApplication({
               <F label="Овог нэр"><input value={fullName} onChange={(e) => setFullName(e.target.value)} className="input h-11" autoComplete="name" /></F>
               <F label="Утас"><input value={phone} onChange={(e) => setPhone(e.target.value)} className="input h-11 mono" inputMode="tel" autoComplete="tel" /></F>
             </Row>
-            <F label="Регистрийн дугаар" hint={birth ? `Төрсөн: ${birth.toISOString().slice(0, 10)} · ${age} нас` : "Жишээ: УБ99112233"}>
+            <F label="Регистрийн дугаар" hint={hasLatin(rd) ? "⚠ Үсгийг кирилл үсгээр бичнэ үү (жишээ: УБ99112233)" : birth ? `Төрсөн: ${birth.toISOString().slice(0, 10)} · ${age} нас` : "Жишээ: УБ99112233"}>
               <input value={rd} onChange={(e) => setRd(e.target.value.toUpperCase())} className="input h-11 mono" maxLength={12} aria-invalid={!!rd && !birth} />
             </F>
             <Row>
@@ -289,27 +349,44 @@ export function LoanApplication({
         {step === 3 && (
           <>
             <H>Баримт бичиг</H>
-            <p className="m-0 text-[13px] text-muted">Зураг эсвэл PDF. Лавлагаануудыг <a href="https://e-mongolia.mn" target="_blank" rel="noreferrer">e-mongolia.mn</a>-ээс үнэгүй татна. Файлууд зөвхөн {partner.name}-д харагдана.</p>
+            {Object.values(docs).some((d) => d.reused) && <p className="m-0 rounded-xl bg-active-bg text-active-fg px-4 py-2.5 text-[13px]">Өмнөх хүсэлтэд хавсаргасан баримтуудыг автоматаар нэмлээ. Хуучирсан бол хасаад шинээр хавсаргана уу.</p>}
+            <p className="m-0 text-[13px] text-muted">Олон хуудастай баримтыг (дансны хуулга гэх мэт) “+ Хуудас нэмэх”-ээр {MAX_DOC_PAGES} хүртэл хуудсаар оруулна. Зураг эсвэл PDF. Лавлагаануудыг <a href="https://e-mongolia.mn" target="_blank" rel="noreferrer">e-mongolia.mn</a>-ээс үнэгүй татна. Файлууд зөвхөн {partner.name}-д харагдана.</p>
             <ul className="list-none p-0 m-0 flex flex-col gap-2">
               {LOAN_DOCS.filter((x) => x.kind !== "cosigner_id" || hasCos).map((x) => {
                 const req = required.includes(x.kind);
-                const have = docs[x.kind];
+                const pages = docPageKeys(x.kind).filter((k) => docs[k]);
+                const next = nextFreeKey(x.kind);
+                const busyHere = !!uploading && docBase(uploading) === x.kind;
+                const fileBtn = (key: string, label: string, ink: boolean) => (
+                  <label className={`btn btn-sm ${ink ? "btn-ink" : "btn-ghost"} cursor-pointer`}>
+                    {label}
+                    <input type="file" accept="image/*,application/pdf" className="sr-only" disabled={!!uploading} onChange={(e) => { upload(key, e.target.files?.[0]); e.target.value = ""; }} />
+                  </label>
+                );
                 return (
-                  <li key={x.kind} className={`rounded-xl border px-4 py-3 flex flex-wrap items-center gap-3 ${have ? "border-[#9BD3AE] bg-[#F1FAF4]" : "border-line"}`}>
-                    <div className="flex-[1_1_220px] flex flex-col gap-0.5 min-w-0">
-                      <span className="text-[14px] font-semibold">{x.label} {req ? <span className="badge bg-pending-bg text-pending-fg ml-1">заавал</span> : <span className="text-[12px] text-muted font-normal">· заавал биш</span>}</span>
-                      {have ? <span className="text-[12px] text-[#1D6B3A] truncate">✓ {have.name}</span> : x.hint ? <span className="text-[12px] text-muted">{x.hint}</span> : null}
-                    </div>
-                    {uploading === x.kind ? (
-                      <span className="btn btn-sm btn-ghost"><IconSpinner size={16} /> Хуулж байна</span>
-                    ) : (
-                      <div className="flex gap-2">
-                        <label className={`btn btn-sm ${have ? "btn-ghost" : "btn-ink"} cursor-pointer`}>
-                          {have ? "Солих" : "Хавсаргах"}
-                          <input type="file" accept="image/*,application/pdf" className="sr-only" disabled={!!uploading} onChange={(e) => { upload(x.kind, e.target.files?.[0]); e.target.value = ""; }} />
-                        </label>
-                        {have && <button type="button" onClick={() => removeDoc(x.kind)} className="btn btn-sm btn-danger">Хасах</button>}
+                  <li key={x.kind} className={`rounded-xl border px-4 py-3 flex flex-col gap-2 ${pages.length ? "border-[#9BD3AE] bg-[#F1FAF4]" : "border-line"}`}>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex-[1_1_220px] flex flex-col gap-0.5 min-w-0">
+                        <span className="text-[14px] font-semibold">{x.label} {req ? <span className="badge bg-pending-bg text-pending-fg ml-1">заавал</span> : <span className="text-[12px] text-muted font-normal">· заавал биш</span>}</span>
+                        {!pages.length && x.hint ? <span className="text-[12px] text-muted">{x.hint}</span> : null}
                       </div>
+                      {busyHere ? (
+                        <span className="btn btn-sm btn-ghost"><IconSpinner size={16} /> Хуулж байна</span>
+                      ) : !pages.length ? (
+                        fileBtn(x.kind, "Хавсаргах", true)
+                      ) : next ? (
+                        fileBtn(next, "+ Хуудас нэмэх", false)
+                      ) : null}
+                    </div>
+                    {pages.length > 0 && (
+                      <ul className="list-none p-0 m-0 flex flex-col gap-1">
+                        {pages.map((k) => (
+                          <li key={k} className="flex items-center justify-between gap-2 text-[12px]">
+                            <span className="text-[#1D6B3A] truncate">✓ {docPage(k)}-р хуудас · {docs[k].name}</span>
+                            <button type="button" onClick={() => removeDoc(k)} disabled={!!uploading} className="text-[12px] text-[#9b1c1c] underline bg-transparent border-0 cursor-pointer">Хасах</button>
+                          </li>
+                        ))}
+                      </ul>
                     )}
                   </li>
                 );
@@ -353,7 +430,7 @@ export function LoanApplication({
           {step < 4 ? (
             <button type="button" onClick={next} disabled={!!uploading} className="btn btn-ink flex-[2]">Үргэлжлүүлэх →</button>
           ) : (
-            <button type="button" onClick={submit} disabled={busy || !consent} className="btn btn-yellow flex-[2] disabled:opacity-50">{busy ? <><IconSpinner size={18} /> Илгээж байна</> : "Хүсэлт илгээх"}</button>
+            <button type="button" onClick={submit} disabled={busy || done || !consent} className="btn btn-yellow flex-[2] disabled:opacity-50">{busy ? <><IconSpinner size={18} /> Илгээж байна</> : "Хүсэлт илгээх"}</button>
           )}
         </div>
       </section>

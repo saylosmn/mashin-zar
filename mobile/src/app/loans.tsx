@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { FlatList, Linking, Pressable, RefreshControl, View } from "react-native";
+import { Alert, FlatList, Linking, Pressable, RefreshControl, View } from "react-native";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
@@ -20,6 +20,7 @@ export default function Loans() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -36,6 +37,7 @@ export default function Loans() {
       setError(errMsg(e));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [uid]);
 
@@ -46,7 +48,11 @@ export default function Loans() {
     const ok = await confirm("Хүсэлт цуцлах уу?", `${r.car} — ${r.partner?.name ?? "лизинг"}-д илгээсэн хүсэлт цуцлагдана.`, "Цуцлах", true);
     if (!ok) return;
     const res = await staffRpc("cancel_loan_request", { p_id: r.id });
-    if (res.ok) load();
+    if (res.ok) {
+      setRows((x) => x.map((y) => (y.id === r.id ? { ...y, status: "cancelled" } : y)));
+      Alert.alert("Хүсэлт цуцлагдлаа");
+      load();
+    }
   }
 
   return (
@@ -55,7 +61,7 @@ export default function Loans() {
       keyExtractor={(r) => r.id}
       style={{ backgroundColor: C.paper }}
       contentContainerStyle={{ padding: 16, paddingTop: 8, gap: 10, paddingBottom: 48 }}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={C.ink} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={C.ink} />}
       ListHeaderComponent={
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingBottom: 6 }}>
           <Pressable accessibilityLabel="Буцах" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>

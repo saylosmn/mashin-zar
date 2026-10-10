@@ -107,7 +107,7 @@ export default function Reports() {
               {filters.map((f) => {
                 const on = f.key === filter;
                 return (
-                  <Pressable key={f.key} onPress={() => { setLoading(true); setFilter(f.key); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 18, backgroundColor: on ? C.ink : C.card, borderWidth: on ? 0 : 1, borderColor: C.line2, justifyContent: "center" }}>
+                  <Pressable key={f.key} onPress={() => { if (on) return; setLoading(true); setFilter(f.key); }} style={{ height: 36, paddingHorizontal: 14, borderRadius: 18, backgroundColor: on ? C.ink : C.card, borderWidth: on ? 0 : 1, borderColor: C.line2, justifyContent: "center" }}>
                     <T w={on ? "semibold" : "body"} style={{ fontSize: 13, color: on ? C.yellow : C.ink }}>{f.label}</T>
                   </Pressable>
                 );

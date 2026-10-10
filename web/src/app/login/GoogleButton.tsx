@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { IconSpinner } from "@/components/icons";
+import { safeNext } from "@/lib/safe-next";
 
 export function GoogleButton({ next }: { next?: string }) {
   const [loading, setLoading] = useState(false);
@@ -12,10 +13,9 @@ export function GoogleButton({ next }: { next?: string }) {
     setLoading(true);
     setErr(null);
     const supabase = createClient();
-    const safeNext = next && next.startsWith("/") ? next : "/";
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}` },
+      options: { redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(safeNext(next))}` },
     });
     if (error) {
       setErr(error.message);

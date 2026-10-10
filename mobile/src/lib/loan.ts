@@ -19,6 +19,7 @@ export type Partner = {
   cosigner_over?: number | null;
   required_docs?: string[];
   requirements_note?: string | null;
+  updated_at?: string;
 };
 
 export type LoanStatus = "new" | "contacted" | "approved" | "rejected" | "cancelled";
@@ -108,17 +109,34 @@ export const fmtNum = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})
 export const LOAN_DOCS: { kind: string; label: string; hint?: string }[] = [
   { kind: "id_front", label: "Иргэний үнэмлэх (нүүр тал)" },
   { kind: "id_back", label: "Иргэний үнэмлэх (ар тал)" },
-  { kind: "ndsh", label: "НДШ төлөлтийн лавлагаа", hint: "e-mongolia.mn → Нийгмийн даатгал → Шимтгэл төлөлтийн лавлагаа (PDF)" },
-  { kind: "bank_statement", label: "Цалингийн дансны хуулга (сүүлийн 6 сар)", hint: "Банкны апп-аас PDF-ээр татна" },
-  { kind: "address", label: "Оршин суугаа хаягийн тодорхойлолт", hint: "e-mongolia.mn → Иргэний бүртгэл → Оршин суугаа хаягийн лавлагаа" },
+  { kind: "ndsh", label: "НДШ төлөлтийн лавлагаа", hint: "e-mongolia.mn → Нийгмийн даатгал → Шимтгэл төлөлтийн лавлагаа. Лавлагаагаа гаргаад дэлгэцийн зургийг (screenshot) оруулна" },
+  { kind: "bank_statement", label: "Цалингийн дансны хуулга (сүүлийн 6 сар)", hint: "Банкны апп-аас хуулгаа дэлгэцийн зургаар (screenshot) оруулна. Олон хуудастай бол «Хуудас нэмэх»" },
+  { kind: "address", label: "Оршин суугаа хаягийн тодорхойлолт", hint: "e-mongolia.mn → Иргэний бүртгэл → Оршин суугаа хаягийн лавлагаа. Дэлгэцийн зургийг (screenshot) оруулна" },
   { kind: "employment", label: "Ажлын газрын тодорхойлолт" },
   { kind: "business", label: "Бизнесийн орлогын баримт (гэрчилгээ, хуулга)" },
-  { kind: "credit", label: "Зээлийн мэдээллийн лавлагаа", hint: "e-mongolia.mn → Зээлийн мэдээллийн сангийн лавлагаа" },
+  { kind: "credit", label: "Зээлийн мэдээллийн лавлагаа", hint: "e-mongolia.mn → Зээлийн мэдээллийн сангийн лавлагаа. Дэлгэцийн зургийг (screenshot) оруулна" },
   { kind: "license", label: "Жолооны үнэмлэх" },
   { kind: "photo", label: "Цээж зураг (сүүлийн 6 сар)" },
   { kind: "cosigner_id", label: "Хамтран зээлдэгчийн иргэний үнэмлэх" },
 ];
-export const docLabel = (k: string) => LOAN_DOCS.find((d) => d.kind === k)?.label ?? k;
+/** Нэг төрлийн баримтын дээд хуудасны тоо: kind, kind_2 … kind_5 */
+export const MAX_DOC_PAGES = 5;
+/** "bank_statement_2" → { base: "bank_statement", page: 2 } */
+export function docPage(key: string): { base: string; page: number } {
+  const m = /^(.+)_([2-9])$/.exec(key);
+  if (m && LOAN_DOCS.some((d) => d.kind === m[1])) return { base: m[1], page: Number(m[2]) };
+  return { base: key, page: 1 };
+}
+/** Хуудасны дугааргүй үндсэн төрөл */
+export const docBase = (key: string) => docPage(key).base;
+/** Баримтын нэр; 2-р хуудаснаас эхлэн "(N-р хуудас)" нэмнэ */
+export function docLabel(key: string) {
+  const { base, page } = docPage(key);
+  const label = LOAN_DOCS.find((d) => d.kind === base)?.label ?? key;
+  return page > 1 ? `${label} (${page}-р хуудас)` : label;
+}
+/** Тухайн төрлийн хуудасны түлхүүрүүд дарааллаар: kind, kind_2 … */
+export const docPageKeys = (kind: string) => Array.from({ length: MAX_DOC_PAGES }, (_, i) => (i === 0 ? kind : `${kind}_${i + 1}`));
 export const DEFAULT_REQUIRED_DOCS = ["id_front", "id_back", "ndsh", "bank_statement"];
 
 export const MARITAL: Record<string, string> = { single: "Ганц бие", married: "Гэрлэсэн", divorced: "Салсан", widowed: "Бэлэвсэн" };

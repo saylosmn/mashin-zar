@@ -3,12 +3,14 @@ import { WebPushCard } from "@/components/WebPush";
 import { requireUser } from "@/lib/data";
 import { CITIES } from "@/lib/cars";
 import { saveProfile } from "../actions";
+import { safeNext } from "@/lib/safe-next";
 import { IconCheck } from "@/components/icons";
 
 export const metadata = { title: "Профайл" };
 
 export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; saved?: string }> }) {
-  const { next, error, saved } = await searchParams;
+  const { next: rawNext, error, saved } = await searchParams;
+  const next = safeNext(rawNext, "") || undefined;
   const me = await requireUser("/profile");
   const creating = !me.profile_completed;
   return (
@@ -48,13 +50,13 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         <input type="hidden" name="next" value={next ?? ""} />
         <label className="label">
           Овог нэр
-          <input name="full_name" required defaultValue={me.full_name ?? ""} className="input" autoComplete="name" />
+          <input name="full_name" required minLength={2} maxLength={80} defaultValue={me.full_name ?? ""} className="input" autoComplete="name" />
         </label>
         <label className="label">
           Утасны дугаар
           <div className="flex items-center h-12 border-2 border-ink rounded-[12px] bg-card overflow-hidden">
             <span className="mono px-3 text-muted border-r border-line h-full flex items-center">+976</span>
-            <input name="phone" type="tel" required minLength={8} defaultValue={me.phone ?? ""} className="mono flex-1 h-full px-3 outline-none bg-transparent text-[15px]" autoComplete="tel" />
+            <input name="phone" type="tel" inputMode="tel" required minLength={8} maxLength={16} title="Утасны дугаар 8+ оронтой байна" defaultValue={me.phone ?? ""} className="mono flex-1 h-full px-3 outline-none bg-transparent text-[15px]" autoComplete="tel" />
           </div>
         </label>
         <label className="label">
@@ -64,7 +66,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           </select>
         </label>
         <label className="flex items-start gap-2.5 text-[13px] leading-snug text-[#2b2f35]">
-          <input type="checkbox" name="consent" defaultChecked={me.profile_completed} className="w-5 h-5 m-0 accent-ink shrink-0" />
+          <input type="checkbox" name="consent" required defaultChecked={me.profile_completed} className="w-5 h-5 m-0 accent-ink shrink-0" />
           Менежер миний утсаар холбогдохыг зөвшөөрч байна
         </label>
         <button className="btn btn-lg btn-ink mt-2">

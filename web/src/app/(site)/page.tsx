@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { MobileCollapse } from "@/components/MobileCollapse";
 import { createClient } from "@/lib/supabase/server";
-import { getSettings, requireUser } from "@/lib/data";
+import { redirect } from "next/navigation";
+import { getProfile, getSettings } from "@/lib/data";
 import { AdCard } from "@/components/AdCard";
 import { IconBell, IconSearch } from "@/components/icons";
 import { BRANDS } from "@/lib/cars";
@@ -20,36 +21,53 @@ function href(sp: SP, patch: SP) {
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
-  await requireUser();
-  const settings = await getSettings();
   const supabase = await createClient();
   const cat = sp.cat === "new" || sp.cat === "old" ? sp.cat : undefined;
-  const page = Math.max(1, Number(sp.page) || 1);
+  const page = Math.max(1, Math.floor(Number(sp.page)) || 1);
   const q = (sp.q ?? "").replace(/[,()%*]/g, " ").trim();
 
-  let query = supabase.from("public_ads").select("*", { count: "exact" });
-  if (cat) query = query.eq("category", cat);
-  if (q) query = query.or(`brand.ilike.%${q}%,model.ilike.%${q}%,trim.ilike.%${q}%`);
-  if (sp.brand) query = query.eq("brand", sp.brand);
-  if (sp.model) query = query.ilike("model", `%${sp.model.replace(/[,()%*]/g, "")}%`);
-  if (Number(sp.pmin)) query = query.gte("price", Number(sp.pmin) * 1_000_000);
-  if (Number(sp.pmax)) query = query.lte("price", Number(sp.pmax) * 1_000_000);
-  if (Number(sp.ymin)) query = query.gte("year_made", Number(sp.ymin));
-  if (Number(sp.ymax)) query = query.lte("year_made", Number(sp.ymax));
-  if (Number(sp.imin)) query = query.gte("year_imported", Number(sp.imin));
-  if (Number(sp.imax)) query = query.lte("year_imported", Number(sp.imax));
+  /** Шүүлтүүртэй асуулга (head=true бол зөвхөн тоо). */
+  function filtered(head = false) {
+    let query = supabase.from("public_ads").select("*", { count: "exact", head });
+    if (cat) query = query.eq("category", cat);
+    if (q) query = query.or(`brand.ilike.%${q}%,model.ilike.%${q}%,trim.ilike.%${q}%`);
+    if (sp.brand) query = query.eq("brand", sp.brand);
+    if (sp.model) query = query.ilike("model", `%${sp.model.replace(/[,()%*]/g, "")}%`);
+    if (Number(sp.pmin)) query = query.gte("price", Number(sp.pmin) * 1_000_000);
+    if (Number(sp.pmax)) query = query.lte("price", Number(sp.pmax) * 1_000_000);
+    if (Number(sp.ymin)) query = query.gte("year_made", Number(sp.ymin));
+    if (Number(sp.ymax)) query = query.lte("year_made", Number(sp.ymax));
+    if (Number(sp.imin)) query = query.gte("year_imported", Number(sp.imin));
+    if (Number(sp.imax)) query = query.lte("year_imported", Number(sp.imax));
+    return query;
+  }
+
+  let query = filtered();
   if (sp.sort === "price_asc") query = query.order("price", { ascending: true });
   else if (sp.sort === "price_desc") query = query.order("price", { ascending: false });
   else query = query.order("approved_at", { ascending: false, nullsFirst: false });
   query = query.range((page - 1) * PAGE, page * PAGE - 1);
 
-  const [{ data, count, error }, all, nw, old] = await Promise.all([
+  const [profile, settings, { data, count, error }, all, nw, old] = await Promise.all([
+    getProfile(),
+    getSettings(),
     query,
     supabase.from("public_ads").select("id", { count: "exact", head: true }),
     supabase.from("public_ads").select("id", { count: "exact", head: true }).eq("category", "new"),
     supabase.from("public_ads").select("id", { count: "exact", head: true }).eq("category", "old"),
   ]);
-  if (error) throw new Error(error.message);
+  if (profile?.is_blocked) redirect("/blocked");
+  if (error) {
+    // Хуудасны дугаар дууссан (PGRST103) бол сүүлийн хуудас руу шилжүүлнэ.
+    if (error.code === "PGRST103" && page > 1) {
+      const { count: n } = await filtered(true);
+      const last = Math.max(1, Math.ceil((n ?? 0) / PAGE));
+      redirect(href(sp, { page: last > 1 && last < page ? String(last) : undefined }));
+    }
+    throw new Error(error.message);
+  }
+  const here = href(sp, {});
+  const loginHref = (next: string) => `/login?next=${encodeURIComponent(next)}`;
   const ads = (data ?? []) as PublicAd[];
   const total = count ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE));
@@ -148,14 +166,22 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <IconSearch size={18} /> Хайх
             </button>
           </form>
-          <form action={saveFilterAlert} className="border-t border-[#ecede9] pt-4">
-            <input type="hidden" name="cat" value={cat ?? ""} />
-            <input type="hidden" name="brand" value={sp.brand ?? ""} />
-            <input type="hidden" name="pmax" value={sp.pmax ?? ""} />
-            <button className="btn btn-ghost w-full text-[13px] h-auto py-2.5 whitespace-normal text-left">
-              <IconBell size={18} /> Энэ шүүлтүүрт тохирох шинэ зар орвол мэдэгдэх
-            </button>
-          </form>
+          {profile ? (
+            <form action={saveFilterAlert} className="border-t border-[#ecede9] pt-4">
+              <input type="hidden" name="cat" value={cat ?? ""} />
+              <input type="hidden" name="brand" value={sp.brand ?? ""} />
+              <input type="hidden" name="pmax" value={sp.pmax ?? ""} />
+              <button className="btn btn-ghost w-full text-[13px] h-auto py-2.5 whitespace-normal text-left">
+                <IconBell size={18} /> Энэ шүүлтүүрт тохирох шинэ зар орвол мэдэгдэх
+              </button>
+            </form>
+          ) : (
+            <div className="border-t border-[#ecede9] pt-4">
+              <Link href={loginHref(here)} className="btn btn-ghost w-full text-[13px] h-auto py-2.5 whitespace-normal text-left">
+                <IconBell size={18} /> Нэвтэрч, энэ шүүлтүүрт тохирох шинэ зарын мэдэгдэл авах
+              </Link>
+            </div>
+          )}
         </aside>
         </MobileCollapse>
 
@@ -176,7 +202,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               </div>
               <div className="flex gap-2.5 flex-wrap justify-center">
                 {hasFilters && <Link href="/" className="btn btn-lg btn-ghost">Шүүлтүүр цэвэрлэх</Link>}
-                <Link href="/post" className="btn btn-lg btn-ink">Зар нэмэх</Link>
+                <Link href={profile ? "/post" : loginHref("/post")} className="btn btn-lg btn-ink">Зар нэмэх</Link>
               </div>
             </div>
           ) : (

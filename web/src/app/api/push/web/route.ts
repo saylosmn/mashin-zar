@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
 import { VAPID_PUBLIC_KEY } from "@/lib/webpush-key";
 
@@ -16,7 +17,19 @@ type Msg = {
 
 export const maxDuration = 30;
 
+/** Зөвхөн өгөгдлийн сан (notify_push) нууц түлхүүрээр дуудна — бусад хүн push илгээж чадахгүй */
+function authorized(request: Request) {
+  const secret = process.env.PUSH_SECRET;
+  const got = request.headers.get("x-push-secret") ?? "";
+  if (!secret || got.length !== secret.length) return false;
+  return timingSafeEqual(Buffer.from(got), Buffer.from(secret));
+}
+
+/** Зөвхөн сайтын доторх зам ("/ads/..."); гадны холбоос руу чиглүүлэхгүй */
+const safeUrl = (u: unknown) => (typeof u === "string" && u.startsWith("/") && !u.startsWith("//") && !u.startsWith("/\\") ? u.slice(0, 300) : "/notifications");
+
 export async function POST(request: Request) {
+  if (!authorized(request)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const priv = process.env.VAPID_PRIVATE_KEY;
   if (!priv) return NextResponse.json({ error: "VAPID_PRIVATE_KEY тохируулаагүй" }, { status: 503 });
   webpush.setVapidDetails("https://web-mu-fawn-45.vercel.app", VAPID_PUBLIC_KEY, priv);
@@ -38,7 +51,7 @@ export async function POST(request: Request) {
         try {
           await webpush.sendNotification(
             m.sub,
-            JSON.stringify({ title: String(m.title ?? "Машин зар").slice(0, 120), body: String(m.body ?? "").slice(0, 300), url: m.url ?? "/notifications", tag: m.tag }),
+            JSON.stringify({ title: String(m.title ?? "Машин зар").slice(0, 120), body: String(m.body ?? "").slice(0, 300), url: safeUrl(m.url), tag: typeof m.tag === "string" ? m.tag.slice(0, 80) : undefined }),
             { TTL: 60 * 60 * 24, urgency: "high" },
           );
           sent++;
@@ -58,7 +71,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ p_endpoints: gone }),
+      body: JSON.stringify({ p_endpoints: gone, p_secret: process.env.PUSH_SECRET }),
     }).catch(() => {});
   }
   return NextResponse.json({ sent, gone: gone.length });
