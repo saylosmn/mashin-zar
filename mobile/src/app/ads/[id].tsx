@@ -14,6 +14,9 @@ import { adCache } from "@/lib/cache";
 import type { Partner } from "@/lib/loan";
 import { LoanCalculator } from "@/components/LoanCalculator";
 import { requireLogin } from "@/lib/guest";
+import { ReportAdSheet } from "@/components/ReportAdSheet";
+import { useCompare, COMPARE_MAX } from "@/lib/compare";
+import { expiryInfo } from "@/lib/commission";
 
 const W = Dimensions.get("window").width;
 
@@ -28,6 +31,8 @@ export default function AdDetail() {
   const [fav, setFav] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [reporting, setReporting] = useState(false);
+  const compare = useCompare();
   const uid = session?.user.id;
 
   const load = useCallback(async () => {
@@ -129,6 +134,12 @@ export default function AdDetail() {
             <T w="display" style={{ fontSize: 26 }}>{money(ad.price)}</T>
           </View>
 
+          {mine && ad.status === "active" && expiryInfo(ad.expires_at).expired && (
+            <Pressable onPress={() => router.push("/my")} style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}>
+              <T style={{ color: "#9B1C1C", fontSize: 14, lineHeight: 20 }}>Зарын хугацаа дууссан тул нийтэд харагдахгүй байна. «Миний зар» хэсгээс сунгана уу →</T>
+            </Pressable>
+          )}
+
           {ad.status === "pending" && (
             <View style={{ backgroundColor: C.pendingBg, borderRadius: 12, padding: 12 }}>
               <T style={{ color: C.pendingFg, fontSize: 14, lineHeight: 20 }}>Энэ зар менежерийн шалгалтыг хүлээж байна. Батлагдсаны дараа бусдад харагдана.</T>
@@ -194,6 +205,27 @@ export default function AdDetail() {
             />
           )}
 
+          {ad.status === "active" && (
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Button
+                small
+                variant={compare.ids.includes(ad.id.toLowerCase()) ? "ink" : "ghost"}
+                icon="shuffle"
+                title={compare.ids.includes(ad.id.toLowerCase()) ? "Харьцуулалтад нэмсэн" : "Харьцуулах"}
+                style={{ flex: 1 }}
+                onPress={() => compare.toggle(ad.id)}
+              />
+              {!mine && (
+                <Button small variant="ghost" icon="flag" title="Мэдээлэх" style={{ flex: 1 }} onPress={() => (uid ? setReporting(true) : requireLogin(`/ads/${id}`))} />
+              )}
+            </View>
+          )}
+          {compare.ids.length >= 2 ? (
+            <Button small variant="yellow" icon="columns" title={`Харьцуулах хуудас (${compare.ids.length}/${COMPARE_MAX}) →`} onPress={() => router.push("/compare")} />
+          ) : compare.ids.length === 1 && compare.ids.includes(ad.id.toLowerCase()) ? (
+            <T style={{ fontSize: 12, color: C.muted }}>Дахиад 1–2 машин сонгоод зэрэгцүүлж харна.</T>
+          ) : null}
+
           {ad.seller_name ? (
             <View style={[s.card, { flexDirection: "row", alignItems: "center", gap: 12, padding: 12 }]}>
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: ad.seller_shop ? C.yellow : C.ink, alignItems: "center", justifyContent: "center" }}>
@@ -218,6 +250,7 @@ export default function AdDetail() {
           )}
         </View>
       )}
+      <ReportAdSheet adId={ad.id} visible={reporting} onClose={() => setReporting(false)} />
     </KeyboardAvoidingView>
   );
 }

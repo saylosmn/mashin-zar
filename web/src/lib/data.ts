@@ -84,3 +84,10 @@ export async function requireLeasing(): Promise<Profile> {
   if (p.role !== "leasing" && p.role !== "admin") redirect("/");
   return p;
 }
+
+/** Агент (эсвэл админ) шаардана. */
+export async function requireAgent(): Promise<Profile> {
+  const p = await requireUser("/agent");
+  if (p.role !== "agent" && p.role !== "admin") redirect("/");
+  return p;
+}

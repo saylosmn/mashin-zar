@@ -41,15 +41,22 @@ export default function Home() {
     async (offset = 0, size = PAGE) => {
       try {
         setError(null);
-        let req = supabase.from("public_ads").select("*", { count: "exact" });
-        if (cat !== "all") req = req.eq("category", cat);
-        const term = query.replace(/[,()%*]/g, " ").trim();
-        if (term) req = req.or(`brand.ilike.%${term}%,model.ilike.%${term}%,trim.ilike.%${term}%`);
-        if (brand) req = req.eq("brand", brand);
-        if (sort === "price_asc") req = req.order("price", { ascending: true });
-        else if (sort === "price_desc") req = req.order("price", { ascending: false });
-        else req = req.order("approved_at", { ascending: false, nullsFirst: false });
-        const { data, error: e, count: c } = await req.range(offset, offset + size - 1);
+        const build = (withFeatured: boolean) => {
+          let req = supabase.from("public_ads").select("*", { count: "exact" });
+          if (cat !== "all") req = req.eq("category", cat);
+          const term = query.replace(/[,()%*]/g, " ").trim();
+          if (term) req = req.or(`brand.ilike.%${term}%,model.ilike.%${term}%,trim.ilike.%${term}%`);
+          if (brand) req = req.eq("brand", brand);
+          // Онцлох (VIP) зар эхэндээ
+          if (withFeatured && sort !== "price_asc" && sort !== "price_desc") req = req.order("featured", { ascending: false });
+          if (sort === "price_asc") req = req.order("price", { ascending: true });
+          else if (sort === "price_desc") req = req.order("price", { ascending: false });
+          else req = req.order("approved_at", { ascending: false, nullsFirst: false });
+          return req.range(offset, offset + size - 1);
+        };
+        let res = await build(true);
+        if (res.error?.code === "42703") res = await build(false); // SQL шинэчлэгдээгүй үед
+        const { data, error: e, count: c } = res;
         if (e) throw e;
         setCount(c ?? 0);
         setAds((prev) => (offset ? [...prev, ...((data ?? []) as PublicAd[])] : ((data ?? []) as PublicAd[])));

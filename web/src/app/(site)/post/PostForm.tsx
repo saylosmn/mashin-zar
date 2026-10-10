@@ -10,6 +10,7 @@ import { IconCamera, IconCheck, IconClose, IconSpinner } from "@/components/icon
 import { SignaturePad } from "@/components/SignaturePad";
 import { ContractView } from "@/components/ContractView";
 import type { ContractTerms } from "@/lib/contract";
+import { checkAgentCode } from "../actions";
 
 type Photo = { id: string; file: File; url: string };
 type Draft = {
@@ -44,6 +45,7 @@ export function PostForm({
   fullName,
   contract,
   dealer = false,
+  defaultAgentCode = "",
 }: {
   userId: string;
   defaultPhone: string;
@@ -53,6 +55,8 @@ export function PostForm({
   fullName: string;
   contract: { company: string; terms: ContractTerms };
   dealer?: boolean;
+  /** Агентын холбоосоор (?ref=КОД) орж ирсэн бол */
+  defaultAgentCode?: string;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -68,6 +72,10 @@ export function PostForm({
   const [signature, setSignature] = useState<string | null>(null);
   const [agree, setAgree] = useState(false);
   const [signName, setSignName] = useState(fullName);
+  const [agentCode, setAgentCode] = useState(defaultAgentCode);
+  /** Шалгагдсан агент (кодоор) — зарт agent_id болж орно */
+  const agentRef = useRef<{ code: string; id: string; name: string } | null>(null);
+  const [agentName, setAgentName] = useState<string | null>(null);
   /** Амжилттай гарын үсэг зурсан гэрээ (дахин оролдоход ашиглана). key нь гэрээнд орсон утгууд. */
   const contractRef = useRef<{ key: string; id: string } | null>(null);
 
@@ -95,7 +103,7 @@ export function PostForm({
   }
 
   /** 1-р алхам: маягтыг шалгаад гэрээний цонх нээнэ */
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
@@ -116,6 +124,15 @@ export function PostForm({
       description: String(fd.get("description") || "").trim() || null,
       price: priceNum,
     };
+    // Агентын код (заавал биш)
+    const code = agentCode.trim().toUpperCase();
+    if (code && agentRef.current?.code !== code) {
+      const found = await checkAgentCode(code).catch(() => null);
+      if (!found) return setError("Агентын код олдсонгүй. Кодоо шалгах эсвэл хоосон орхино уу.");
+      agentRef.current = { code, ...found };
+      setAgentName(found.name);
+    }
+    if (!code) agentRef.current = null;
     // Авто худалдаа: гэрээгүй, шууд нийтлэнэ
     if (dealer) return void send(d, null);
     setDraft(d);
@@ -200,7 +217,7 @@ export function PostForm({
 
       // 3) Зар
       setBusy({ step: 3, done: total });
-      const { error: insErr } = await supabase.from("ads").insert({ ...draft, user_id: userId, photos: paths, contract_id: contractId });
+      const { error: insErr } = await supabase.from("ads").insert({ ...draft, user_id: userId, photos: paths, contract_id: contractId, agent_id: agentRef.current?.id ?? null });
       if (insErr) throw insErr;
       contractRef.current = null;
       // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
@@ -401,6 +418,21 @@ export function PostForm({
             />
             <span className="h-display text-[22px]">₮</span>
           </div>
+          <label className="label max-w-[420px] mt-1">
+            Агентын код <span className="font-normal text-muted">(заавал биш)</span>
+            <input
+              value={agentCode}
+              onChange={(e) => {
+                setAgentCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12));
+                setAgentName(null);
+              }}
+              autoComplete="off"
+              placeholder="Жишээ: K7M2QX"
+              className="input mono font-normal"
+            />
+            {agentName && <span className="text-[13px] font-normal text-active-fg">✓ Агент: {agentName}</span>}
+            <span className="text-[12px] font-normal text-muted">Танд манай агент туслалцаа үзүүлсэн бол түүний кодыг оруулна уу.</span>
+          </label>
         </section>
       </form>
 

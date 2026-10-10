@@ -28,10 +28,11 @@ export default async function AdminReports({ searchParams }: { searchParams: Pro
   const [pending, list, stats] = await Promise.all([
     pendingCount(),
     q,
-    supabase.from("sale_reports").select("status,commission_amount,sold_price,reviewed_at"),
+    supabase.from("sale_reports").select("status,commission_amount,sold_price,reviewed_at,agent_amount,agent_paid_at"),
   ]);
   const rows = (list.data ?? []) as unknown as ReportRow[];
-  const all = (stats.data ?? []) as { status: string; commission_amount: number; sold_price: number; reviewed_at: string | null }[];
+  const all = (stats.data ?? []) as { status: string; commission_amount: number; sold_price: number; reviewed_at: string | null; agent_amount?: number | null; agent_paid_at?: string | null }[];
+  const unpaid = all.filter((r) => r.status === "approved" && (r.agent_amount ?? 0) > 0 && !r.agent_paid_at);
   const approved = all.filter((r) => r.status === "approved");
   const month = approved.filter((r) => (r.reviewed_at ?? "") >= monthStart);
   const back = `/admin/reports?tab=${tab}`;
@@ -43,11 +44,12 @@ export default async function AdminReports({ searchParams }: { searchParams: Pro
         <span className="text-[14px] text-muted">Менежерүүдийн “зарагдсан” тайлан. Батлахад зар зарагдсан болж, эзэнд нь мэдэгдэл очно.</span>
       </div>
       <Flash ok={sp.ok} err={sp.err ?? (list.error ? `Тайлан уншиж чадсангүй: ${list.error.message}` : undefined)} />
-      <div className="grid gap-3.5 grid-cols-2 md:grid-cols-4 max-w-[1000px]">
+      <div className="grid gap-3.5 grid-cols-2 md:grid-cols-5 max-w-[1100px]">
         <Kpi dark label="Хүлээгдэж буй" value={all.filter((r) => r.status === "pending").length} href="/admin/reports?tab=pending" />
         <Kpi label="Энэ сард зарагдсан" value={month.length} sub={`${num(month.reduce((t, r) => t + r.sold_price, 0))}₮`} />
         <Kpi label="Энэ сарын шимтгэл" value={`${num(month.reduce((t, r) => t + r.commission_amount, 0))}₮`} />
         <Kpi label="Нийт шимтгэл" value={`${num(approved.reduce((t, r) => t + r.commission_amount, 0))}₮`} sub={`${approved.length} борлуулалт`} />
+        <Kpi label="Агентад төлөх" value={`${num(unpaid.reduce((t, r) => t + (r.agent_amount ?? 0), 0))}₮`} sub={`${unpaid.length} тайлан төлөгдөөгүй`} />
       </div>
       <nav className="flex flex-wrap gap-1.5" aria-label="Шүүлтүүр">
         {TABS.map((t) => (

@@ -128,15 +128,21 @@ export function AdCard({
   cy,
   onPress,
 }: {
-  ad: { brand: string; model: string; trim: string | null; plate_masked: string; year_made: number; year_imported: number | null; price: number; photos: string[]; category: Category; seller_shop?: string | null };
+  ad: { brand: string; model: string; trim: string | null; plate_masked: string; year_made: number; year_imported: number | null; price: number; photos: string[]; category: Category; seller_shop?: string | null; featured?: boolean };
   cy: number;
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="link" style={s.card}>
+    <Pressable onPress={onPress} accessibilityRole="link" style={[s.card, ad.featured ? { borderWidth: 2, borderColor: C.yellow } : null]}>
       <View>
         <Photo path={ad.photos[0]} style={{ height: 190, width: "100%" }} />
         <View style={{ position: "absolute", left: 12, top: 12 }}><CatChip c={ad.category} cy={cy} /></View>
+        {ad.featured ? (
+          <View style={{ position: "absolute", right: 12, top: 12, backgroundColor: C.yellow, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2, flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Feather name="star" size={11} color={C.ink} />
+            <T w="bold" style={{ fontSize: 11 }}>Онцлох</T>
+          </View>
+        ) : null}
         {ad.seller_shop ? (
           <View style={{ position: "absolute", left: 12, bottom: 12, maxWidth: "60%", backgroundColor: C.yellow, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2, flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Feather name="shopping-bag" size={11} color={C.ink} />

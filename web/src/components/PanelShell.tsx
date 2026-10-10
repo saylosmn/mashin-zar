@@ -2,11 +2,19 @@ import Link from "next/link";
 import { Logo } from "./Logo";
 import { OfflineBanner } from "./OfflineBanner";
 import { LiveSync } from "./LiveSync";
+import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
+
+/** Шийдвэрлээгүй гомдлын тоо (цэсний тэмдэг). Хүснэгт байхгүй үед 0. */
+async function openFlags() {
+  const supabase = await createClient();
+  const { count } = await supabase.from("ad_flags").select("id", { count: "exact", head: true }).eq("status", "open");
+  return count ?? 0;
+}
 
 export type NavItem = { href: string; label: string; badge?: number; key: string };
 
-export function PanelShell({
+export async function PanelShell({
   profile,
   area,
   active,
@@ -23,6 +31,7 @@ export function PanelShell({
   children: React.ReactNode;
 }) {
   const isAdmin = profile.role === "admin";
+  const flags = area === "leasing" ? 0 : await openFlags();
   const nav: NavItem[] =
     area === "leasing"
       ? [
@@ -37,10 +46,12 @@ export function PanelShell({
           { key: "admin-ads", href: "/admin/ads", label: "Бүх зар" },
           { key: "mgr-ads", href: "/manager/ads", label: "Шинэ зар ба санал", badge: pending },
           { key: "mgr", href: "/manager", label: "Менежерийн самбар" },
+          { key: "mgr-flags", href: "/manager/flags", label: "Гомдол", badge: flags },
           { key: "admin-reports", href: "/admin/reports", label: "Тайлангууд" },
           { key: "admin-leasing", href: "/admin/leasing", label: "Лизинг: компаниуд" },
           { key: "leasing", href: "/leasing?partner=all", label: "Лизинг: хүсэлтүүд" },
           { key: "admin-notif", href: "/admin/notifications", label: "Мэдэгдэл" },
+          { key: "admin-errors", href: "/admin/errors", label: "Алдааны бүртгэл" },
           { key: "admin-settings", href: "/admin/settings", label: "Тохиргоо" },
         ]
       : [
@@ -49,6 +60,7 @@ export function PanelShell({
           { key: "mgr-all", href: "/manager/all", label: "Бүх зар" },
           { key: "mgr-sold", href: "/manager/all?status=sold", label: "Зарагдсан машинууд" },
           { key: "mgr-users", href: "/manager/users", label: "Зар тавьсан хүмүүс" },
+          { key: "mgr-flags", href: "/manager/flags", label: "Гомдол", badge: flags },
           { key: "mgr-reports", href: "/manager/reports", label: "Тайлан илгээх" },
           ...(isAdmin ? [{ key: "admin", href: "/admin", label: "Админ панел" }] : []),
         ];

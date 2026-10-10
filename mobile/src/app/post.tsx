@@ -50,6 +50,10 @@ export default function Post() {
   const [mods, setMods] = useState("");
   const [desc, setDesc] = useState("");
   const [price, setPrice] = useState("");
+  const [agentCode, setAgentCode] = useState("");
+  const [agent, setAgentState] = useState<{ code: string; id: string; name: string } | null>(null);
+  const agentIdRef = useRef<string | null>(null);
+  const setAgent = (a: { code: string; id: string; name: string } | null) => { agentIdRef.current = a?.id ?? null; setAgentState(a); };
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | { done: number; step: 1 | 2 | 3 }>(null);
   const [contractOpen, setContractOpen] = useState(false);
@@ -116,6 +120,15 @@ export default function Post() {
     if (!plate.trim() || !vin.trim()) return setErr("Улсын болон арлын дугаараа оруулна уу.");
     if (phone.replace(/\D/g, "").length < 8) return setErr("Утасны дугаараа оруулна уу.");
     if (!priceNum) return setErr("Үнээ оруулна уу.");
+    // Агентын код (заавал биш)
+    const code = agentCode.trim().toUpperCase();
+    if (!code) setAgent(null);
+    else if (agent?.code !== code) {
+      const { data } = await supabase.rpc("agent_by_code", { p_code: code });
+      const row = Array.isArray(data) ? (data[0] as { id: string; name: string } | undefined) : undefined;
+      if (!row) return setErr("Агентын код олдсонгүй. Кодоо шалгах эсвэл хоосон орхино уу.");
+      setAgent({ code, id: row.id, name: row.name });
+    }
     // Авто худалдаа: гэрээгүй, шууд нийтлэнэ
     if (dealer) return send(true);
     setAgree(false);
@@ -204,6 +217,7 @@ export default function Post() {
         price: priceNum,
         photos: paths,
         contract_id: contractId,
+        agent_id: agentIdRef.current,
       });
       if (error) throw error;
       // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
@@ -410,6 +424,9 @@ export default function Post() {
             <T w="display" style={{ fontSize: 20 }}>₮</T>
           </View>
         </View>
+        <Field label="Агентын код (заавал биш)" hint={agent && agent.code === agentCode.trim().toUpperCase() ? `✓ Агент: ${agent.name}` : "Танд манай агент туслалцаа үзүүлсэн бол түүний кодыг оруулна уу."}>
+          <Input value={agentCode} onChangeText={(t) => setAgentCode(t.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12))} autoCapitalize="characters" autoCorrect={false} mono placeholder="K7M2QX" />
+        </Field>
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
         <FooterError err={err} />

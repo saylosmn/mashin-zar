@@ -17,7 +17,7 @@ export default async function AdminAds({ searchParams }: { searchParams: Promise
         <Link href="/post" className="btn btn-ink">+ Зар нэмэх</Link>
       </div>
       <Flash ok={sp.ok} err={sp.err} />
-      <AdsTable basePath="/admin/ads" sp={sp} admin cutoff={settings.cutoff_year} />
+      <AdsTable basePath="/admin/ads" sp={sp} admin cutoff={settings.cutoff_year} featuredDays={settings.featured_days ?? 7} />
     </PanelShell>
   );
 }

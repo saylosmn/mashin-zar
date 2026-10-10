@@ -6,7 +6,8 @@ import { CarPhoto } from "@/components/CarPhoto";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AdCard } from "@/components/AdCard";
 import { IconCheck, IconClose } from "@/components/icons";
-import { deleteMyAd } from "../actions";
+import { deleteMyAd, renewAd, requestFeatured } from "../actions";
+import { expiryInfo, isFeatured, recentlyRequested } from "@/lib/commission";
 import { dealerSetStatus } from "@/app/panel-actions";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
@@ -117,8 +118,9 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
                   <StatusBadge status={a.status} />
                   {a.status === "pending" && <span className="text-[12px] text-muted">Менежер удахгүй холбогдоно</span>}
                   {a.offer_amount && <span className="text-[12px] text-pending-fg font-semibold">Санал: {money(a.offer_amount)}</span>}
+                  <AdLife a={a} />
                 </div>
-                <AdActions a={a} dealer={dealer} className="flex flex-wrap gap-2 [&>*]:flex-[1_1_auto] [&_.btn]:w-full" />
+                <AdActions a={a} dealer={dealer} featuredPrice={settings.featured_price} featuredDays={settings.featured_days} className="flex flex-wrap gap-2 [&>*]:flex-[1_1_auto] [&_.btn]:w-full" />
               </li>
             ))}
           </ul>
@@ -143,12 +145,13 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
                         <StatusBadge status={a.status} />
                         {a.status === "pending" && <span className="text-[12px] text-muted">Менежер удахгүй холбогдоно</span>}
                         {a.offer_amount && <span className="text-[12px] text-pending-fg font-semibold">Санал: {money(a.offer_amount)}</span>}
+                        <AdLife a={a} />
                       </div>
                     </td>
                     <td className="mono">{a.status === "pending" ? "—" : num(a.views)}</td>
                     <td className="text-muted">{dateShort(a.created_at)}</td>
                     <td className="text-right">
-                      <AdActions a={a} dealer={dealer} className="flex gap-2 justify-end items-center" />
+                      <AdActions a={a} dealer={dealer} featuredPrice={settings.featured_price} featuredDays={settings.featured_days} className="flex gap-2 justify-end items-center flex-wrap" />
                     </td>
                   </tr>
                 ))}
@@ -161,10 +164,50 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
   );
 }
 
-/** Зарын үйлдлүүд (гэрээ, засах, нуух, зарагдсан, устгах) — хүснэгт ба утасны картад хоёуланд нь. */
-function AdActions({ a, dealer, className }: { a: Ad; dealer: boolean; className?: string }) {
+/** Нийтлэгдсэн зарын хугацаа, онцлох төлөв */
+function AdLife({ a }: { a: Ad }) {
+  if (a.status !== "active" && a.status !== "hidden") return null;
+  const e = expiryInfo(a.expires_at);
+  return (
+    <>
+      {!e.none && (
+        <span className={`text-[12px] font-semibold ${e.expired ? "text-[#9b1c1c]" : e.renewable ? "text-pending-fg" : "text-muted"}`}>
+          {e.expired ? "Хугацаа дууссан — нийтэд харагдахгүй" : `${e.daysLeft} хоног үлдсэн`}
+        </span>
+      )}
+      {isFeatured(a.featured_until) && <span className="text-[12px] font-semibold text-pending-fg">⭐ Онцлох · {dateShort(a.featured_until)} хүртэл</span>}
+    </>
+  );
+}
+
+/** Зарын үйлдлүүд (гэрээ, сунгах, онцлох, засах, нуух, зарагдсан, устгах) — хүснэгт ба утасны картад хоёуланд нь. */
+function AdActions({ a, dealer, className, featuredPrice, featuredDays }: { a: Ad; dealer: boolean; className?: string; featuredPrice?: number; featuredDays?: number }) {
+  const e = expiryInfo(a.expires_at);
+  const featured = isFeatured(a.featured_until);
+  const requested = recentlyRequested(a.featured_requested_at);
   return (
     <div className={className}>
+      {(a.status === "active" || a.status === "hidden") && e.renewable && (
+        <form action={renewAd}>
+          <input type="hidden" name="id" value={a.id} />
+          <button className="btn btn-sm btn-yellow">Сунгах</button>
+        </form>
+      )}
+      {a.status === "active" && !e.expired && !featured && (
+        requested ? (
+          <span className="text-[12px] text-muted self-center">⭐ Хүсэлт илгээсэн</span>
+        ) : (
+          <form action={requestFeatured}>
+            <input type="hidden" name="id" value={a.id} />
+            <ConfirmButton
+              message={`Зараа ${featuredDays ?? 7} хоног жагсаалтын эхэнд онцлох уу? Үнэ: ${money(featuredPrice ?? 50000)}. Менежер тантай холбогдож төлбөрийг тохирно.`}
+              className="btn btn-sm btn-ghost"
+            >
+              ⭐ Онцлох
+            </ConfirmButton>
+          </form>
+        )
+      )}
       {a.contract_id && (
         <a href={`/api/contracts/${a.contract_id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Гэрээ</a>
       )}

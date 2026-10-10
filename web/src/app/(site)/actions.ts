@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/data";
+import { getProfile, requireUser } from "@/lib/data";
 import { safeNext } from "@/lib/safe-next";
 
 export async function saveFilterAlert(fd: FormData) {
@@ -91,4 +91,41 @@ export async function saveProfile(fd: FormData) {
   if (error) redirect(`/profile?error=2${next ? `&next=${encodeURIComponent(next)}` : ""}`);
   revalidatePath("/", "layout");
   redirect(next || "/profile?saved=1");
+}
+
+/** Зар сунгах (хугацаа дуусах дөхсөн / дууссан) */
+export async function renewAd(fd: FormData) {
+  await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("renew_ad", { p_ad: String(fd.get("id")) });
+  revalidatePath("/", "layout");
+  redirect(`/my?${error ? `err=${encodeURIComponent(error.message)}` : `ok=${encodeURIComponent("Зар сунгагдлаа")}`}`);
+}
+
+/** Онцлох (VIP) зар болгох хүсэлт — админ холбогдож төлбөр тохирно */
+export async function requestFeatured(fd: FormData) {
+  await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_featured", { p_ad: String(fd.get("id")) });
+  redirect(`/my?${error ? `err=${encodeURIComponent(error.message)}` : `ok=${encodeURIComponent("Хүсэлт илгээгдлээ. Менежер удахгүй холбогдож төлбөрийг тохирно.")}`}`);
+}
+
+/** Зарыг мэдээлэх (гомдол). Клиентээс дуудаж, үр дүнг буцаана. */
+export async function reportAd(adId: string, reason: string, note: string): Promise<{ ok: boolean; error?: string }> {
+  const me = await getProfile();
+  if (!me) return { ok: false, error: "Нэвтэрнэ үү" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("report_ad", { p_ad: adId, p_reason: reason, p_note: note.trim().slice(0, 500) || null });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Агентын кодыг шалгах (зар оруулах маягт) */
+export async function checkAgentCode(code: string): Promise<{ id: string; name: string } | null> {
+  await requireUser();
+  const c = code.trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,12}$/.test(c)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("agent_by_code", { p_code: c });
+  const row = Array.isArray(data) ? data[0] : null;
+  return row ? { id: row.id as string, name: row.name as string } : null;
 }

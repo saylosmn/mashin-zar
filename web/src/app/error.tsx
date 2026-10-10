@@ -4,10 +4,12 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { PageMessage } from "@/components/PageMessage";
 import { IconRetry, WarnSign } from "@/components/icons";
+import { logClientError } from "@/lib/log-error";
 
 export default function Error({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   useEffect(() => {
     console.error(error);
+    logClientError(error, { digest: error.digest });
   }, [error]);
   const offline = typeof navigator !== "undefined" && !navigator.onLine;
   return (

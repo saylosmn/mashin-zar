@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSettings, requireStaff } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
-import { REPORT_SELECT, reportableAds, type ReportRow } from "@/lib/reports";
+import { REPORT_SELECT, agentOptions, reportableAds, type ReportRow } from "@/lib/reports";
 import { Flash, PanelShell } from "@/components/PanelShell";
 import { SaleReportForm } from "@/components/SaleReportForm";
 import { ReportList } from "@/components/ReportList";
@@ -14,9 +14,10 @@ export default async function ManagerReports({ searchParams }: { searchParams: P
   const me = await requireStaff();
   const supabase = await createClient();
   const settings = await getSettings();
-  const [pending, ads, mine] = await Promise.all([
+  const [pending, ads, agents, mine] = await Promise.all([
     pendingCount(),
     reportableAds(settings),
+    agentOptions(),
     supabase.from("sale_reports").select(REPORT_SELECT).eq("manager_id", me.id).order("created_at", { ascending: false }).limit(100),
   ]);
   const rows = (mine.data ?? []) as unknown as ReportRow[];
@@ -29,7 +30,7 @@ export default async function ManagerReports({ searchParams }: { searchParams: P
       </div>
       <Flash ok={sp.ok} err={sp.err ?? (mine.error ? `Тайлан уншиж чадсангүй: ${mine.error.message}` : undefined)} />
       <div className="max-w-[860px] flex flex-col gap-5">
-        <SaleReportForm ads={ads} defaultAd={sp.ad} action={submitSaleReport} back={back} />
+        <SaleReportForm ads={ads} defaultAd={sp.ad} action={submitSaleReport} back={back} agents={agents} agentShare={Number(settings.agent_share ?? 50)} />
         <section className="flex flex-col gap-3">
           <h2 className="m-0 text-[17px] font-bold">Миний илгээсэн тайлангууд</h2>
           <ReportList rows={rows} back={back} />

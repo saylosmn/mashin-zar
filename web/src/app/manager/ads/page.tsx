@@ -7,7 +7,8 @@ import { Flash, PanelShell } from "@/components/PanelShell";
 import { CarPhoto } from "@/components/CarPhoto";
 import { StatusBadge } from "@/components/StatusBadge";
 import { IconPhone } from "@/components/icons";
-import { approveAd, markContacted, rejectAd, saveNote, sendOffer } from "../../panel-actions";
+import { approveAd, markContacted, rejectAd, saveNote, sendOffer, setAdAgent } from "../../panel-actions";
+import { agentOptions } from "@/lib/reports";
 import { RejectForm } from "./RejectForm";
 import type { Ad, Profile } from "@/lib/types";
 
@@ -43,6 +44,7 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
   }
   if (!ad && !sp.id) ad = list[0] ?? null;
 
+  const agents = await agentOptions();
   let sellerStats = { total: 0, sold: 0 };
   if (ad) {
     const { data: s } = await supabase.from("ads").select("status").eq("user_id", ad.user_id);
@@ -192,6 +194,20 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                 </label>
                 <button className="btn btn-sm btn-dark-ghost self-start">Тэмдэглэл хадгалах</button>
               </form>
+              {agents.length > 0 && (
+                <form action={setAdAgent} className="flex flex-wrap gap-2 items-end">
+                  <input type="hidden" name="id" value={ad.id} />
+                  <input type="hidden" name="back" value={backUrl} />
+                  <label className="label text-paper flex-[1_1_200px]">
+                    Агент
+                    <select name="agent_id" defaultValue={ad.agent_id ?? ""} className="input h-10 bg-ink-2 border-ink-line text-paper font-normal">
+                      <option value="">Агентгүй</option>
+                      {agents.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                  </label>
+                  <button className="btn btn-sm btn-dark-ghost">Хадгалах</button>
+                </form>
+              )}
             </div>
 
             <div className="flex gap-2.5 flex-wrap">

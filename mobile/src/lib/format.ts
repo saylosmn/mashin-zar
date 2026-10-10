@@ -51,4 +51,4 @@ export const errMsg = (e: unknown) => {
 };
 
 export const roleLabel = (r?: string | null) =>
-  r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : r === "leasing" ? "Лизинг" : "Хэрэглэгч";
+  r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : r === "leasing" ? "Лизинг" : r === "agent" ? "Агент" : "Хэрэглэгч";

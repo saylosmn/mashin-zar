@@ -32,6 +32,9 @@ export function SiteHeader({ profile, unread, q }: { profile: Profile | null; un
           {leasing && (
             <Link href="/leasing" className="btn btn-dark-ghost px-3 sm:px-4">Лизинг</Link>
           )}
+          {profile?.role === "agent" && (
+            <Link href="/agent" className="btn btn-dark-ghost px-3 sm:px-4">Агент</Link>
+          )}
           {profile && (
             <Link href="/notifications" aria-label="Мэдэгдэл" className="btn btn-dark-ghost w-11 px-0 relative hidden sm:inline-flex">
               <IconBell />

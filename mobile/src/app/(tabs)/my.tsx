@@ -10,11 +10,12 @@ import { Button, CardSkeleton, Photo, StateView, StatusBadge, T, s } from "@/com
 import type { Ad, AdStatus, PublicAd } from "@/lib/types";
 import { useLiveSync } from "@/lib/live";
 import { confirm, openContract, staffRpc } from "@/lib/staff";
+import { expiryInfo, isFeatured, recentlyRequested } from "@/lib/commission";
 
 type Tab = "all" | AdStatus | "saved";
 
 function MyAdsInner() {
-  const { session, profile } = useAuth();
+  const { session, profile, settings } = useAuth();
   const dealer = profile?.role === "dealer";
   const uid = session?.user.id;
   const [ads, setAds] = useState<Ad[]>([]);
@@ -75,6 +76,28 @@ function MyAdsInner() {
     const r = await staffRpc("dealer_set_status", { p_ad: a.id, p_status: status, p_price: null });
     if (r.ok) load();
   }
+  async function renew(a: Ad) {
+    const r = await staffRpc("renew_ad", { p_ad: a.id });
+    if (r.ok) {
+      Alert.alert("Зар сунгагдлаа", `${settings.ad_days} хоног нийтэд харагдана.`);
+      load();
+    }
+  }
+
+  async function askFeatured(a: Ad) {
+    const ok = await confirm(
+      "Зараа онцлох уу?",
+      `${settings.featured_days ?? 7} хоног жагсаалтын эхэнд, тодорсон байдлаар харагдана. Үнэ: ${money(settings.featured_price ?? 50000)}. Менежер тантай холбогдож төлбөрийг тохирно.`,
+      "Хүсэлт илгээх",
+    );
+    if (!ok) return;
+    const r = await staffRpc("request_featured", { p_ad: a.id });
+    if (r.ok) {
+      Alert.alert("Хүсэлт илгээгдлээ", "Менежер удахгүй холбогдоно.");
+      load();
+    }
+  }
+
   const shown = tab === "all" ? ads : tab === "saved" ? [] : ads.filter((a) => a.status === tab);
 
   if (error && !ads.length)
@@ -130,6 +153,7 @@ function MyAdsInner() {
                   <StatusBadge s={a.status} />
                   <T w="semibold" style={{ color: a.status === "sold" ? C.body : C.ink }}>{a.brand} {a.model} · {a.year_made}</T>
                   <T w="display" style={{ fontSize: 15, color: a.status === "sold" ? C.body : C.ink, textDecorationLine: a.status === "sold" ? "line-through" : "none" }}>{money(a.price)}</T>
+                  <AdLife a={a} />
                 </View>
               </Pressable>
               {(a.status !== "sold" || a.contract_id) && (
@@ -138,6 +162,12 @@ function MyAdsInner() {
                     {a.offer_amount ? `Санал: ${money(a.offer_amount)}` : a.status === "pending" ? "Менежер удахгүй холбогдоно" : a.status === "rejected" ? "Татгалзагдсан" : `${a.views} үзэлт`}
                   </T>
                   {a.contract_id ? <Button small title="Гэрээ" icon="file-text" variant="ghost" onPress={() => openContract(a.contract_id!)} /> : null}
+                  {(a.status === "active" || a.status === "hidden") && expiryInfo(a.expires_at).renewable ? (
+                    <Button small title="Сунгах" icon="refresh-cw" variant="yellow" onPress={() => renew(a)} />
+                  ) : null}
+                  {a.status === "active" && !expiryInfo(a.expires_at).expired && !isFeatured(a.featured_until) && !recentlyRequested(a.featured_requested_at) ? (
+                    <Button small title="Онцлох" icon="star" variant="ghost" onPress={() => askFeatured(a)} />
+                  ) : null}
                   {dealer && a.status !== "sold" ? (
                     <>
                       <Button small title="Засах" icon="edit-2" variant="ghost" onPress={() => router.push(`/edit/${a.id}`)} />
@@ -154,6 +184,23 @@ function MyAdsInner() {
           )}
         />
       )}
+    </View>
+  );
+}
+
+/** Нийтлэгдсэн зарын хугацаа, онцлох төлөв */
+function AdLife({ a }: { a: Ad }) {
+  if (a.status !== "active" && a.status !== "hidden") return null;
+  const e = expiryInfo(a.expires_at);
+  return (
+    <View style={{ gap: 2 }}>
+      {!e.none && (
+        <T w="semibold" style={{ fontSize: 12, color: e.expired ? C.danger : e.renewable ? C.pendingFg : C.muted }}>
+          {e.expired ? "Хугацаа дууссан — нийтэд харагдахгүй" : `${e.daysLeft} хоног үлдсэн`}
+        </T>
+      )}
+      {isFeatured(a.featured_until) ? <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>⭐ Онцлох зар</T> : null}
+      {recentlyRequested(a.featured_requested_at) ? <T style={{ fontSize: 12, color: C.muted }}>⭐ Онцлох хүсэлт илгээсэн</T> : null}
     </View>
   );
 }

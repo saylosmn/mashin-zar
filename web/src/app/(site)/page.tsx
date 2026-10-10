@@ -9,6 +9,8 @@ import { BRANDS } from "@/lib/cars";
 import { saveFilterAlert } from "./actions";
 import type { PublicAd } from "@/lib/types";
 
+export const metadata = { alternates: { canonical: "/" } };
+
 const PAGE = 24;
 type SP = Record<string, string | undefined>;
 
@@ -42,16 +44,24 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     return query;
   }
 
-  let query = filtered();
-  if (sp.sort === "price_asc") query = query.order("price", { ascending: true });
-  else if (sp.sort === "price_desc") query = query.order("price", { ascending: false });
-  else query = query.order("approved_at", { ascending: false, nullsFirst: false });
-  query = query.range((page - 1) * PAGE, page * PAGE - 1);
+  /** Онцлох (VIP) зар эхэндээ. featured багана байхгүй (SQL ажиллаагүй) үед энгийн эрэмбэ. */
+  function listQuery(withFeatured: boolean) {
+    let query = filtered();
+    if (withFeatured && !sp.sort) query = query.order("featured", { ascending: false });
+    if (sp.sort === "price_asc") query = query.order("price", { ascending: true });
+    else if (sp.sort === "price_desc") query = query.order("price", { ascending: false });
+    else query = query.order("approved_at", { ascending: false, nullsFirst: false });
+    return query.range((page - 1) * PAGE, page * PAGE - 1);
+  }
+  const listed = async () => {
+    const r = await listQuery(true);
+    return r.error?.code === "42703" ? listQuery(false) : r;
+  };
 
   const [profile, settings, { data, count, error }, all, nw, old] = await Promise.all([
     getProfile(),
     getSettings(),
-    query,
+    listed(),
     supabase.from("public_ads").select("id", { count: "exact", head: true }),
     supabase.from("public_ads").select("id", { count: "exact", head: true }).eq("category", "new"),
     supabase.from("public_ads").select("id", { count: "exact", head: true }).eq("category", "old"),

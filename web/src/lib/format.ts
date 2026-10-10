@@ -28,7 +28,7 @@ export const STATUS: Record<AdStatus, { label: string; cls: string }> = {
 };
 
 export const roleLabel = (r?: string | null) =>
-  r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : r === "leasing" ? "Лизинг" : "Хэрэглэгч";
+  r === "admin" ? "Админ" : r === "manager" ? "Менежер" : r === "dealer" ? "Авто худалдаа" : r === "leasing" ? "Лизинг" : r === "agent" ? "Агент" : "Хэрэглэгч";
 
 const MONTHS = ["1-р сар", "2-р сар", "3-р сар", "4-р сар", "5-р сар", "6-р сар", "7-р сар", "8-р сар", "9-р сар", "10-р сар", "11-р сар", "12-р сар"];
 export const monthLabel = (d: Date) => MONTHS[d.getMonth()];

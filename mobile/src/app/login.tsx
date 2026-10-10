@@ -1,3 +1,4 @@
+import { WEB_URL } from "@/lib/staff";
 import { useEffect, useRef, useState } from "react";
 import { Linking, Pressable, View } from "react-native";
 import { router, useLocalSearchParams, type Href } from "expo-router";
@@ -77,8 +78,10 @@ export default function Login() {
         <Button title="Нэвтрэлгүйгээр зар үзэх" variant="darkGhost" onPress={skip} />
         <T style={{ textAlign: "center", fontSize: 13, color: "#9AA0A9", lineHeight: 20 }}>
           Нэвтэрснээр{" "}
-          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL("https://web-mu-fawn-45.vercel.app")}>үйлчилгээний нөхцөл</T>{" "}
-          болон нууцлалын бодлогыг зөвшөөрнө.
+          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL(`${WEB_URL}/terms`)}>үйлчилгээний нөхцөл</T>{" "}
+          болон{" "}
+          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL(`${WEB_URL}/privacy`)}>нууцлалын бодлогыг</T>{" "}
+          зөвшөөрнө.
         </T>
       </View>
     </View>

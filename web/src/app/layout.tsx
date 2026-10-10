@@ -1,10 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PwaSetup } from "@/components/WebPush";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ErrorReporter } from "@/components/ErrorReporter";
+import { SITE_NAME, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { default: "Машин зар", template: "%s — Машин зар" },
-  description: "Менежерээр шалгагдсан автомашины зарууд. 2016 ба хойш, 2016-аас өмнө ангилалтай.",
+  metadataBase: new URL(siteUrl()),
+  title: { default: "Машин зар — автомашины зар", template: "%s — Машин зар" },
+  description: "Менежерээр шалгагдсан автомашины зарууд Монголд. Toyota Prius, Land Cruiser зэрэг машин зарах, худалдан авах, лизингийн тооцоолуур, шинэ зарын мэдэгдэл.",
+  keywords: ["машин зар", "автомашин худалдаа", "машин зарна", "машин авна", "Prius зар", "лизинг", "Улаанбаатар"],
+  openGraph: { type: "website", siteName: SITE_NAME, locale: "mn_MN", url: "/" },
+  twitter: { card: "summary_large_image" },
   applicationName: "Машин зар",
   appleWebApp: { capable: true, title: "Машин зар", statusBarStyle: "black" },
   formatDetection: { telephone: false },
@@ -26,7 +34,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh flex flex-col">
         <PwaSetup />
+        <ErrorReporter />
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
