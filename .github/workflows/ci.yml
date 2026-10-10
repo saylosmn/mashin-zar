@@ -1,5 +1,5 @@
 # Шалгалт: push болон pull request бүрт вэб, апп, өгөгдлийн сангийн кодыг автоматаар шалгана.
-#  - Вэб: TypeScript, unit тест (шимтгэл, хугацаа, харьцуулалт, лизинг…), production build
+#  - Вэб: TypeScript, ESLint, unit тест (шимтгэл, хугацаа, харьцуулалт, лизинг…), production build
 #  - Апп: TypeScript
 #  - SQL: schema.sql-ийг хоосон Postgres-д 2 удаа ажиллуулж (дахин ажиллуулахад аюулгүй эсэх),
 #         supabase/tests/flows.sql-ийн урсгалын тестүүд (эрх, RLS, агент, гомдол, хугацаа…)
@@ -33,9 +33,8 @@ jobs:
         run: npm run typecheck
       - name: Unit тест
         run: npm test
-      - name: Lint (мэдээллийн зорилгоор)
+      - name: Lint
         run: npm run lint
-        continue-on-error: true
       - name: Build
         run: npm run build
         env:

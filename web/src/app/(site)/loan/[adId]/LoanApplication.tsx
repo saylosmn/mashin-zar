@@ -44,7 +44,8 @@ export function LoanApplication({
 }) {
   const router = useRouter();
   const d = defaults.applicant ?? {};
-  const batch = useRef(crypto.randomUUID());
+  /** Баримтын хавтас (нэг хүсэлтийн файлууд нэг дор) — ноорогоос сэргээж болно */
+  const [batch, setBatch] = useState(() => crypto.randomUUID());
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,17 +95,17 @@ export function LoanApplication({
   // ---- Ноорог: хуудас хаагдах / утас камер нээхэд дахин ачаалагдвал бөглөсөн мэдээлэл алдагдахгүй ----
   const snapshot = {
     step, fullName, phone, rd, city, district, address, marital, household, license, emp, employer, position, work, income, other, debt,
-    overdue, refName, refPhone, refRel, hasCos, cosName, cosPhone, cosRel, cosRd, cosIncome, docs, note, batch: batch.current,
+    overdue, refName, refPhone, refRel, hasCos, cosName, cosPhone, cosRel, cosRd, cosIncome, docs, note, batch,
   };
   const restoredOnce = useRef(false);
   useEffect(() => {
     if (restoredOnce.current) return;
-    restoredOnce.current = true;
-    try {
-      const raw = localStorage.getItem(draftKey);
-      if (!raw) return;
-      const v = JSON.parse(raw) as Partial<typeof snapshot> & { at?: number };
-      if (!v.at || Date.now() - v.at > 7 * 864e5) { localStorage.removeItem(draftKey); return; }
+    // Эхний зурсны дараа сэргээнэ (сервер дээрх HTML-тэй зөрөхгүй)
+    const id = requestAnimationFrame(() => {
+      if (restoredOnce.current) return;
+      restoredOnce.current = true;
+      const v = readDraft<typeof snapshot>(draftKey);
+      if (!v) return;
       const str = (x: unknown, f: (s: string) => void) => { if (typeof x === "string") f(x); };
       str(v.fullName, setFullName); str(v.phone, setPhone); str(v.rd, setRd); str(v.city, setCity); str(v.district, setDistrict);
       str(v.address, setAddress); str(v.marital, setMarital); str(v.household, setHousehold); str(v.emp, setEmp); str(v.employer, setEmployer);
@@ -115,16 +116,17 @@ export function LoanApplication({
       if (typeof v.overdue === "boolean" || v.overdue === null) setOverdue(v.overdue);
       if (typeof v.hasCos === "boolean") setHasCos(v.hasCos);
       if (v.docs && typeof v.docs === "object") setDocs(v.docs as Record<string, Doc>);
-      if (typeof v.batch === "string") batch.current = v.batch;
+      if (typeof v.batch === "string") setBatch(v.batch);
       if (typeof v.step === "number" && v.step >= 0 && v.step <= 4) setStep(v.step);
       setRestored(true);
-    } catch {}
+    });
+    return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const snapJson = JSON.stringify(snapshot);
   useEffect(() => {
     if (!restoredOnce.current || done) return;
-    const t = setTimeout(() => { try { localStorage.setItem(draftKey, JSON.stringify({ ...JSON.parse(snapJson), at: Date.now() })); } catch {} }, 400);
+    const t = setTimeout(() => { saveDraft(draftKey, snapJson); }, 400);
     return () => clearTimeout(t);
   }, [snapJson, draftKey, done]);
 
@@ -187,7 +189,7 @@ export function LoanApplication({
     try {
       const body = isPdf ? file : await compress(file);
       const ext = isPdf ? "pdf" : "jpg";
-      const path = `${userId}/${batch.current}/${kind}-${Date.now()}.${ext}`;
+      const path = `${userId}/${batch}/${kind}-${stamp()}.${ext}`;
       const supabase = createClient();
       const { error: e } = await supabase.storage.from("loan-docs").upload(path, body, { contentType: isPdf ? "application/pdf" : "image/jpeg" });
       if (e) throw e;
@@ -481,3 +483,30 @@ function Sum({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
     </div>
   );
 }
+
+/** 7 хоногоос хуучин бол устгаж null буцаана */
+function readDraft<T>(key: string): (Partial<T> & { at?: number }) | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Partial<T> & { at?: number };
+    if (!v.at || Date.now() - v.at > 7 * 864e5) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(key: string, json: string) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ...JSON.parse(json), at: Date.now() }));
+  } catch {
+    /* хувийн цонх */
+  }
+}
+
+/** Файлын нэрэнд давхардахгүй хугацааны тэмдэг */
+const stamp = () => Date.now();
