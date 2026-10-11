@@ -5,7 +5,7 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
-import { registerPush } from "./push";
+import { registerPush, unregisterPush } from "./push";
 import { useLiveSync } from "./live";
 import type { Profile, Settings } from "./types";
 
@@ -109,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    await unregisterPush();
     await supabase.auth.signOut();
     setProfile(null);
   }, []);

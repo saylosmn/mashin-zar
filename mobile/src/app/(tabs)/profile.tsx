@@ -6,10 +6,30 @@ import { C } from "@/lib/theme";
 import { initial, roleLabel } from "@/lib/format";
 import { Button, T, s } from "@/components/ui";
 import { openWebPanel } from "@/lib/staff";
+import { useState } from "react";
+import { Alert } from "react-native";
+import { PUSH_REASON, registerPush } from "@/lib/push";
+import { supabase } from "@/lib/supabase";
+import { errMsg } from "@/lib/format";
 
 
 function ProfileTabInner() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, session } = useAuth();
+  const [testing, setTesting] = useState(false);
+
+  async function testPush() {
+    if (!session) return;
+    setTesting(true);
+    const st = await registerPush(session.user.id);
+    if (!st.ok) {
+      setTesting(false);
+      return Alert.alert("Мэдэгдэл ажиллахгүй байна", `${PUSH_REASON[st.reason]}${st.detail ? `\n\n(${st.detail})` : ""}`);
+    }
+    const { error } = await supabase.rpc("test_push");
+    setTesting(false);
+    if (error) return Alert.alert("Илгээж чадсангүй", errMsg(error));
+    Alert.alert("Илгээгдлээ", "5–30 секундэд «Туршилтын мэдэгдэл» ирэх ёстой. Апп-аа хаагаад (эсвэл гадагш гараад) хүлээгээрэй. Ирэхгүй бол админд хэлнэ үү.");
+  }
   const staff = profile?.role === "manager" || profile?.role === "admin";
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 12, gap: 16 }}>
@@ -37,6 +57,7 @@ function ProfileTabInner() {
       <Button title={profile?.profile_completed ? "Профайл засах" : "Профайл үүсгэх"} variant="ghost" icon="edit-2" onPress={() => router.push("/complete-profile")} />
       <Button title="Миний лизингийн хүсэлтүүд" variant="ghost" icon="percent" onPress={() => router.push("/loans")} />
       <Button title="Машин харьцуулах" variant="ghost" icon="shuffle" onPress={() => router.push("/compare")} />
+      <Button title="Мэдэгдэл шалгах (туршилт)" variant="ghost" icon="bell" loading={testing} onPress={testPush} />
       {profile?.role === "agent" && (
         <Button title="Агентын самбар" icon="award" onPress={() => router.push("/agent")} />
       )}

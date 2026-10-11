@@ -19,6 +19,9 @@ export default async function AdminNotifications({ searchParams }: { searchParam
   const rows = (list.data ?? []) as Row[];
   const back = "/admin/notifications";
 
+  type PushRes = { created: string; status_code: number | null; body: string | null; error: string | null };
+  const [{ data: pushRows }, { data: tokenCount }] = await Promise.all([supabase.rpc("push_debug"), supabase.rpc("push_token_count")]);
+  const pushes = (pushRows ?? []) as PushRes[];
   return (
     <PanelShell profile={me} area="admin" active="admin-notif" pending={pending}>
       <div className="flex flex-col gap-1">
@@ -89,6 +92,28 @@ export default async function AdminNotifications({ searchParams }: { searchParam
                 </li>
               );
             })}
+          </ul>
+        )}
+      </section>
+      <section className="card p-5 flex flex-col gap-3 max-w-[920px]">
+        <h2 className="m-0 text-[17px] font-bold">Push-ийн байдал</h2>
+        <span className="text-[13px] text-muted">
+          Бүртгэлтэй Android төхөөрөмж: <strong className="text-ink">{tokenCount != null ? String(tokenCount) : "?"}</strong> (апп-д нэвтэрч мэдэгдлийг зөвшөөрсөн).
+          Доорх нь сүүлийн илгээлтүүдийн хариу. <span className="mono">exp.host</span>-ийн хариунд <span className="mono">InvalidCredentials</span> гарвал Expo-д FCM түлхүүр оруулаагүй,
+          <span className="mono"> DeviceNotRegistered</span> бол апп устгагдсан гэсэн үг.
+        </span>
+        {pushes.length === 0 ? (
+          <p className="m-0 text-[13px] text-muted">Хариу алга (pg_net идэвхгүй эсвэл одоогоор илгээгээгүй).</p>
+        ) : (
+          <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
+            {pushes.map((r, i) => (
+              <li key={i} className="rounded-lg bg-paper px-3 py-2 text-[12px] flex flex-col gap-0.5">
+                <span className={`font-semibold ${r.status_code && r.status_code < 300 && !/"status":"error"/.test(r.body ?? "") ? "text-active-fg" : "text-[#9b1c1c]"}`}>
+                  {r.status_code ?? "—"} · {new Date(r.created).toLocaleString("en-GB", { timeZone: "Asia/Ulaanbaatar" })}
+                </span>
+                <span className="mono break-all text-body">{r.error ?? r.body ?? ""}</span>
+              </li>
+            ))}
           </ul>
         )}
       </section>
