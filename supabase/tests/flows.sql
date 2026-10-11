@@ -229,4 +229,23 @@ select pg_temp.eq((select count(*)::int from public.messages), 3, 'менеже�
 reset role;
 select pg_temp.eq(public.notify_url('message', null), '/messages', 'чатын push холбоос');
 
+
+-- 12. Push токен: нэг утсан дээр аккаунт солиход шинэ хэрэглэгчид шилжинэ
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+set role authenticated;
+select public.save_push_token('ExponentPushToken[abc123]', 'android');
+reset role;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e');
+set role authenticated;
+select public.save_push_token('ExponentPushToken[abc123]', 'android');
+select pg_temp.fails($$select public.save_push_token('bad-token', 'android')$$, 'буруу токен');
+select pg_temp.eq(public.test_push(), 1, 'туршилтын мэдэгдэл');
+reset role;
+select pg_temp.eq((select user_id from public.push_tokens where token = 'ExponentPushToken[abc123]'), '00000000-0000-0000-0000-00000000000e'::uuid, 'токен шинэ хэрэглэгчид шилжсэн');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e');
+set role authenticated;
+select public.remove_push_token('ExponentPushToken[abc123]');
+reset role;
+select pg_temp.eq((select count(*)::int from public.push_tokens where token = 'ExponentPushToken[abc123]'), 0, 'гарахад токен устсан');
+
 \echo 'Бүх SQL тест амжилттай'
