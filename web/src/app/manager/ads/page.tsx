@@ -7,6 +7,8 @@ import { Flash, PanelShell } from "@/components/PanelShell";
 import { CarPhoto } from "@/components/CarPhoto";
 import { StatusBadge } from "@/components/StatusBadge";
 import { IconPhone } from "@/components/icons";
+import { PAY_STATUS, PLAN_LABEL } from "@/lib/payments";
+import type { PayStatus } from "@/lib/types";
 import { approveAd, markContacted, rejectAd, saveNote, sendOffer, setAdAgent } from "../../panel-actions";
 import { agentOptions } from "@/lib/reports";
 import { RejectForm } from "./RejectForm";
@@ -57,6 +59,12 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
   const leads = (leadRes.data ?? []) as unknown as Lead[];
   const chats = (chatRes.data ?? []) as unknown as Chat[];
   let sellerStats = { total: 0, sold: 0 };
+  type PayRow = { status: PayStatus; ref: string; amount: number };
+  const pay: PayRow | null =
+    ad?.plan === "paid"
+      ? (((await supabase.from("payments").select("status,ref,amount").eq("ad_id", ad.id).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle()).data as PayRow | null) ?? null)
+      : null;
+  const payBlocked = ad?.plan === "paid" && (ad.status === "pending" || ad.status === "rejected") && pay?.status !== "confirmed";
   if (ad) {
     const { data: s } = await supabase.from("ads").select("status").eq("user_id", ad.user_id);
     sellerStats = { total: s?.length ?? 0, sold: (s ?? []).filter((x) => x.status === "sold").length };
@@ -109,6 +117,7 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                   </div>
                   <span className="text-[13px] text-body">{a.year_made} · {categoryLabel(a.category, cy)} · {a.photos.length} зураг</span>
                   <span className="h-display text-[13px]">{money(a.price)}</span>
+                  {a.plan === "paid" && <span className="text-[12px] font-semibold text-pending-fg">💳 {PLAN_LABEL.paid}</span>}
                 </div>
               </Link>
             </li>
@@ -122,6 +131,7 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                 <div className="flex gap-2 items-center flex-wrap">
                   <span className="cat-chip">{categoryLabel(ad.category, cy)}</span>
                   <StatusBadge status={ad.status} />
+                  {ad.plan && <span className="cat-chip">{PLAN_LABEL[ad.plan]}</span>}
                   <span className="text-[12px] text-muted">{timeAgo(ad.created_at)}</span>
                   {ad.contacted_at && <span className="badge bg-active-bg text-active-fg">Холбогдсон</span>}
                 </div>
@@ -162,8 +172,14 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                 <div className="flex justify-between text-[14px]"><span className="text-muted">Үйлд. / Орж ирсэн</span><span className="mono font-bold">{ad.year_made} / {ad.year_imported ?? "—"}</span></div>
                 <div className="flex justify-between text-[14px] gap-3"><span className="text-muted">Опшн</span><span className="text-right">{ad.options.join(", ") || "—"}</span></div>
                 <div className="flex justify-between text-[14px] gap-3">
-                  <span className="text-muted">Гэрээ</span>
-                  {ad.contract_id ? (
+                  <span className="text-muted">{ad.plan === "paid" ? "Төлбөр" : "Гэрээ"}</span>
+                  {ad.plan === "paid" ? (
+                    pay ? (
+                      <Link href="/admin/payments" className="font-semibold text-right">{PAY_STATUS[pay.status].label} · <span className="mono">{pay.ref}</span> · {money(pay.amount)}</Link>
+                    ) : (
+                      <span className="text-muted">Шимтгэлгүй · төлбөр алга</span>
+                    )
+                  ) : ad.contract_id ? (
                     <a href={`/api/contracts/${ad.contract_id}/pdf`} target="_blank" rel="noreferrer" className="font-semibold">Гарын үсэгтэй PDF ↗</a>
                   ) : (
                     <span className="text-muted">Гэрээгүй (өмнөх зар)</span>
@@ -254,14 +270,18 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                 <form action={approveAd} className="flex-[2_1_220px] flex">
                   <input type="hidden" name="id" value={ad.id} />
                   <input type="hidden" name="back" value={`/manager/ads?tab=${tab}`} />
-                  <button className="btn btn-lg btn-yellow flex-1">Батлаж нийтлэх</button>
+                  <button disabled={payBlocked} className="btn btn-lg btn-yellow flex-1 disabled:opacity-50">{payBlocked ? "Төлбөр баталгаажаагүй" : "Батлаж нийтлэх"}</button>
                 </form>
               )}
               {ad.status === "active" && (
                 <Link href={`/manager/reports?ad=${ad.id}`} className="btn btn-lg btn-ink flex-[2_1_220px]">Зарагдсан тайлан илгээх</Link>
               )}
             </div>
-            <span className="text-[12px] text-muted">Батлагдмагц зар нийтлэгдэж, бүх хэрэглэгчид шинэ зарын мэдэгдэл очно.</span>
+            <span className="text-[12px] text-muted">
+              {payBlocked
+                ? "Шимтгэлгүй (онцлох төлбөртэй) зар: админ «Төлбөрүүд» эсвэл Telegram-аас орлогыг баталсны дараа нийтэлнэ."
+                : "Батлагдмагц зар нийтлэгдэж, бүх хэрэглэгчид шинэ зарын мэдэгдэл очно."}
+            </span>
           </section>
         ) : (
           <section className="card flex-[999_1_520px] p-10 text-center text-muted">Зар сонгоно уу.</section>

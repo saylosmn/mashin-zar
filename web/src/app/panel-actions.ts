@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireStaff, requireUser } from "@/lib/data";
+import { siteUrl } from "@/lib/site";
+import { tgApi } from "@/lib/telegram";
 
 function back(fd: FormData, fallback: string, extra: Record<string, string>) {
   const to = String(fd.get("back") || fallback);
@@ -413,4 +415,80 @@ export async function clearErrors(fd: FormData) {
   await run(fd, "/admin/errors", id ? "Устгагдлаа" : "Бүх бүртгэл цэвэрлэгдлээ", () =>
     id ? supabase.from("error_logs").delete().eq("id", Number(id)) : supabase.from("error_logs").delete().gt("id", 0),
   );
+}
+
+// ---------- Төлбөр, Telegram ----------
+/** Админ: төлбөр батлах / ороогүй (Telegram-ын товчтой ижил) */
+export async function decidePayment(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const approve = fd.get("approve") === "1";
+  const { data, error } = await supabase.rpc("decide_payment", {
+    p_id: String(fd.get("id")),
+    p_approve: approve,
+    p_note: String(fd.get("note") || "").trim() || null,
+  });
+  revalidatePath("/", "layout");
+  redirect(back(fd, "/admin/payments", error ? { err: error.message } : { ok: String(data ?? "Хадгалагдлаа") }));
+}
+
+export async function savePaymentSettings(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await run(fd, "/admin/settings", "Хадгалагдлаа", () =>
+    supabase.rpc("update_payment_settings", {
+      p_bank: String(fd.get("pay_bank") || ""),
+      p_account: String(fd.get("pay_account") || ""),
+      p_holder: String(fd.get("pay_holder") || ""),
+      p_commission_featured_days: Math.round(Number(fd.get("commission_featured_days") || 0)),
+    }),
+  );
+}
+
+type TgConfig = { bot_token: string | null; chat_id: string | null; webhook_secret: string };
+/** Webhook-ийг сайтын /api/telegram руу заагаад туршилтын мессеж илгээнэ */
+async function connectTelegram(): Promise<{ ok: boolean; msg: string }> {
+  const supabase = await createClient();
+  const [{ data, error }, { data: st }] = await Promise.all([
+    supabase.rpc("telegram_admin"),
+    supabase.from("settings").select("site_url").eq("id", 1).maybeSingle(),
+  ]);
+  const cfg = data as TgConfig | null;
+  if (error || !cfg?.bot_token || !cfg.chat_id) return { ok: false, msg: error?.message ?? "Бот токен, chat ID-гаа оруулна уу" };
+  const site = String((st?.site_url as string | undefined) || siteUrl()).replace(/\/+$/, "");
+  const hook = await tgApi(cfg.bot_token, "setWebhook", {
+    url: `${site}/api/telegram`,
+    secret_token: cfg.webhook_secret,
+    allowed_updates: ["message", "callback_query"],
+  });
+  if (!hook.ok) return { ok: false, msg: `Webhook тохируулж чадсангүй: ${hook.description ?? "алдаа"}. Токеноо шалгана уу.` };
+  const test = await tgApi(cfg.bot_token, "sendMessage", {
+    chat_id: cfg.chat_id,
+    text: "✅ Машин зар холбогдлоо. Төлбөрийн мэдэгдэл энд «Орлого орсон / Ороогүй» товчтой ирнэ.\n/list — шалгах төлбөрүүд",
+  });
+  if (!test.ok) {
+    return { ok: false, msg: `Webhook тохирлоо, гэхдээ мессеж очсонгүй: ${test.description ?? "алдаа"}. Telegram-аас ботоо нээж /start дараад дахин оролдоно уу.` };
+  }
+  return { ok: true, msg: "Telegram холбогдлоо — туршилтын мессеж илгээгдлээ" };
+}
+
+export async function saveTelegram(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("save_telegram", {
+    p_token: String(fd.get("token") || "").trim() || null,
+    p_chat: String(fd.get("chat") || "").trim(),
+  });
+  const r = error ? { ok: false, msg: error.message } : await connectTelegram();
+  revalidatePath("/admin/settings");
+  redirect(back(fd, "/admin/settings", r.ok ? { ok: r.msg } : { err: r.msg }));
+}
+
+export async function disconnectTelegram(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("telegram_admin");
+  const cfg = data as TgConfig | null;
+  if (cfg?.bot_token) await tgApi(cfg.bot_token, "deleteWebhook");
+  await run(fd, "/admin/settings", "Telegram салгагдлаа", () => supabase.rpc("clear_telegram"));
 }

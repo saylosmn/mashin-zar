@@ -15,6 +15,9 @@ export function notifyHref(n: Pick<Notification, "type" | "ad_id">, role: Role |
     case "featured_on": return "/my";
     case "ad_flag": return staff ? "/manager/flags" : "/notifications";
     case "featured_request": return role === "admin" ? "/admin/ads?featured=1" : "/notifications";
+    case "payment_submitted": return role === "admin" ? "/admin/payments" : "/notifications";
+    case "payment_ok":
+    case "payment_rejected": return n.ad_id ? `/pay/${n.ad_id}` : "/my";
   }
   if (n.ad_id) return n.type === "staff_new_ad" && staff ? `/manager/ads?id=${n.ad_id}` : `/ads/${n.ad_id}`;
   return "/notifications";

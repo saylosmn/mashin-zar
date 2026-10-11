@@ -19,6 +19,12 @@ describe("notifyHref", () => {
     expect(notifyHref({ type: "ad_flag", ad_id: ad }, "user")).toBe("/notifications");
     expect(notifyHref({ type: "featured_request", ad_id: ad }, "admin")).toBe("/admin/ads?featured=1");
   });
+  it("төлбөр: админ → Төлбөрүүд, хэрэглэгч → төлбөрийн хуудас", () => {
+    expect(notifyHref({ type: "payment_submitted", ad_id: ad }, "admin")).toBe("/admin/payments");
+    expect(notifyHref({ type: "payment_submitted", ad_id: ad }, "manager")).toBe("/notifications");
+    expect(notifyHref({ type: "payment_ok", ad_id: ad }, "user")).toBe(`/pay/${ad}`);
+    expect(notifyHref({ type: "payment_rejected", ad_id: null }, "user")).toBe("/my");
+  });
   it("хуучин төрлүүд хэвээр", () => {
     expect(notifyHref({ type: "staff_new_ad", ad_id: ad }, "manager")).toBe(`/manager/ads?id=${ad}`);
     expect(notifyHref({ type: "staff_new_ad", ad_id: ad }, "user")).toBe(`/ads/${ad}`);

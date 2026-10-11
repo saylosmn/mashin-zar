@@ -7,10 +7,13 @@ import { GuestGate } from "@/components/GuestGate";
 import { C } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
 import { Button, CardSkeleton, Photo, StateView, StatusBadge, T, s } from "@/components/ui";
-import type { Ad, AdStatus, PublicAd } from "@/lib/types";
+import type { Ad, AdStatus, Payment, PublicAd } from "@/lib/types";
 import { useLiveSync } from "@/lib/live";
 import { confirm, openContract, staffRpc } from "@/lib/staff";
 import { expiryInfo, isFeatured, recentlyRequested } from "@/lib/commission";
+import { PAY_STATUS, needsAction } from "@/lib/payments";
+
+type OpenPay = Pick<Payment, "ad_id" | "status" | "ref">;
 
 type Tab = "all" | AdStatus | "saved";
 
@@ -20,6 +23,7 @@ function MyAdsInner() {
   const uid = session?.user.id;
   const [ads, setAds] = useState<Ad[]>([]);
   const [saved, setSaved] = useState<PublicAd[]>([]);
+  const [payOf, setPayOf] = useState<Map<string | null, OpenPay>>(new Map());
   const [tab, setTab] = useState<Tab>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +34,9 @@ function MyAdsInner() {
       const { data, error: e } = await supabase.from("ads").select("*").eq("user_id", uid).order("created_at", { ascending: false });
       if (e) throw e;
       setAds((data ?? []) as Ad[]);
+      // Нээлттэй төлбөрүүд (төлөх, шалгагдаж буй, ороогүй)
+      const { data: pays } = await supabase.from("payments").select("ad_id,status,ref").eq("user_id", uid).in("status", ["awaiting", "submitted", "rejected"]);
+      setPayOf(new Map(((pays ?? []) as OpenPay[]).map((p) => [p.ad_id, p])));
       const { data: favs } = await supabase.from("favorites").select("ad_id").eq("user_id", uid);
       const ids = (favs ?? []).map((f) => f.ad_id);
       if (ids.length) {
@@ -45,7 +52,7 @@ function MyAdsInner() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
   // Менежер батлах, санал илгээх, зарагдсан болгоход төлөв шууд солигдоно
-  useLiveSync(() => load(), ["ads"]);
+  useLiveSync(() => load(), ["ads", "payments"]);
 
   async function remove(a: Ad) {
     const ok = await confirm("Зар устгах уу?", `${a.brand} ${a.model} зарыг бүр мөсөн устгана. Энэ үйлдлийг буцаах боломжгүй.`, "Устгах", true);
@@ -80,20 +87,6 @@ function MyAdsInner() {
     const r = await staffRpc("renew_ad", { p_ad: a.id });
     if (r.ok) {
       Alert.alert("Зар сунгагдлаа", `${settings.ad_days} хоног нийтэд харагдана.`);
-      load();
-    }
-  }
-
-  async function askFeatured(a: Ad) {
-    const ok = await confirm(
-      "Зараа онцлох уу?",
-      `${settings.featured_days ?? 7} хоног жагсаалтын эхэнд, тодорсон байдлаар харагдана. Үнэ: ${money(settings.featured_price ?? 50000)}. Менежер тантай холбогдож төлбөрийг тохирно.`,
-      "Хүсэлт илгээх",
-    );
-    if (!ok) return;
-    const r = await staffRpc("request_featured", { p_ad: a.id });
-    if (r.ok) {
-      Alert.alert("Хүсэлт илгээгдлээ", "Менежер удахгүй холбогдоно.");
       load();
     }
   }
@@ -154,19 +147,26 @@ function MyAdsInner() {
                   <T w="semibold" style={{ color: a.status === "sold" ? C.body : C.ink }}>{a.brand} {a.model} · {a.year_made}</T>
                   <T w="display" style={{ fontSize: 15, color: a.status === "sold" ? C.body : C.ink, textDecorationLine: a.status === "sold" ? "line-through" : "none" }}>{money(a.price)}</T>
                   <AdLife a={a} />
+                  {payOf.get(a.id) ? (
+                    <Pressable onPress={() => router.push(`/pay/${a.id}`)} style={{ alignSelf: "flex-start", backgroundColor: PAY_STATUS[payOf.get(a.id)!.status].bg, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+                      <T w="semibold" style={{ fontSize: 11, color: PAY_STATUS[payOf.get(a.id)!.status].fg }}>💳 {PAY_STATUS[payOf.get(a.id)!.status].label}</T>
+                    </Pressable>
+                  ) : null}
                 </View>
               </Pressable>
               {(a.status !== "sold" || a.contract_id) && (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: dealer ? "flex-start" : "space-between", borderTopWidth: 1, borderColor: "#ECEDE9", paddingTop: 10, gap: 8 }}>
                   <T style={{ fontSize: 12, color: a.offer_amount ? C.pendingFg : C.muted, flex: dealer ? undefined : 1, flexBasis: dealer ? "100%" : undefined }} w={a.offer_amount ? "semibold" : "body"}>
-                    {a.offer_amount ? `Санал: ${money(a.offer_amount)}` : a.status === "pending" ? "Менежер удахгүй холбогдоно" : a.status === "rejected" ? "Татгалзагдсан" : `${a.views} үзэлт`}
+                    {a.offer_amount ? `Санал: ${money(a.offer_amount)}` : a.status === "pending" ? (a.plan === "paid" ? "Төлбөр баталгаажсаны дараа нийтлэгдэнэ" : "Менежер удахгүй холбогдоно") : a.status === "rejected" ? "Татгалзагдсан" : `${a.views} үзэлт`}
                   </T>
                   {a.contract_id ? <Button small title="Гэрээ" icon="file-text" variant="ghost" onPress={() => openContract(a.contract_id!)} /> : null}
                   {(a.status === "active" || a.status === "hidden") && expiryInfo(a.expires_at).renewable ? (
                     <Button small title="Сунгах" icon="refresh-cw" variant="yellow" onPress={() => renew(a)} />
                   ) : null}
-                  {a.status === "active" && !expiryInfo(a.expires_at).expired && !isFeatured(a.featured_until) && !recentlyRequested(a.featured_requested_at) ? (
-                    <Button small title="Онцлох" icon="star" variant="ghost" onPress={() => askFeatured(a)} />
+                  {payOf.get(a.id) && needsAction(payOf.get(a.id)!.status) ? (
+                    <Button small title="Төлөх" icon="credit-card" variant="yellow" onPress={() => router.push(`/pay/${a.id}`)} />
+                  ) : a.status === "active" && !expiryInfo(a.expires_at).expired && !isFeatured(a.featured_until) && !payOf.get(a.id) ? (
+                    <Button small title="Онцлох" icon="star" variant="ghost" onPress={() => router.push(`/pay/${a.id}`)} />
                   ) : null}
                   {dealer && a.status !== "sold" ? (
                     <>

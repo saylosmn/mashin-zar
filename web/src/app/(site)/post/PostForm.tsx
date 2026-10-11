@@ -9,7 +9,9 @@ import { errMsg } from "@/lib/format";
 import { IconCamera, IconCheck, IconClose, IconSpinner } from "@/components/icons";
 import { SignaturePad } from "@/components/SignaturePad";
 import { ContractView } from "@/components/ContractView";
-import type { ContractTerms } from "@/lib/contract";
+import { tierLines, type ContractTerms } from "@/lib/contract";
+import { money } from "@/lib/format";
+import type { Plan } from "@/lib/types";
 import { checkAgentCode } from "../actions";
 
 type Photo = { id: string; file: File; url: string };
@@ -36,6 +38,9 @@ function contractKey(d: Draft, name: string) {
 
 const normCode = (v: FormDataEntryValue | null) => String(v ?? "").trim().replace(/\s+/g, " ").toUpperCase();
 
+/** Зар оруулах 2 сонголтын үнэ, хоног (тохиргооноос) */
+export type PlanInfo = { featuredPrice: number; featuredDays: number; commissionFeaturedDays: number };
+
 export function PostForm({
   userId,
   defaultPhone,
@@ -46,6 +51,7 @@ export function PostForm({
   contract,
   dealer = false,
   defaultAgentCode = "",
+  plans,
 }: {
   userId: string;
   defaultPhone: string;
@@ -57,6 +63,7 @@ export function PostForm({
   dealer?: boolean;
   /** Агентын холбоосоор (?ref=КОД) орж ирсэн бол */
   defaultAgentCode?: string;
+  plans: PlanInfo;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -69,6 +76,8 @@ export function PostForm({
   const [error, setError] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  /** Цонхны алхам: сонголт → (шимтгэлтэй бол) гэрээ / (төлбөртэй бол) баталгаажуулах */
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
   const [agree, setAgree] = useState(false);
   const [signName, setSignName] = useState(fullName);
@@ -80,6 +89,7 @@ export function PostForm({
   const contractRef = useRef<{ key: string; id: string } | null>(null);
 
   const models = BRANDS[brand] ?? [];
+  const maxPct = Math.max(contract.terms.after, ...contract.terms.tiers.map((t) => t.percent));
   const y = Number(yearMade);
   const category = y ? (y >= cutoff ? "new" : "old") : null;
 
@@ -134,8 +144,9 @@ export function PostForm({
     }
     if (!code) agentRef.current = null;
     // Авто худалдаа: гэрээгүй, шууд нийтлэнэ
-    if (dealer) return void send(d, null);
+    if (dealer) return void send(d, null, "commission");
     setDraft(d);
+    setPlan(null);
     setAgree(false);
     setSignature(null);
   }
@@ -146,15 +157,15 @@ export function PostForm({
     if (!signName.trim()) return setError("Овог нэрээ бичнэ үү.");
     if (!signature) return setError("Гарын үсгээ зурна уу.");
     if (!agree) return setError("Гэрээг уншиж зөвшөөрснөө тэмдэглэнэ үү.");
-    await send(draft, signature);
+    await send(draft, signature, "commission");
   }
 
   /**
    * Зар үүсгэнэ: 1) зургуудыг байршуулна (3-аар зэрэг, дараалал хадгална) → 2) гэрээнд гарын үсэг (RPC)
-   * → 3) зар оруулна. signature=null бол гэрээгүй (авто худалдаа).
+   * → 3) зар оруулна. signature=null бол гэрээгүй (авто худалдаа, эсвэл онцлох төлбөртэй сонголт).
    * Гэрээ амжилттай үүсээд дараагийн алхам унавал, мэдээлэл өөрчлөгдөөгүй бол дахин оролдоход тэр гэрээг ашиглана.
    */
-  async function send(draft: Draft, signature: string | null) {
+  async function send(draft: Draft, signature: string | null, plan: Plan) {
     if (!navigator.onLine) return setError("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
     setError(null);
     const supabase = createClient();
@@ -217,12 +228,17 @@ export function PostForm({
 
       // 3) Зар
       setBusy({ step: 3, done: total });
-      const { error: insErr } = await supabase.from("ads").insert({ ...draft, user_id: userId, photos: paths, contract_id: contractId, agent_id: agentRef.current?.id ?? null });
+      const { data: row, error: insErr } = await supabase
+        .from("ads")
+        .insert({ ...draft, user_id: userId, photos: paths, contract_id: contractId, agent_id: agentRef.current?.id ?? null, ...(dealer ? {} : { plan }) })
+        .select("id")
+        .single();
       if (insErr) throw insErr;
       contractRef.current = null;
       // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
       if (contractId) fetch(`/api/contracts/${contractId}/pdf`, { method: "POST", keepalive: true }).catch(() => {});
-      router.push("/my?created=1");
+      // Төлбөртэй сонголт: шууд дансны мэдээлэл, «Төлсөн» товчтой хуудас руу
+      router.push(plan === "paid" && row?.id ? `/pay/${row.id}?created=1` : "/my?created=1");
       router.refresh();
     } catch (err) {
       if (uploaded.length) await supabase.storage.from("ad-photos").remove(uploaded).catch(() => {});
@@ -469,11 +485,11 @@ export function PostForm({
               ))}
             </ul>
             {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
-            <button form="post-form" className="btn btn-lg btn-yellow">{dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Гэрээ"}</button>
+            <button form="post-form" className="btn btn-lg btn-yellow">{dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"}</button>
             <p className="m-0 text-[13px] leading-relaxed text-pale">
               {dealer
                 ? "Авто худалдааны зар менежерийн шалгалтгүйгээр шууд нийтлэгдэнэ."
-                : "Дараагийн алхамд зуучлалын гэрээг уншиж, гарын үсгээ зурж зөвшөөрнө. Дараа нь “Зар амжилттай үүслээ, манай менежер удахгүй холбогдоно” гэсэн мэдэгдэл гарна."}
+                : `Дараагийн алхамд 2 сонголтоос нэгийг сонгоно: зарагдвал шимтгэл төлөх (онцлох зар үнэгүй, агент зарна), эсвэл ${money(plans.featuredPrice)} төлж шимтгэлгүй онцлох зар байршуулах.`}
             </p>
           </>
         )}
@@ -484,61 +500,156 @@ export function PostForm({
           <div className="bg-card w-full sm:max-w-[760px] max-h-[94dvh] rounded-t-[22px] sm:rounded-[22px] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
               <div className="flex flex-col">
-                <span className="text-[12px] text-muted">Алхам 3 / 3</span>
-                <h2 id="contract-title" className="m-0 text-[18px] font-bold">Зуучлалын гэрээ</h2>
+                <span className="text-[12px] text-muted">{plan ? "Алхам 3 / 3" : "Алхам 2 / 3 · Сонголт"}</span>
+                <h2 id="contract-title" className="m-0 text-[18px] font-bold">
+                  {plan === "commission" ? "Зуучлалын гэрээ" : plan === "paid" ? "Онцлох зар · шимтгэлгүй" : "Зараа хэрхэн байршуулах вэ?"}
+                </h2>
               </div>
               <button type="button" aria-label="Хаах" disabled={!!busy} onClick={() => setDraft(null)} className="w-10 h-10 rounded-xl bg-paper border-0 flex items-center justify-center cursor-pointer disabled:opacity-40">
                 <IconClose size={20} />
               </button>
             </div>
-            <div className="overflow-y-auto px-5 py-4 flex flex-col gap-5">
-              <div className="rounded-xl bg-paper p-4 max-h-[42dvh] overflow-y-auto border border-line">
-                <ContractView
-                  data={{
-                    company: contract.company,
-                    terms: contract.terms,
-                    fullName: signName || null,
-                    phone: draft.phone,
-                    brand: draft.brand,
-                    model: draft.model,
-                    yearMade: draft.year_made,
-                    plate: draft.plate_number,
-                    vin: draft.vin,
-                    price: draft.price,
+
+            {!plan && (
+              <div className="overflow-y-auto px-5 py-4 flex flex-col gap-3">
+                <PlanCard
+                  title="Шимтгэлтэй · агент зарна"
+                  price={`Одоо 0₮ · зарагдвал ${maxPct}% хүртэл`}
+                  points={[
+                    plans.commissionFeaturedDays > 0 ? `⭐ ${plans.commissionFeaturedDays} хоног онцлох зар — үнэгүй, жагсаалтын эхэнд` : "Зар нийтэд үнэгүй харагдана",
+                    "Манай агентууд худалдан авагч хайж, хурдан зарж өгнө",
+                    "Шимтгэлийг зөвхөн машин зарагдсаны дараа төлнө (гэрээтэй)",
+                  ]}
+                  onPick={() => {
+                    setError(null);
+                    setAgree(false);
+                    setSignature(null);
+                    setPlan("commission");
                   }}
+                  cta="Сонгох · гэрээ"
+                  highlight
                 />
+                <PlanCard
+                  title="Онцлох зар · шимтгэлгүй"
+                  price={`${money(plans.featuredPrice)} нэг удаа`}
+                  points={[
+                    `⭐ ${plans.featuredDays} хоног онцлох — жагсаалтын эхэнд, тэмдэгтэй`,
+                    "Зарагдахад ямар ч шимтгэл төлөхгүй, өөрөө зарна",
+                    "Дансаар шилжүүлээд «Төлсөн» дарна — баталгаажмагц нийтлэгдэнэ",
+                  ]}
+                  onPick={() => {
+                    setError(null);
+                    setPlan("paid");
+                  }}
+                  cta="Сонгох · төлбөр"
+                />
+                <span className="text-[12px] text-muted">Дэлгэрэнгүй: шимтгэлийн шат — {tierLines(contract.terms).join("; ")}.</span>
               </div>
-              <a href="/api/contracts/template" target="_blank" rel="noreferrer" className="text-[13px] font-semibold self-start">Гэрээний загварыг PDF-ээр үзэх ↗</a>
-              <label className="label">
-                Овог нэр (гэрээнд бичигдэнэ)
-                <input value={signName} onChange={(e) => setSignName(e.target.value)} className="input" placeholder="Овог нэр" />
-              </label>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[13px] font-semibold">Гарын үсэг</span>
-                <SignaturePad onChange={setSignature} />
-              </div>
-              <label className="flex items-start gap-3 text-[14px] leading-snug cursor-pointer">
-                <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#111317]" />
-                <span>Би гэрээг бүрэн уншиж танилцсан бөгөөд шимтгэлийн нөхцөлийг зөвшөөрч байна.</span>
-              </label>
-              {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
-            </div>
-            <div className="px-5 py-4 border-t border-line flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
-              <button type="button" disabled={!!busy} onClick={() => setDraft(null)} className="btn btn-lg btn-ghost">Буцах</button>
-              <button type="button" disabled={!!busy || !signature || !agree} onClick={confirmAndSend} className="btn btn-lg btn-yellow disabled:opacity-50">
-                {busy ? (
-                  <>
-                    <IconSpinner size={20} />
-                    {busy.step === 1 ? `Зураг ${busy.done} / ${photos.length}` : busy.step === 2 ? "Гэрээ хадгалж байна…" : "Илгээж байна…"}
-                  </>
-                ) : (
-                  "Зөвшөөрч, зар илгээх"
-                )}
-              </button>
-            </div>
+            )}
+
+            {plan === "paid" && (
+              <>
+                <div className="overflow-y-auto px-5 py-4 flex flex-col gap-4">
+                  <div className="rounded-2xl bg-ink text-paper p-5 flex flex-col gap-2">
+                    <span className="text-[13px] text-pale">{draft.brand} {draft.model} · {draft.year_made} · {money(draft.price)}</span>
+                    <span className="h-display text-[28px] text-yellow">{money(plans.featuredPrice)}</span>
+                    <span className="text-[14px]">⭐ {plans.featuredDays} хоног онцлох · шимтгэлгүй</span>
+                  </div>
+                  <ol className="m-0 pl-5 flex flex-col gap-1.5 text-[14px] leading-snug">
+                    <li>«Зар илгээх» дарахад зар хадгалагдаж, дансны мэдээлэл гарна.</li>
+                    <li>Гүйлгээний утгад таны кодыг бичиж шилжүүлнэ.</li>
+                    <li>«Төлбөр төлсөн» дарна — орлого баталгаажмагц менежер зарыг нийтэлнэ.</li>
+                  </ol>
+                  {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
+                </div>
+                <div className="px-5 py-4 border-t border-line flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
+                  <button type="button" disabled={!!busy} onClick={() => setPlan(null)} className="btn btn-lg btn-ghost">Буцах</button>
+                  <button type="button" disabled={!!busy} onClick={() => send(draft, null, "paid")} className="btn btn-lg btn-yellow disabled:opacity-50">
+                    {busy ? (
+                      <>
+                        <IconSpinner size={20} />
+                        {busy.step === 1 ? `Зураг ${busy.done} / ${photos.length}` : "Илгээж байна…"}
+                      </>
+                    ) : (
+                      "Зар илгээх · төлбөр рүү"
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {plan === "commission" && (
+              <>
+                <div className="overflow-y-auto px-5 py-4 flex flex-col gap-5">
+                  <div className="rounded-xl bg-paper p-4 max-h-[42dvh] overflow-y-auto border border-line">
+                    <ContractView
+                      data={{
+                        company: contract.company,
+                        terms: contract.terms,
+                        fullName: signName || null,
+                        phone: draft.phone,
+                        brand: draft.brand,
+                        model: draft.model,
+                        yearMade: draft.year_made,
+                        plate: draft.plate_number,
+                        vin: draft.vin,
+                        price: draft.price,
+                      }}
+                    />
+                  </div>
+                  <a href="/api/contracts/template" target="_blank" rel="noreferrer" className="text-[13px] font-semibold self-start">Гэрээний загварыг PDF-ээр үзэх ↗</a>
+                  <label className="label">
+                    Овог нэр (гэрээнд бичигдэнэ)
+                    <input value={signName} onChange={(e) => setSignName(e.target.value)} className="input" placeholder="Овог нэр" />
+                  </label>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[13px] font-semibold">Гарын үсэг</span>
+                    <SignaturePad onChange={setSignature} />
+                  </div>
+                  <label className="flex items-start gap-3 text-[14px] leading-snug cursor-pointer">
+                    <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#111317]" />
+                    <span>Би гэрээг бүрэн уншиж танилцсан бөгөөд шимтгэлийн нөхцөлийг зөвшөөрч байна.</span>
+                  </label>
+                  {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
+                </div>
+                <div className="px-5 py-4 border-t border-line flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
+                  <button type="button" disabled={!!busy} onClick={() => setPlan(null)} className="btn btn-lg btn-ghost">Буцах</button>
+                  <button type="button" disabled={!!busy || !signature || !agree} onClick={confirmAndSend} className="btn btn-lg btn-yellow disabled:opacity-50">
+                    {busy ? (
+                      <>
+                        <IconSpinner size={20} />
+                        {busy.step === 1 ? `Зураг ${busy.done} / ${photos.length}` : busy.step === 2 ? "Гэрээ хадгалж байна…" : "Илгээж байна…"}
+                      </>
+                    ) : (
+                      "Зөвшөөрч, зар илгээх"
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PlanCard({ title, price, points, onPick, cta, highlight = false }: { title: string; price: string; points: string[]; onPick: () => void; cta: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-2xl p-4.5 flex flex-col gap-3 ${highlight ? "border-2 border-ink" : "border border-line-2"}`}>
+      <div className="flex justify-between items-baseline gap-3 flex-wrap">
+        <span className="font-bold text-[17px]">{title}</span>
+        <span className="h-display text-[15px]">{price}</span>
+      </div>
+      <ul className="list-none p-0 m-0 flex flex-col gap-1.5 text-[14px]">
+        {points.map((p) => (
+          <li key={p} className="flex gap-2 items-start">
+            <span className="w-5 h-5 mt-px rounded-full bg-yellow text-ink flex items-center justify-center shrink-0"><IconCheck size={12} /></span>
+            {p}
+          </li>
+        ))}
+      </ul>
+      <button type="button" onClick={onPick} className={`btn ${highlight ? "btn-ink" : "btn-yellow"} self-stretch sm:self-end`}>{cta}</button>
     </div>
   );
 }
