@@ -171,4 +171,62 @@ select pg_temp.eq((select (agent_share, featured_price, featured_days, site_url)
 select pg_temp.eq(public.notify_url('ad_expired', null), '/my', 'push холбоос');
 select pg_temp.eq(public.notify_url('new_ad', '00000000-0000-0000-0000-0000000000ff'), '/ads/00000000-0000-0000-0000-0000000000ff', 'push холбоос (зар)');
 
+
+-- 10. Утас: нийтэд харагдахгүй, нэвтэрсэн хүн RPC-ээр, бүртгэлтэй
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+set role authenticated;
+select public.sign_contract('Бат Болд','99112233','Lexus','RX',2019,'5678 УНА','LX999',80000000,'M 1 1 L 50 50 L 60 60 Z') as cid2 \gset
+insert into public.ads(user_id, brand, model, plate_number, vin, phone, year_made, price, photos, contract_id)
+values ('00000000-0000-0000-0000-00000000000c','Lexus','RX','5678 УНА','LX999','99112233',2019,80000000,'{b.jpg}', :'cid2') returning id as ad2 \gset
+reset role;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+set role authenticated;
+select public.approve_ad(:'ad2');
+reset role;
+select pg_temp.fails($$select phone from public.public_ads limit 1$$, 'public_ads-д утас байхгүй');
+select pg_temp.as_user('');
+set role anon;
+select pg_temp.fails(format($$select public.reveal_phone(%L)$$, :'ad2'), 'нэвтрээгүй хүн утас харахгүй');
+reset role;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e');
+set role authenticated;
+select pg_temp.eq(public.reveal_phone(:'ad2'), '99112233', 'нэвтэрсэн хүн утас харна');
+select public.reveal_phone(:'ad2');
+select pg_temp.eq((select count(*)::int from public.ad_phone_views), 0, 'хэрэглэгч бусдын бүртгэл харахгүй');
+reset role;
+select pg_temp.eq((select times from public.ad_phone_views where ad_id = :'ad2'), 2, 'харсан тоо');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+set role authenticated;
+select pg_temp.eq((select phone_views from public.ad_interest(:'ad2')), 1, 'эзэн сонирхсон хүний тоог харна');
+reset role;
+
+-- 11. Чат
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e');
+set role authenticated;
+select public.start_chat(:'ad2', 'Сайн байна уу, машин байгаа юу?') as conv \gset
+select pg_temp.eq(public.start_chat(:'ad2', 'Дахиад нэг асуулт'), :'conv'::uuid, 'нэг зарт нэг чат');
+select pg_temp.fails(format($$select public.send_message(%L, '   ')$$, :'conv'), 'хоосон мессеж');
+reset role;
+select pg_temp.eq((select count(*)::int from public.notifications where type = 'message'), 1, 'мэдэгдэл 10 минутад нэг');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+set role authenticated;
+select pg_temp.eq(public.chat_unread(), 2, 'худалдагчид 2 уншаагүй');
+select pg_temp.eq((select other_name from public.my_chats() limit 1), 'Бат', 'нөгөө талын нэр');
+select public.send_message(:'conv', 'Байгаа, хэзээ үзэх вэ?');
+select public.mark_chat_read(:'conv');
+select pg_temp.eq(public.chat_unread(), 0, 'уншсан');
+select pg_temp.fails(format($$select public.start_chat(%L, 'hi')$$, :'ad2'), 'өөрийн зартай чатлахгүй');
+reset role;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+set role authenticated;
+select pg_temp.eq((select count(*)::int from public.messages), 0, 'гуравдагч хүн мессеж харахгүй');
+select pg_temp.fails(format($$select public.send_message(%L, 'hack')$$, :'conv'), 'гуравдагч хүн бичихгүй');
+select pg_temp.fails($$insert into public.messages(conversation_id, sender_id, body) values (gen_random_uuid(), auth.uid(), 'x')$$, 'шууд insert хориотой');
+reset role;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+set role authenticated;
+select pg_temp.eq((select count(*)::int from public.messages), 3, 'менежер чат уншина');
+reset role;
+select pg_temp.eq(public.notify_url('message', null), '/messages', 'чатын push холбоос');
+
 \echo 'Бүх SQL тест амжилттай'

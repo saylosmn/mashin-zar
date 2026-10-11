@@ -129,3 +129,22 @@ export async function checkAgentCode(code: string): Promise<{ id: string; name: 
   const row = Array.isArray(data) ? data[0] : null;
   return row ? { id: row.id as string, name: row.name as string } : null;
 }
+
+/** Худалдагчийн утас (нэвтэрсэн хэрэглэгчид, хэн харсныг бүртгэнэ) */
+export async function revealPhone(adId: string): Promise<{ phone?: string; error?: string }> {
+  const me = await getProfile();
+  if (!me) return { error: "Утас харахын тулд нэвтэрнэ үү" };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reveal_phone", { p_ad: adId });
+  return error ? { error: error.message } : { phone: String(data ?? "") };
+}
+
+/** Зарын эзэнтэй чат эхлүүлэх → чат руу шилжинэ */
+export async function startChat(adId: string, body: string): Promise<{ error?: string }> {
+  await requireUser(`/messages/start/${adId}`);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("start_chat", { p_ad: adId, p_body: body.slice(0, 1000) });
+  if (error) return { error: error.message };
+  revalidatePath("/messages");
+  redirect(`/messages/${data}`);
+}

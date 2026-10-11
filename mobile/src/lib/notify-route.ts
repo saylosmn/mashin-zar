@@ -9,6 +9,7 @@ export function notifyRoute(type: string | undefined, adId: string | null | unde
     case "loan_request": return "/panel/leasing";
     case "loan_update": return "/loans";
     case "agent_commission": return "/agent";
+    case "message": return "/messages";
     case "ad_expiring":
     case "ad_expired":
     case "featured_on": return "/my";

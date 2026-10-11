@@ -66,7 +66,7 @@ export function CompareToggle({ adId }: { adId: string }) {
 export function CompareBar() {
   const { ids, clear } = useCompare();
   const path = usePathname();
-  if (!ids.length || path.startsWith("/compare")) return null;
+  if (!ids.length || path.startsWith("/compare") || path.startsWith("/messages")) return null;
   return (
     <div className="fixed z-40 left-1/2 -translate-x-1/2 bottom-[calc(84px+env(safe-area-inset-bottom))] sm:bottom-6 bg-ink text-paper rounded-full shadow-lg pl-4 pr-1.5 py-1.5 flex items-center gap-3 max-w-[calc(100vw-24px)]">
       <span className="text-[13px] whitespace-nowrap">Харьцуулах: <strong className="mono text-yellow">{ids.length}/{COMPARE_MAX}</strong></span>

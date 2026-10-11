@@ -91,3 +91,10 @@ export async function requireAgent(): Promise<Profile> {
   if (p.role !== "agent" && p.role !== "admin") redirect("/");
   return p;
 }
+
+/** Уншаагүй чатын мессежийн тоо (SQL шинэчлэгдээгүй үед 0) */
+export async function chatUnread(): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("chat_unread");
+  return error ? 0 : Number(data ?? 0);
+}

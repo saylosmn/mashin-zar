@@ -5,7 +5,7 @@ import { initial } from "@/lib/format";
 import { LoginLink } from "./LoginLink";
 import type { Profile } from "@/lib/types";
 
-export function SiteHeader({ profile, unread, q }: { profile: Profile | null; unread: number; q?: string }) {
+export function SiteHeader({ profile, unread, q, chats = 0 }: { profile: Profile | null; unread: number; q?: string; chats?: number }) {
   const staff = profile && (profile.role === "manager" || profile.role === "admin");
   const leasing = profile?.role === "leasing";
   return (
@@ -34,6 +34,16 @@ export function SiteHeader({ profile, unread, q }: { profile: Profile | null; un
           )}
           {profile?.role === "agent" && (
             <Link href="/agent" className="btn btn-dark-ghost px-3 sm:px-4">Агент</Link>
+          )}
+          {profile && (
+            <Link href="/messages" aria-label="Чат" className="btn btn-dark-ghost w-11 px-0 relative">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></svg>
+              {chats > 0 && (
+                <span className="mono absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-[#ff7a1a] text-ink text-[11px] font-bold flex items-center justify-center">
+                  {chats > 99 ? "99+" : chats}
+                </span>
+              )}
+            </Link>
           )}
           {profile && (
             <Link href="/notifications" aria-label="Мэдэгдэл" className="btn btn-dark-ghost w-11 px-0 relative hidden sm:inline-flex">

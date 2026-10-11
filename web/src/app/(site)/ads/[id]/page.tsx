@@ -157,7 +157,7 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
             ))}
           </dl>
           {!mine && ad.status === "active" && (
-            <ContactBox adId={ad.id} phone={ad.phone} favorite={Boolean(fav)} loginHref={loginHref} />
+            <ContactBox adId={ad.id} favorite={Boolean(fav)} loginHref={loginHref} />
           )}
           {ad.status === "active" && <CompareToggle adId={ad.id} />}
           {!mine && ad.status === "active" && <ViewCounter adId={ad.id} />}

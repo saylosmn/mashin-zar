@@ -11,6 +11,8 @@ import { IconBell, IconHome, IconList, IconPlus, IconUser } from "./icons";
  */
 export function MobileTabBar({ unread }: { unread: number }) {
   const path = usePathname();
+  // Чатын цонхонд бичих талбарыг халхлахгүй
+  if (/^\/messages\/[^/]+$/.test(path)) return null;
   const is = (p: string) => (p === "/" ? path === "/" || path.startsWith("/ads") : path.startsWith(p));
   const items = [
     { href: "/", label: "Зарууд", icon: <IconHome size={22} />, on: is("/") },

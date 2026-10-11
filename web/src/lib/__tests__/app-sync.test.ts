@@ -18,7 +18,7 @@ describe("вэб ↔ апп хуулбар", () => {
   });
   it("мэдэгдлийн төрлүүд апп-д бүгд бий", () => {
     const app = read("../../../../mobile/src/lib/notify-route.ts");
-    for (const t of ["agent_commission", "ad_expiring", "ad_expired", "featured_on", "ad_flag", "featured_request", "sale_report", "loan_request", "loan_update"]) {
+    for (const t of ["message", "agent_commission", "ad_expiring", "ad_expired", "featured_on", "ad_flag", "featured_request", "sale_report", "loan_request", "loan_update"]) {
       expect(app).toContain(`"${t}"`);
     }
   });

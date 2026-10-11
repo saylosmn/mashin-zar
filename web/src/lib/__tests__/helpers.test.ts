@@ -12,6 +12,7 @@ describe("notifyHref", () => {
     expect(notifyHref({ type: "ad_expiring", ad_id: ad }, "user")).toBe("/my");
     expect(notifyHref({ type: "ad_expired", ad_id: ad }, "user")).toBe("/my");
     expect(notifyHref({ type: "featured_on", ad_id: ad }, "user")).toBe("/my");
+    expect(notifyHref({ type: "message", ad_id: ad }, "user")).toBe("/messages");
   });
   it("гомдол, онцлох хүсэлт зөвхөн эрхтэй хүнд панел руу", () => {
     expect(notifyHref({ type: "ad_flag", ad_id: ad }, "manager")).toBe("/manager/flags");
