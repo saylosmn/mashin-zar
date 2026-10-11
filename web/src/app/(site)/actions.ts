@@ -102,12 +102,27 @@ export async function renewAd(fd: FormData) {
   redirect(`/my?${error ? `err=${encodeURIComponent(error.message)}` : `ok=${encodeURIComponent("Зар сунгагдлаа")}`}`);
 }
 
-/** Онцлох (VIP) зар болгох хүсэлт — админ холбогдож төлбөр тохирно */
-export async function requestFeatured(fd: FormData) {
+/** Онцлох зарын төлбөр нээх (нийтлэгдсэн зар) → төлбөрийн хуудас */
+export async function startPayment(fd: FormData) {
   await requireUser();
+  const id = String(fd.get("id"));
   const supabase = await createClient();
-  const { error } = await supabase.rpc("request_featured", { p_ad: String(fd.get("id")) });
-  redirect(`/my?${error ? `err=${encodeURIComponent(error.message)}` : `ok=${encodeURIComponent("Хүсэлт илгээгдлээ. Менежер удахгүй холбогдож төлбөрийг тохирно.")}`}`);
+  const { error } = await supabase.rpc("open_payment", { p_ad: id });
+  revalidatePath(`/pay/${id}`);
+  redirect(`/pay/${id}${error ? `?err=${encodeURIComponent(error.message)}` : ""}`);
+}
+
+/** «Төлбөр төлсөн» — админд Telegram-аар очно */
+export async function submitPayment(fd: FormData) {
+  await requireUser();
+  const ad = String(fd.get("ad"));
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("submit_payment", {
+    p_id: String(fd.get("id")),
+    p_note: String(fd.get("note") || "").trim().slice(0, 300) || null,
+  });
+  revalidatePath("/", "layout");
+  redirect(`/pay/${ad}?${error ? `err=${encodeURIComponent(error.message)}` : "sent=1"}`);
 }
 
 /** Зарыг мэдээлэх (гомдол). Клиентээс дуудаж, үр дүнг буцаана. */

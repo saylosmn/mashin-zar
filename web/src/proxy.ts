@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = [
-  "/login", "/auth", "/setup-error", "/app", "/api/app-version", "/api/push", "/api/contracts",
+  "/login", "/auth", "/setup-error", "/app", "/api/app-version", "/api/push", "/api/contracts", "/api/telegram",
   "/terms", "/privacy", "/compare", "/sitemap.xml", "/robots.txt", "/opengraph-image",
 ];
 

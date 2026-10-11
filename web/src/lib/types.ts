@@ -55,6 +55,30 @@ export type Ad = {
   expires_at?: string | null;
   featured_until?: string | null;
   featured_requested_at?: string | null;
+  /** commission = шимтгэлтэй (гэрээтэй), paid = онцлох төлбөртэй (шимтгэлгүй) */
+  plan?: Plan;
+  created_at: string;
+};
+
+export type Plan = "commission" | "paid";
+export type PayStatus = "awaiting" | "submitted" | "confirmed" | "rejected" | "cancelled";
+
+export type Payment = {
+  id: string;
+  ad_id: string | null;
+  user_id: string;
+  ad_title: string | null;
+  amount: number;
+  days: number;
+  ref: string;
+  status: PayStatus;
+  payer_note: string | null;
+  submitted_at: string | null;
+  decided_at: string | null;
+  decided_via: "web" | "telegram" | null;
+  decided_name: string | null;
+  admin_note: string | null;
+  applied_at: string | null;
   created_at: string;
 };
 
@@ -104,6 +128,10 @@ export type Settings = {
   featured_price?: number;
   featured_days?: number;
   site_url?: string;
+  commission_featured_days?: number;
+  pay_bank?: string | null;
+  pay_account?: string | null;
+  pay_holder?: string | null;
 };
 
 export type Notification = {

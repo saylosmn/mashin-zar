@@ -6,11 +6,14 @@ import { CarPhoto } from "@/components/CarPhoto";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AdCard } from "@/components/AdCard";
 import { IconCheck, IconClose } from "@/components/icons";
-import { deleteMyAd, renewAd, requestFeatured } from "../actions";
-import { expiryInfo, isFeatured, recentlyRequested } from "@/lib/commission";
+import { deleteMyAd, renewAd } from "../actions";
+import { expiryInfo, isFeatured } from "@/lib/commission";
+import { PAY_STATUS, needsAction } from "@/lib/payments";
 import { dealerSetStatus } from "@/app/panel-actions";
 import { ConfirmButton } from "@/components/ConfirmButton";
-import type { Ad, AdStatus, PublicAd } from "@/lib/types";
+import type { Ad, AdStatus, Payment, PublicAd } from "@/lib/types";
+
+type OpenPay = Pick<Payment, "ad_id" | "status" | "ref">;
 
 export const metadata = { title: "Миний зарууд" };
 
@@ -31,6 +34,9 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
   const ads = (data ?? []) as Ad[];
   const { data: favRows } = await supabase.from("favorites").select("ad_id").eq("user_id", me.id);
   const favIds = (favRows ?? []).map((f) => f.ad_id as string);
+  // Нээлттэй төлбөрүүд (төлөх, шалгагдаж буй, ороогүй)
+  const { data: payRows } = await supabase.from("payments").select("ad_id,status,ref").eq("user_id", me.id).in("status", ["awaiting", "submitted", "rejected"]);
+  const payOf = new Map(((payRows ?? []) as OpenPay[]).map((p) => [p.ad_id, p]));
   const { data: favAds } = favIds.length
     ? await supabase.from("public_ads").select("*").in("id", favIds)
     : { data: [] as PublicAd[] };
@@ -116,11 +122,11 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
                 </Link>
                 <div className="flex flex-wrap gap-1.5 items-center">
                   <StatusBadge status={a.status} />
-                  {a.status === "pending" && <span className="text-[12px] text-muted">Менежер удахгүй холбогдоно</span>}
+                  {a.status === "pending" && <span className="text-[12px] text-muted">{pendingText(a)}</span>}
                   {a.offer_amount && <span className="text-[12px] text-pending-fg font-semibold">Санал: {money(a.offer_amount)}</span>}
-                  <AdLife a={a} />
+                  <AdLife a={a} pay={payOf.get(a.id)} />
                 </div>
-                <AdActions a={a} dealer={dealer} featuredPrice={settings.featured_price} featuredDays={settings.featured_days} className="flex flex-wrap gap-2 [&>*]:flex-[1_1_auto] [&_.btn]:w-full" />
+                <AdActions a={a} dealer={dealer} pay={payOf.get(a.id)} className="flex flex-wrap gap-2 [&>*]:flex-[1_1_auto] [&_.btn]:w-full" />
               </li>
             ))}
           </ul>
@@ -143,15 +149,15 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
                     <td>
                       <div className="flex flex-col gap-1 items-start">
                         <StatusBadge status={a.status} />
-                        {a.status === "pending" && <span className="text-[12px] text-muted">Менежер удахгүй холбогдоно</span>}
+                        {a.status === "pending" && <span className="text-[12px] text-muted">{pendingText(a)}</span>}
                         {a.offer_amount && <span className="text-[12px] text-pending-fg font-semibold">Санал: {money(a.offer_amount)}</span>}
-                        <AdLife a={a} />
+                        <AdLife a={a} pay={payOf.get(a.id)} />
                       </div>
                     </td>
                     <td className="mono">{a.status === "pending" ? "—" : num(a.views)}</td>
                     <td className="text-muted">{dateShort(a.created_at)}</td>
                     <td className="text-right">
-                      <AdActions a={a} dealer={dealer} featuredPrice={settings.featured_price} featuredDays={settings.featured_days} className="flex gap-2 justify-end items-center flex-wrap" />
+                      <AdActions a={a} dealer={dealer} pay={payOf.get(a.id)} className="flex gap-2 justify-end items-center flex-wrap" />
                     </td>
                   </tr>
                 ))}
@@ -164,12 +170,20 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
   );
 }
 
-/** Нийтлэгдсэн зарын хугацаа, онцлох төлөв */
-function AdLife({ a }: { a: Ad }) {
-  if (a.status !== "active" && a.status !== "hidden") return null;
+const pendingText = (a: Ad) => (a.plan === "paid" ? "Төлбөр баталгаажсаны дараа нийтлэгдэнэ" : "Менежер удахгүй холбогдоно");
+
+/** Нийтлэгдсэн зарын хугацаа, онцлох төлөв, нээлттэй төлбөр */
+function AdLife({ a, pay }: { a: Ad; pay?: OpenPay }) {
+  const payChip = pay && (
+    <Link href={`/pay/${a.id}`} className={`badge no-underline ${PAY_STATUS[pay.status].cls}`}>
+      💳 {PAY_STATUS[pay.status].label}
+    </Link>
+  );
+  if (a.status !== "active" && a.status !== "hidden") return payChip ?? null;
   const e = expiryInfo(a.expires_at);
   return (
     <>
+      {payChip}
       {!e.none && (
         <span className={`text-[12px] font-semibold ${e.expired ? "text-[#9b1c1c]" : e.renewable ? "text-pending-fg" : "text-muted"}`}>
           {e.expired ? "Хугацаа дууссан — нийтэд харагдахгүй" : `${e.daysLeft} хоног үлдсэн`}
@@ -180,11 +194,10 @@ function AdLife({ a }: { a: Ad }) {
   );
 }
 
-/** Зарын үйлдлүүд (гэрээ, сунгах, онцлох, засах, нуух, зарагдсан, устгах) — хүснэгт ба утасны картад хоёуланд нь. */
-function AdActions({ a, dealer, className, featuredPrice, featuredDays }: { a: Ad; dealer: boolean; className?: string; featuredPrice?: number; featuredDays?: number }) {
+/** Зарын үйлдлүүд (гэрээ, сунгах, онцлох/төлөх, засах, нуух, зарагдсан, устгах) — хүснэгт ба утасны картад хоёуланд нь. */
+function AdActions({ a, dealer, className, pay }: { a: Ad; dealer: boolean; className?: string; pay?: OpenPay }) {
   const e = expiryInfo(a.expires_at);
   const featured = isFeatured(a.featured_until);
-  const requested = recentlyRequested(a.featured_requested_at);
   return (
     <div className={className}>
       {(a.status === "active" || a.status === "hidden") && e.renewable && (
@@ -193,20 +206,10 @@ function AdActions({ a, dealer, className, featuredPrice, featuredDays }: { a: A
           <button className="btn btn-sm btn-yellow">Сунгах</button>
         </form>
       )}
-      {a.status === "active" && !e.expired && !featured && (
-        requested ? (
-          <span className="text-[12px] text-muted self-center">⭐ Хүсэлт илгээсэн</span>
-        ) : (
-          <form action={requestFeatured}>
-            <input type="hidden" name="id" value={a.id} />
-            <ConfirmButton
-              message={`Зараа ${featuredDays ?? 7} хоног жагсаалтын эхэнд онцлох уу? Үнэ: ${money(featuredPrice ?? 50000)}. Менежер тантай холбогдож төлбөрийг тохирно.`}
-              className="btn btn-sm btn-ghost"
-            >
-              ⭐ Онцлох
-            </ConfirmButton>
-          </form>
-        )
+      {pay && needsAction(pay.status) ? (
+        <Link href={`/pay/${a.id}`} className="btn btn-sm btn-yellow">💳 Төлөх</Link>
+      ) : (
+        a.status === "active" && !e.expired && !featured && !pay && <Link href={`/pay/${a.id}`} className="btn btn-sm btn-ghost">⭐ Онцлох</Link>
       )}
       {a.contract_id && (
         <a href={`/api/contracts/${a.contract_id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Гэрээ</a>
