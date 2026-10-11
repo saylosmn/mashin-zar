@@ -9,6 +9,7 @@ export function notifyHref(n: Pick<Notification, "type" | "ad_id">, role: Role |
     case "loan_request": return "/leasing";
     case "loan_update": return "/loans";
     case "agent_commission": return "/agent";
+    case "message": return "/messages";
     case "ad_expiring":
     case "ad_expired":
     case "featured_on": return "/my";

@@ -68,6 +68,7 @@ function RootStack() {
         <Stack.Screen name="panel/leasing" />
         <Stack.Screen name="panel/flags" />
         <Stack.Screen name="agent" />
+        <Stack.Screen name="chat/[id]" />
       </Stack.Protected>
     </Stack>
   );

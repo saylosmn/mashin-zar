@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Dimensions, FlatList, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native";
+import { Alert, Dimensions, FlatList, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,7 +29,8 @@ export default function AdDetail() {
   const [error, setError] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
   const [fav, setFav] = useState(false);
-  const [showPhone, setShowPhone] = useState(false);
+  const [phone, setPhone] = useState<string | null>(null);
+  const [phoneBusy, setPhoneBusy] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [reporting, setReporting] = useState(false);
   const compare = useCompare();
@@ -243,11 +244,26 @@ export default function AdDetail() {
 
       {!mine && ad.status === "active" && (
         <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line }}>
-          {showPhone ? (
-            <Button title={ad.phone} icon="phone" variant="yellow" style={{ flex: 1 }} onPress={() => Linking.openURL(`tel:${ad.phone}`)} />
+          {phone ? (
+            <Button title={phone} icon="phone" variant="yellow" style={{ flex: 1 }} onPress={() => Linking.openURL(`tel:${phone}`)} />
           ) : (
-            <Button title="Дугаар харах" icon="phone" variant="yellow" style={{ flex: 1 }} onPress={() => setShowPhone(true)} />
+            <Button
+              title={uid ? "Дугаар харах" : "Нэвтэрч дугаар харах"}
+              icon="phone"
+              variant="yellow"
+              style={{ flex: 1 }}
+              loading={phoneBusy}
+              onPress={async () => {
+                if (!uid) return requireLogin(`/ads/${id}`);
+                setPhoneBusy(true);
+                const { data, error: e } = await supabase.rpc("reveal_phone", { p_ad: ad.id });
+                setPhoneBusy(false);
+                if (e) Alert.alert("Харж чадсангүй", errMsg(e));
+                else setPhone(String(data ?? ""));
+              }}
+            />
           )}
+          <Button title="Чат" icon="message-circle" style={{ flex: 0.7 }} onPress={() => (uid ? router.push({ pathname: "/chat/[id]", params: { id: "new", ad: ad.id } }) : requireLogin(`/ads/${id}`))} />
         </View>
       )}
       <ReportAdSheet adId={ad.id} visible={reporting} onClose={() => setReporting(false)} />

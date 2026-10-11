@@ -45,6 +45,17 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
   if (!ad && !sp.id) ad = list[0] ?? null;
 
   const agents = await agentOptions();
+  // Сонирхсон хүмүүс: утас харсан, чат бичсэн (SQL шинэчлэгдээгүй үед хоосон)
+  type Lead = { user_id: string; last_at: string; times: number; user: { full_name: string | null; phone: string | null } | null };
+  type Chat = { id: string; last_message_at: string; last_message: string | null; buyer: { full_name: string | null } | null };
+  const [leadRes, chatRes] = ad
+    ? await Promise.all([
+        supabase.from("ad_phone_views").select("user_id,last_at,times, user:profiles!ad_phone_views_user_id_fkey(full_name,phone)").eq("ad_id", ad.id).order("last_at", { ascending: false }).limit(50),
+        supabase.from("conversations").select("id,last_message_at,last_message, buyer:profiles!conversations_buyer_id_fkey(full_name)").eq("ad_id", ad.id).order("last_message_at", { ascending: false }).limit(50),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const leads = (leadRes.data ?? []) as unknown as Lead[];
+  const chats = (chatRes.data ?? []) as unknown as Chat[];
   let sellerStats = { total: 0, sold: 0 };
   if (ad) {
     const { data: s } = await supabase.from("ads").select("status").eq("user_id", ad.user_id);
@@ -194,6 +205,24 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
                 </label>
                 <button className="btn btn-sm btn-dark-ghost self-start">Тэмдэглэл хадгалах</button>
               </form>
+              <details className="rounded-xl bg-ink-2 px-3.5 py-2.5">
+                <summary className="cursor-pointer text-[14px] font-semibold">Сонирхсон: {leads.length} хүн утас харсан · {chats.length} чат</summary>
+                <div className="flex flex-col gap-1.5 pt-2.5 text-[13px]">
+                  {leads.map((l) => (
+                    <div key={l.user_id} className="flex justify-between gap-2">
+                      <span>{l.user?.full_name ?? "Хэрэглэгч"} {l.user?.phone ? <a href={`tel:${l.user.phone}`} className="mono text-yellow">{l.user.phone}</a> : null}</span>
+                      <span className="text-pale whitespace-nowrap">{timeAgo(l.last_at)}{l.times > 1 ? ` · ${l.times}×` : ""}</span>
+                    </div>
+                  ))}
+                  {chats.map((c) => (
+                    <a key={c.id} href={`/messages/${c.id}`} className="flex justify-between gap-2 no-underline">
+                      <span className="truncate">💬 {c.buyer?.full_name ?? "Худалдан авагч"}: {c.last_message ?? ""}</span>
+                      <span className="text-pale whitespace-nowrap">{timeAgo(c.last_message_at)}</span>
+                    </a>
+                  ))}
+                  {!leads.length && !chats.length && <span className="text-pale">Одоогоор алга.</span>}
+                </div>
+              </details>
               {agents.length > 0 && (
                 <form action={setAdAgent} className="flex flex-wrap gap-2 items-end">
                   <input type="hidden" name="id" value={ad.id} />

@@ -8,10 +8,11 @@ import { T } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { isStaff } from "@/lib/staff";
 import { requireLogin } from "@/lib/guest";
+import { useChatUnread } from "@/lib/chat-unread";
 
 const ITEMS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap }> = {
   index: { label: "Зарууд", icon: "home" },
-  notifications: { label: "Мэдэгдэл", icon: "bell" },
+  messages: { label: "Чат", icon: "message-circle" },
   my: { label: "Миний зар", icon: "list" },
   panel: { label: "Панел", icon: "shield" },
   profile: { label: "Профайл", icon: "user" },
@@ -21,6 +22,7 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { profile, session } = useAuth();
   const staff = isStaff(profile) || profile?.role === "leasing";
+  const chats = useChatUnread(!!session);
   return (
     <Tabs
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.paper } }}
@@ -39,7 +41,14 @@ export default function TabsLayout() {
               onPress={() => navigation.navigate(r.name)}
               style={{ flex: 1, alignItems: "center", gap: 3, paddingVertical: 4 }}
             >
-              <Feather name={it.icon} size={22} color={on ? C.ink : C.muted} />
+              <View>
+                <Feather name={it.icon} size={22} color={on ? C.ink : C.muted} />
+                {r.name === "messages" && chats > 0 ? (
+                  <View style={{ position: "absolute", top: -6, right: -10, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: "#FF7A1A", alignItems: "center", justifyContent: "center" }}>
+                    <T w="bold" style={{ fontSize: 10, color: C.ink }}>{chats > 99 ? "99+" : chats}</T>
+                  </View>
+                ) : null}
+              </View>
               <T w={on ? "semibold" : "body"} style={{ fontSize: 11, color: on ? C.ink : C.muted }}>{it.label}</T>
             </Pressable>
           );
@@ -63,6 +72,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="messages" />
       <Tabs.Screen name="notifications" />
       <Tabs.Screen name="my" />
       <Tabs.Screen name="panel" />

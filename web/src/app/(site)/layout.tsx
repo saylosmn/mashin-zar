@@ -4,14 +4,14 @@ import { LiveSync } from "@/components/LiveSync";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { PushPrompt } from "@/components/WebPush";
 import { CompareBar } from "@/components/Compare";
-import { getProfile, unreadCount } from "@/lib/data";
+import { chatUnread, getProfile, unreadCount } from "@/lib/data";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const profile = await getProfile();
-  const unread = profile ? await unreadCount(profile.id) : 0;
+  const [unread, chats] = profile ? await Promise.all([unreadCount(profile.id), chatUnread()]) : [0, 0];
   return (
     <>
-      <SiteHeader profile={profile} unread={unread} />
+      <SiteHeader profile={profile} unread={unread} chats={chats} />
       {profile && <PushPrompt />}
       <OfflineBanner />
       <LiveSync userId={profile?.id} role={profile?.role} partnerId={profile?.partner_id} />
