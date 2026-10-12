@@ -1,9 +1,8 @@
 import { getSettings, requireAdmin } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import { disconnectTelegram, regenSmsKey, saveContractSettings, saveGrowthSettings, savePaymentSettings, saveSettings, saveTelegram } from "../../panel-actions";
+import { regenSmsKey, saveContractSettings, saveGrowthSettings, savePaymentSettings, saveSettings } from "../../panel-actions";
 import { createClient } from "@/lib/supabase/server";
-import { tgApi } from "@/lib/telegram";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { siteUrl } from "@/lib/site";
 import { termsFrom } from "@/lib/contract";
@@ -15,7 +14,7 @@ export const metadata = { title: "Админ · Тохиргоо" };
 export default async function AdminSettings({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string; apk?: string; v?: string }> }) {
   const sp = await searchParams;
   const me = await requireAdmin();
-  const [s, pending, tg, sms] = await Promise.all([getSettings(), pendingCount(), telegramStatus(), smsStatus()]);
+  const [s, pending, sms] = await Promise.all([getSettings(), pendingCount(), smsStatus()]);
   const smsUrl = `${String(s.site_url ?? siteUrl()).replace(/\/+$/, "")}/api/sms`;
   const ct = termsFrom(s);
   const ex = s.offer_percent != null ? Math.round((50_000_000 * s.offer_percent) / 100).toLocaleString("en-US") + "₮" : "[ДҮН]";
@@ -103,41 +102,6 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
         </div>
         <div className="flex justify-end"><button className="btn btn-ink h-12">Хадгалах</button></div>
       </form>
-      <section id="telegram" className="card p-5.5 flex flex-col gap-4 max-w-[920px]">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="m-0 text-[17px] font-bold">Telegram бот · орлого батлах</h2>
-          {tg.connected ? (
-            <span className="badge bg-active-bg text-active-fg">Холбогдсон{tg.bot ? ` · @${tg.bot}` : ""}</span>
-          ) : (
-            <span className="badge bg-soft text-body">Холбогдоогүй</span>
-          )}
-        </div>
-        <ol className="m-0 pl-5 text-[14px] text-body flex flex-col gap-1 leading-relaxed">
-          <li>Telegram-д <strong>@BotFather</strong> → <code>/newbot</code> → ботын токеныг хуулна.</li>
-          <li>Өөрийн ботоо нээгээд <strong>Start</strong> дарна (эсвэл ботыг ажилтнуудын бүлэгт нэмнэ).</li>
-          <li>Chat ID: хувийн чат бол <strong>@userinfobot</strong>-д бичихэд гарна. Холбосны дараа ботод <code>/id</code> бичсэн ч хариулна.</li>
-          <li>Доор оруулаад «Холбох» — туршилтын мессеж ирвэл бэлэн. Төлбөр бүр «✅ Орлого орсон / ❌ Ороогүй» товчтой ирнэ.</li>
-        </ol>
-        {tg.error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[13px]">Сүүлийн алдаа: {tg.error}</p>}
-        {tg.pending > 0 && <p className="m-0 text-[13px] text-pending-fg">Хүлээгдэж буй {tg.pending} шинэчлэл байна — «Дахин холбох» дарна уу.</p>}
-        <form action={saveTelegram} className="flex flex-wrap gap-3 items-end">
-          <input type="hidden" name="back" value="/admin/settings" />
-          <label className="label flex-[2_1_300px] text-[14px]">Бот токен
-            <input name="token" type="password" autoComplete="off" className="input mono font-normal" placeholder={tg.tokenHint ? `Хадгалсан (…${tg.tokenHint}) — солих бол шинээр оруулна` : "123456789:AA…"} />
-          </label>
-          <label className="label flex-[1_1_180px] text-[14px]">Chat ID
-            <input name="chat" required inputMode="numeric" defaultValue={tg.chat ?? ""} className="input mono font-normal" placeholder="123456789" />
-          </label>
-          <button className="btn btn-ink h-12">{tg.connected ? "Дахин холбох" : "Холбох"}</button>
-        </form>
-        {tg.tokenHint && (
-          <form action={disconnectTelegram} className="flex justify-end">
-            <input type="hidden" name="back" value="/admin/settings" />
-            <ConfirmButton message="Telegram ботыг салгах уу? Төлбөрийн мэдэгдэл Telegram-д ирэхээ болино." className="btn btn-sm btn-ghost">Салгах</ConfirmButton>
-          </form>
-        )}
-        <span className="text-[12px] text-muted">Токен зөвхөн өгөгдлийн санд нууцаар хадгалагдана, хэнд ч харагдахгүй. Webhook: {s.site_url ?? siteUrl()}/api/telegram (дээрх «Сайтын хаяг»).</span>
-      </section>
       <section id="sms" className="card p-5.5 flex flex-col gap-4 max-w-[920px]">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="m-0 text-[17px] font-bold">SMS апп · орлого автоматаар батлах</h2>
@@ -151,7 +115,7 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
           <li>Дансны орлогын SMS ирдэг Android утсан дээр <strong>«Орлого SMS»</strong> апп суулгаж, SMS зөвшөөрөл өгнө.</li>
           <li>Апп → ⋮ → Тохиргоо: доорх <strong>серверийн хаяг</strong>, <strong>түлхүүр</strong>, банкны SMS ирдэг дугаарыг оруулна.</li>
           <li>«Туршиж илгээх» → «✓ Сервер хүлээж авлаа» гарвал бэлэн.</li>
-          <li>Орлого орж ирэхэд гүйлгээний утгаас <code>MZXXXXXX</code> кодыг олж, дүн хүрэлцвэл төлбөр <strong>автоматаар</strong> батлагдана. Код олдоогүй, дүн дутуу орлого Telegram-д тусад нь ирнэ.</li>
+          <li>Орлого орж ирэхэд гүйлгээний утгаас <code>MZXXXXXX</code> кодыг олж, дүн хүрэлцвэл төлбөр <strong>автоматаар</strong> батлагдана. Код олдоогүй, дүн дутуу орлого танд мэдэгдлээр ирж, «Төлбөрүүд»-ийн доод хэсэгт харагдана.</li>
         </ol>
         <div className="flex flex-wrap gap-3 items-end">
           <label className="label flex-[2_1_320px] text-[14px]">Серверийн хаяг
@@ -229,21 +193,4 @@ async function smsStatus() {
   const { data } = await supabase.rpc("sms_admin");
   const d = data as { api_key: string | null; last_seen_at: string | null } | null;
   return { key: d?.api_key ?? null, lastSeen: d?.last_seen_at ?? null };
-}
-
-/** Telegram холболтын төлөв (токен хөтөч рүү очихгүй, зөвхөн сүүлийн 4 тэмдэгт) */
-async function telegramStatus() {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("telegram_admin");
-  const cfg = data as { bot_token: string | null; chat_id: string | null } | null;
-  const out = { connected: false, bot: null as string | null, chat: cfg?.chat_id ?? null, tokenHint: cfg?.bot_token ? cfg.bot_token.slice(-4) : null, error: null as string | null, pending: 0 };
-  if (!cfg?.bot_token) return out;
-  const [me, hook] = await Promise.all([tgApi(cfg.bot_token, "getMe", {}, 4000), tgApi(cfg.bot_token, "getWebhookInfo", {}, 4000)]);
-  const info = (hook.result ?? {}) as { url?: string; pending_update_count?: number; last_error_message?: string; last_error_date?: number };
-  out.bot = me.ok ? ((me.result as { username?: string }).username ?? null) : null;
-  out.connected = Boolean(me.ok && info.url && cfg.chat_id);
-  out.pending = info.pending_update_count ?? 0;
-  const recent = info.last_error_date && Date.now() / 1000 - info.last_error_date < 3 * 86400;
-  out.error = !me.ok ? (me.description ?? "Токен ажиллахгүй байна") : recent ? (info.last_error_message ?? null) : null;
-  return out;
 }

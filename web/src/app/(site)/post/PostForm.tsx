@@ -467,7 +467,7 @@ export function PostForm({
             <div role="progressbar" aria-valuemin={0} aria-valuemax={photos.length} aria-valuenow={busy.done} className="h-3 rounded-md bg-ink-line overflow-hidden">
               <div className="h-full bg-yellow rounded-md transition-all" style={{ width: `${(busy.done / Math.max(photos.length, 1)) * 100}%` }} />
             </div>
-            <span className="text-[14px] text-pale">{busy.step === 2 ? "Гэрээ баталгаажуулж байна…" : busy.step === 3 ? (dealer ? "Нийтэлж байна…" : "Менежерт илгээж байна…") : ""}</span>
+            <span className="text-[14px] text-pale">{busy.step === 2 ? "Гэрээ баталгаажуулж байна…" : busy.step === 3 ? (dealer ? "Нийтэлж байна…" : plan === "paid" ? "Илгээж байна…" : "Менежерт илгээж байна…") : ""}</span>
           </div>
         ) : (
           <>
@@ -558,7 +558,7 @@ export function PostForm({
                   <ol className="m-0 pl-5 flex flex-col gap-1.5 text-[14px] leading-snug">
                     <li>«Зар илгээх» дарахад зар хадгалагдаж, дансны мэдээлэл гарна.</li>
                     <li>Гүйлгээний утгад таны кодыг бичиж шилжүүлнэ.</li>
-                    <li>«Төлбөр төлсөн» дарна — орлого баталгаажмагц менежер зарыг нийтэлнэ.</li>
+                    <li>«Төлбөр төлсөн» дарна — орлого баталгаажмагц зар шууд нийтлэгдэж, онцлох болно.</li>
                   </ol>
                   {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
                 </div>

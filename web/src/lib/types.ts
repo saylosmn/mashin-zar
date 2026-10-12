@@ -75,7 +75,7 @@ export type Payment = {
   payer_note: string | null;
   submitted_at: string | null;
   decided_at: string | null;
-  decided_via: "web" | "telegram" | "sms" | null;
+  decided_via: "web" | "telegram" | "sms" | null; // telegram: хуучин бичлэг
   decided_name: string | null;
   admin_note: string | null;
   applied_at: string | null;

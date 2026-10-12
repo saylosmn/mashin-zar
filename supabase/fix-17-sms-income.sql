@@ -2,15 +2,15 @@
 -- ЗАСВАР 17: Банкны орлогын SMS-ээр төлбөрийг автоматаар батлах
 --   Утсан дээрх «Орлого SMS» апп банкны орлогын SMS-ийг /api/sms руу илгээнэ →
 --   гүйлгээний утгаас MZXXXXXX кодыг олж, дүн хүрэлцэж байвал төлбөр автоматаар батлагдана
---   (зар онцлох болж, хэрэглэгчид мэдэгдэл очно, Telegram мессеж «✅ Орлого орсон — SMS» болж шинэчлэгдэнэ).
---   Код олдоогүй, дүн дутуу орлогыг Telegram-д тусад нь мэдэгдэнэ, «Админ → Төлбөрүүд»-д жагсаана.
+--   (зар онцлох болж, хэрэглэгчид мэдэгдэл очно).
+--   Код олдоогүй, дүн дутуу орлогыг админуудад мэдэгдэнэ, «Админ → Төлбөрүүд»-д жагсаана.
 -- SQL Editor → New query → бүтнээр нь Run. Дахин ажиллуулахад аюулгүй. fix-16-ийн дараа.
 -- Түлхүүрийг «Админ → Тохиргоо → SMS апп» хэсгээс хуулж утсан дээрх апп-д оруулна.
 -- =====================================================================
 
 -- ---------- 1. Шийдвэрийн суваг: sms ----------
 alter table public.payments drop constraint if exists payments_decided_via_check;
-alter table public.payments add constraint payments_decided_via_check check (decided_via in ('web','telegram','sms'));
+alter table public.payments add constraint payments_decided_via_check check (decided_via in ('web','telegram','sms')); -- telegram: хуучин бичлэг
 
 -- ---------- 2. Апп-ын нууц түлхүүр (зөвхөн функцээр) ----------
 create table if not exists public.sms_config (
@@ -43,22 +43,11 @@ create policy sms_income_read on public.sms_income for select using (public.is_a
 revoke all on public.sms_income from anon;
 grant select on public.sms_income to authenticated;
 
--- Telegram-ын төлбөрийн чат руу энгийн мессеж (тохируулаагүй бол юу ч хийхгүй)
-create or replace function public.tg_notify(p_text text) returns void
-language plpgsql security definer set search_path = public as $$
-declare c public.telegram_config;
-begin
-  select * into c from public.telegram_config where id = 1;
-  if coalesce(c.bot_token, '') = '' or coalesce(c.chat_id, '') = '' then return; end if;
-  perform public.tg_call('sendMessage', jsonb_build_object('chat_id', c.chat_id, 'text', p_text,
-    'parse_mode', 'HTML', 'disable_web_page_preview', true));
-end $$;
-
 -- ---------- 4. Апп-аас ирсэн орлогыг боловсруулах (Next.js /api/sms энийг дамжуулна) ----------
 create or replace function public.sms_ingest(p_key text, p_money text, p_value text, p_body text, p_sender text, p_date text)
 returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare k text; amt bigint; h text; txt text; p public.payments; res text; msg text; nl text := E'\n';
+declare k text; amt bigint; h text; txt text; p public.payments; res text;
   fmt text := 'FM999,999,999,999';
 begin
   select api_key into k from public.sms_config where id = 1;
@@ -101,13 +90,14 @@ begin
   insert into public.sms_income(amount, value, body, sender, sms_date, hash, payment_id, result)
   values (amt, nullif(left(trim(coalesce(p_value, '')), 200), ''), left(p_body, 1000), left(p_sender, 40), left(p_date, 40), h, p.id, res);
 
+  -- Код олдоогүй / дүн дутуу орлогыг админуудад мэдэгдэнэ (апп, push) — «Админ → Төлбөрүүд»-ээс шийднэ
   if res in ('unmatched','short') then
-    msg := '💰 <b>Орлого орлоо</b>: ' || to_char(amt, fmt) || '₮' || nl
-      || case when res = 'short'
-              then '⚠️ Код <code>' || p.ref || '</code> — дүн дутуу (' || to_char(p.amount, fmt) || '₮ байх ёстой). Автоматаар батлаагүй.'
-              else '❓ Тохирох төлбөрийн код олдсонгүй.' end || nl
-      || '<i>' || public.tg_esc(left(coalesce(p_body, ''), 400)) || '</i>';
-    perform public.tg_notify(msg);
+    insert into public.notifications(user_id, type, title, body, ad_id)
+    select pr.id, 'payment_submitted',
+           case when res = 'short' then 'Орлого дутуу: ' || p.ref else 'Орлого орлоо — код олдсонгүй' end,
+           to_char(amt, fmt) || '₮' || case when res = 'short' then ' (' || to_char(p.amount, fmt) || '₮ байх ёстой)' else '' end
+           || ' · ' || left(coalesce(p_body, ''), 140), p.ad_id
+    from public.profiles pr where pr.role = 'admin' and not pr.is_blocked;
   end if;
 
   return jsonb_build_object('code', 0, 'result', res, 'ref', p.ref);
@@ -133,7 +123,6 @@ begin
 end $$;
 
 -- ---------- 6. Эрх (GRANT) ----------
-revoke execute on function public.tg_notify(text) from public, anon, authenticated;
 revoke execute on function public.sms_admin() from public, anon;
 grant execute on function public.sms_admin() to authenticated;
 revoke execute on function public.regen_sms_key() from public, anon;

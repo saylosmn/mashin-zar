@@ -256,7 +256,7 @@ export default function Post() {
           </View>
         </View>
         <View style={[s.section, { gap: 14 }]}>
-          {[[`Зураг байршуулах`, true], [dealer ? "Мэдээлэл шалгах" : plan === "paid" ? "Онцлох төлбөртэй сонголт" : "Гэрээнд гарын үсэг зурах", busy.step >= 2], [dealer ? "Нийтлэх" : "Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
+          {[[`Зураг байршуулах`, true], [dealer ? "Мэдээлэл шалгах" : plan === "paid" ? "Онцлох төлбөртэй сонголт" : "Гэрээнд гарын үсэг зурах", busy.step >= 2], [dealer ? "Нийтлэх" : plan === "paid" ? "Илгээх" : "Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
             <View key={String(t)} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
               <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: on ? C.ink : "transparent", borderWidth: on ? 0 : 2, borderColor: C.pale, alignItems: "center", justifyContent: "center" }}>
                 {on && <Feather name="check" size={14} color={C.yellow} />}
@@ -319,7 +319,7 @@ export default function Post() {
                 <T w="display" style={{ color: C.yellow, fontSize: 28 }}>{money(fPrice)}</T>
                 <T style={{ color: C.paper, fontSize: 14 }}>⭐ {fDays} хоног онцлох · шимтгэлгүй</T>
               </View>
-              {["«Зар илгээх» дарахад зар хадгалагдаж, дансны мэдээлэл гарна.", "Гүйлгээний утгад таны кодыг бичиж шилжүүлнэ.", "«Төлбөр төлсөн» дарна — орлого баталгаажмагц менежер зарыг нийтэлнэ."].map((t, i) => (
+              {["«Зар илгээх» дарахад зар хадгалагдаж, дансны мэдээлэл гарна.", "Гүйлгээний утгад таны кодыг бичиж шилжүүлнэ.", "«Төлбөр төлсөн» дарна — орлого баталгаажмагц зар шууд нийтлэгдэж, онцлох болно."].map((t, i) => (
                 <View key={t} style={{ flexDirection: "row", gap: 10 }}>
                   <T w="monoBold" style={{ fontSize: 14 }}>{i + 1}.</T>
                   <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{t}</T>
@@ -504,7 +504,7 @@ export default function Post() {
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
         <FooterError err={err} />
         <Button title={dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"} variant="yellow" icon={dealer ? "check" : "arrow-right"} onPress={submit} />
-        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>{dealer ? "Авто худалдааны зар шууд нийтлэгдэнэ" : "Дараа нь: шимтгэлтэй (гэрээ) эсвэл онцлох төлбөртэй · Нийтлэхээс өмнө менежер шалгана"}</T>
+        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>{dealer ? "Авто худалдааны зар шууд нийтлэгдэнэ" : "Дараа нь: шимтгэлтэй (гэрээ, менежер шалгана) эсвэл онцлох төлбөртэй (төлбөр ормогц шууд нийтлэгдэнэ)"}</T>
       </View>
     </KeyboardAvoidingView>
   );

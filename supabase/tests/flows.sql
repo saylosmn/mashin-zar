@@ -248,7 +248,7 @@ select public.remove_push_token('ExponentPushToken[abc123]');
 reset role;
 select pg_temp.eq((select count(*)::int from public.push_tokens where token = 'ExponentPushToken[abc123]'), 0, 'гарахад токен устсан');
 
--- 13. Хоёр сонголт: төлбөртэй (шимтгэлгүй) зар, Telegram-аар батлах
+-- 13. Хоёр сонголт: төлбөртэй (шимтгэлгүй) зар, вэбээс батлах
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 set role authenticated;
 select pg_temp.fails($$insert into public.ads(user_id, brand, model, plate_number, vin, phone, year_made, price, photos)
@@ -272,38 +272,22 @@ select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 set role authenticated;
 select public.submit_payment(:'pay', 'Б.Болд, Хаан банк');
 select pg_temp.fails(format($$select public.submit_payment(%L, null)$$, :'pay'), 'давхар илгээхгүй');
-select pg_temp.fails($$select public.save_telegram('1:x', '1')$$, 'хэрэглэгч Telegram тохируулахгүй');
 reset role;
 select pg_temp.eq((select count(*)::int from public.notifications where type = 'payment_submitted'), 1, 'админд төлбөрийн мэдэгдэл');
+set role anon;
+select pg_temp.fails(format($$select public.decide_payment(%L, true)$$, :'pay'), 'нэвтрээгүй хүн төлбөр батлахгүй');
+reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 set role authenticated;
-select pg_temp.fails($$select public.save_telegram('bad-token', '123456')$$, 'буруу токен');
-select pg_temp.fails($$select public.save_telegram('', '123456')$$, 'токенгүй');
-select public.save_telegram('123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', '987654321');
-select public.save_telegram(null, '987654322');
-select (public.telegram_admin()->>'webhook_secret') as sec \gset
-select pg_temp.eq(public.telegram_admin()->>'chat_id', '987654322', 'chat ID солигдсон, токен хэвээр');
+select pg_temp.eq(public.decide_payment(:'pay', true), '✅ Батлагдлаа', 'админ вэбээс батлав');
+select pg_temp.eq(public.decide_payment(:'pay', false), 'Аль хэдийн батлагдсан', 'давхар дарахад өөрчлөгдөхгүй');
 reset role;
-set role anon;
-select pg_temp.fails($$select count(*) from public.telegram_config$$, 'токен нийтэд харагдахгүй');
-select pg_temp.fails(format($$select public.tg_webhook('wrong', '{}'::jsonb)$$), 'буруу нууц түлхүүр');
-select pg_temp.eq(public.tg_webhook(:'sec', jsonb_build_object('callback_query', jsonb_build_object('id', '1', 'data', 'pay:' || :'pay' || ':ok',
-  'from', jsonb_build_object('first_name', 'Бат'), 'message', jsonb_build_object('message_id', 5, 'chat', jsonb_build_object('id', 111))))),
-  'Энэ чат холбогдоогүй', 'өөр чатаас батлахгүй');
-select pg_temp.eq(public.tg_webhook(:'sec', jsonb_build_object('callback_query', jsonb_build_object('id', '2', 'data', 'pay:' || :'pay' || ':ok',
-  'from', jsonb_build_object('first_name', 'Бат', 'username', 'bat'), 'message', jsonb_build_object('message_id', 7, 'chat', jsonb_build_object('id', 987654322))))),
-  '✅ Батлагдлаа', 'Telegram-аас батлав');
-select pg_temp.eq(public.tg_webhook(:'sec', jsonb_build_object('callback_query', jsonb_build_object('id', '3', 'data', 'pay:' || :'pay' || ':no',
-  'from', jsonb_build_object('first_name', 'Бат'), 'message', jsonb_build_object('message_id', 7, 'chat', jsonb_build_object('id', 987654322))))),
-  'Аль хэдийн батлагдсан', 'давхар дарахад өөрчлөгдөхгүй');
-select pg_temp.eq(public.tg_webhook(:'sec', '{"message":{"text":"/id","chat":{"id":555}}}'::jsonb), 'id', '/id команд');
-reset role;
-select pg_temp.eq((select (status, decided_via, tg_message_id)::text from public.payments where id = :'pay'), '(confirmed,telegram,7)', 'төлбөр батлагдсан');
-select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
-set role authenticated;
-select public.approve_ad(:'pad');
-reset role;
+select pg_temp.eq((select (status, decided_via)::text from public.payments where id = :'pay'), '(confirmed,web)', 'төлбөр батлагдсан');
+select pg_temp.eq(to_regclass('public.telegram_config') is null, true, 'Telegram хүснэгт байхгүй');
+select pg_temp.eq((select (status, approved_at is not null, manager_id is null)::text from public.ads where id = :'pad'), '(active,t,t)', 'төлбөр батлагдмагц зар менежергүй шууд нийтлэгдсэн');
+select pg_temp.eq((select count(*)::int from public.notifications where type = 'staff_new_ad' and title like 'Төлбөр орсон%'), 0, 'менежерт «батлахад бэлэн» мэдэгдэл очихгүй');
 select pg_temp.eq((select round(extract(epoch from featured_until - now()) / 86400)::int from public.ads where id = :'pad'), 10, 'төлбөртэй зар 10 хоног онцлох');
+select pg_temp.eq((select expires_at > now() + interval '50 days' from public.ads where id = :'pad'), true, 'нийтлэгдэхэд зарын хугацаа эхэлсэн');
 select pg_temp.eq((select applied_at is not null from public.payments where id = :'pay'), true, 'онцлох хугацаа хэрэглэгдсэн');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 set role authenticated;
@@ -367,6 +351,7 @@ select pg_temp.fails($$select count(*) from public.sms_income$$, 'SMS жагса
 reset role;
 select pg_temp.eq((select (status, decided_via, decided_name)::text from public.payments where id = :'spay'), '(confirmed,sms,"SMS · банк")', 'төлбөр SMS-ээр батлагдсан');
 select pg_temp.eq((select count(*)::int from public.notifications where type = 'payment_ok' and ad_id = :'sad'), 1, 'хэрэглэгчид «баталгаажлаа» мэдэгдэл');
+select pg_temp.eq((select status from public.ads where id = :'sad'), 'active', 'SMS-ээр төлсөн зар шууд нийтлэгдсэн');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 set role authenticated;
 select pg_temp.eq((select count(*)::int from public.sms_income), 0, 'хэрэглэгч ирсэн SMS харахгүй');
