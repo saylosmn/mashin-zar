@@ -46,7 +46,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
 
       {sp.created && (
         <p role="status" className="m-0 rounded-2xl bg-ink text-paper px-5 py-4 text-[14px] leading-relaxed">
-          <strong className="text-yellow">Зар хадгалагдлаа.</strong> Доорх данс руу шилжүүлээд «Төлбөр төлсөн» дарна уу. Орлого баталгаажмагц менежер зарыг нийтэлнэ.
+          <strong className="text-yellow">Зар хадгалагдлаа.</strong> Доорх данс руу шилжүүлээд «Төлбөр төлсөн» дарна уу. Орлого баталгаажмагц зар тань шууд нийтлэгдэж, онцлох болно.
         </p>
       )}
       {sp.err && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">{sp.err}</p>}
@@ -87,7 +87,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
             <div role="status" className="card p-5 flex flex-col gap-1.5">
               <span className="font-bold text-[16px]">⏳ Шалгаж байна</span>
               <span className="text-[14px] text-body">
-                {open.submitted_at ? `${dateShort(open.submitted_at)}-нд илгээсэн. ` : ""}Орлого баталгаажмагц танд мэдэгдэл ирж, {ad.status === "active" ? "зар тань шууд онцлох болно" : "менежер зарыг нийтэлнэ"}.
+                {open.submitted_at ? `${dateShort(open.submitted_at)}-нд илгээсэн. ` : ""}Орлого баталгаажмагц танд мэдэгдэл ирж, {ad.status === "active" ? "зар тань шууд онцлох болно" : ad.status === "pending" ? "зар тань шууд нийтлэгдэнэ" : "менежер зарыг нийтэлнэ"}.
               </span>
             </div>
           ) : (
@@ -120,7 +120,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
           </div>
           <ul className="m-0 pl-5 text-[14px] flex flex-col gap-1">
             <li>⭐ {days} хоног жагсаалтын эхэнд, тэмдэгтэй харагдана</li>
-            <li>Дансаар шилжүүлээд «Төлбөр төлсөн» дарна — Telegram-аар шууд шалгана</li>
+            <li>Дансаар шилжүүлэхэд орлого автоматаар шалгагдана</li>
           </ul>
           <button className="btn btn-lg btn-yellow">Төлбөрийн мэдээлэл авах</button>
         </form>

@@ -15,7 +15,7 @@ export function notifyRoute(type: string | undefined, adId: string | null | unde
     case "featured_on": return "/my";
     case "ad_flag": return staff ? "/panel/flags" : "/notifications";
     case "featured_request": return adId ? `/panel/ad/${adId}` : "/notifications";
-    case "payment_submitted": return "/notifications"; // админ: вэбийн «Төлбөрүүд» эсвэл Telegram
+    case "payment_submitted": return "/notifications"; // админ: вэбийн «Төлбөрүүд»
     case "payment_ok":
     case "payment_rejected": return adId ? `/pay/${adId}` : "/my";
   }

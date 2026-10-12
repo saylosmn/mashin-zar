@@ -13,7 +13,7 @@ import { PAY_STATUS } from "@/lib/payments";
 import { Button, Field, Input, Photo, Skeleton, StateView, T, s } from "@/components/ui";
 import type { Ad, Payment } from "@/lib/types";
 
-/** Онцлох зарын төлбөр: дансны мэдээлэл, гүйлгээний утга, «Төлбөр төлсөн» (админд Telegram-аар очно) */
+/** Онцлох зарын төлбөр: дансны мэдээлэл, гүйлгээний утга, «Төлбөр төлсөн» (орлогыг SMS апп автоматаар батална) */
 export default function PayScreen() {
   const { id, created } = useLocalSearchParams<{ id: string; created?: string }>();
   const { session, settings } = useAuth();
@@ -45,7 +45,7 @@ export default function PayScreen() {
   }, [uid, id]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
-  // Админ Telegram-аас батлахад шууд шинэчлэгдэнэ
+  // Төлбөр батлагдахад шууд шинэчлэгдэнэ
   useLiveSync(() => load(), ["payments", "ads"]);
 
   const back = (
@@ -92,7 +92,7 @@ export default function PayScreen() {
           <View style={{ backgroundColor: C.ink, borderRadius: 16, padding: 14 }}>
             <T style={{ color: C.paper, fontSize: 14, lineHeight: 20 }}>
               <T w="bold" style={{ color: C.yellow }}>Зар хадгалагдлаа. </T>
-              Доорх данс руу шилжүүлээд «Төлбөр төлсөн» дарна уу. Орлого баталгаажмагц менежер зарыг нийтэлнэ.
+              Доорх данс руу шилжүүлээд «Төлбөр төлсөн» дарна уу. Орлого баталгаажмагц зар тань шууд нийтлэгдэж, онцлох болно.
             </T>
           </View>
         ) : null}
@@ -135,7 +135,7 @@ export default function PayScreen() {
               <View style={[s.card, { padding: 16, gap: 4 }]}>
                 <T w="bold" style={{ fontSize: 16 }}>⏳ Шалгаж байна</T>
                 <T style={{ color: C.body, fontSize: 14, lineHeight: 20 }}>
-                  Орлого баталгаажмагц танд мэдэгдэл ирж, {ad.status === "active" ? "зар тань шууд онцлох болно" : "менежер зарыг нийтэлнэ"}.
+                  Орлого баталгаажмагц танд мэдэгдэл ирж, {ad.status === "active" ? "зар тань шууд онцлох болно" : ad.status === "pending" ? "зар тань шууд нийтлэгдэнэ" : "менежер зарыг нийтэлнэ"}.
                 </T>
               </View>
             ) : (

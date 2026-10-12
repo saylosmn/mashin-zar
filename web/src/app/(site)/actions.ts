@@ -112,7 +112,7 @@ export async function startPayment(fd: FormData) {
   redirect(`/pay/${id}${error ? `?err=${encodeURIComponent(error.message)}` : ""}`);
 }
 
-/** «Төлбөр төлсөн» — админд Telegram-аар очно */
+/** «Төлбөр төлсөн» — админд мэдэгдэл очно (SMS апп орлогыг автоматаар батална) */
 export async function submitPayment(fd: FormData) {
   await requireUser();
   const ad = String(fd.get("ad"));

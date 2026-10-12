@@ -81,8 +81,8 @@ export default async function AdminPayments({ searchParams }: { searchParams: Pr
       </div>
       <Flash ok={sp.ok} err={sp.err ?? error?.message} />
       <p className="m-0 text-[14px] text-muted max-w-[920px]">
-        Хэрэглэгч «Төлбөр төлсөн» дармагц энд болон Telegram ботод «✅ Орлого орсон / ❌ Ороогүй» товчтой ирнэ. Дансны хуулгаас <strong>гүйлгээний утга</strong>, дүнгээр нь тулгана.
-        Аль нэгээс нь батлахад нөгөө нь автоматаар шинэчлэгдэнэ. <Link href="/admin/settings#sms">SMS апп</Link> холбосон бол код, дүн таарсан орлого автоматаар батлагдана.
+        <Link href="/admin/settings#sms">SMS апп</Link> гүйлгээний утгын код, дүн таарсан орлогыг автоматаар батална — онцлох зар шууд нийтлэгдэнэ.
+        Автоматаар батлагдаагүйг (код буруу, дүн дутуу) дансны хуулгаас <strong>гүйлгээний утга</strong>, дүнгээр нь тулгаж энд гараар шийднэ.
       </p>
 
       {rows.length === 0 ? (

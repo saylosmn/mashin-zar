@@ -4,8 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireStaff, requireUser } from "@/lib/data";
-import { siteUrl } from "@/lib/site";
-import { tgApi } from "@/lib/telegram";
 
 function back(fd: FormData, fallback: string, extra: Record<string, string>) {
   const to = String(fd.get("back") || fallback);
@@ -417,8 +415,8 @@ export async function clearErrors(fd: FormData) {
   );
 }
 
-// ---------- Төлбөр, Telegram ----------
-/** Админ: төлбөр батлах / ороогүй (Telegram-ын товчтой ижил) */
+// ---------- Төлбөр ----------
+/** Админ: төлбөр батлах / ороогүй */
 export async function decidePayment(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
@@ -445,45 +443,6 @@ export async function savePaymentSettings(fd: FormData) {
   );
 }
 
-type TgConfig = { bot_token: string | null; chat_id: string | null; webhook_secret: string };
-/** Webhook-ийг сайтын /api/telegram руу заагаад туршилтын мессеж илгээнэ */
-async function connectTelegram(): Promise<{ ok: boolean; msg: string }> {
-  const supabase = await createClient();
-  const [{ data, error }, { data: st }] = await Promise.all([
-    supabase.rpc("telegram_admin"),
-    supabase.from("settings").select("site_url").eq("id", 1).maybeSingle(),
-  ]);
-  const cfg = data as TgConfig | null;
-  if (error || !cfg?.bot_token || !cfg.chat_id) return { ok: false, msg: error?.message ?? "Бот токен, chat ID-гаа оруулна уу" };
-  const site = String((st?.site_url as string | undefined) || siteUrl()).replace(/\/+$/, "");
-  const hook = await tgApi(cfg.bot_token, "setWebhook", {
-    url: `${site}/api/telegram`,
-    secret_token: cfg.webhook_secret,
-    allowed_updates: ["message", "callback_query"],
-  });
-  if (!hook.ok) return { ok: false, msg: `Webhook тохируулж чадсангүй: ${hook.description ?? "алдаа"}. Токеноо шалгана уу.` };
-  const test = await tgApi(cfg.bot_token, "sendMessage", {
-    chat_id: cfg.chat_id,
-    text: "✅ Машин зар холбогдлоо. Төлбөрийн мэдэгдэл энд «Орлого орсон / Ороогүй» товчтой ирнэ.\n/list — шалгах төлбөрүүд",
-  });
-  if (!test.ok) {
-    return { ok: false, msg: `Webhook тохирлоо, гэхдээ мессеж очсонгүй: ${test.description ?? "алдаа"}. Telegram-аас ботоо нээж /start дараад дахин оролдоно уу.` };
-  }
-  return { ok: true, msg: "Telegram холбогдлоо — туршилтын мессеж илгээгдлээ" };
-}
-
-export async function saveTelegram(fd: FormData) {
-  await requireAdmin();
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("save_telegram", {
-    p_token: String(fd.get("token") || "").trim() || null,
-    p_chat: String(fd.get("chat") || "").trim(),
-  });
-  const r = error ? { ok: false, msg: error.message } : await connectTelegram();
-  revalidatePath("/admin/settings");
-  redirect(back(fd, "/admin/settings", r.ok ? { ok: r.msg } : { err: r.msg }));
-}
-
 /** SMS апп-ын түлхүүрийг солино — хуучин түлхүүртэй утас холбогдохоо болино */
 export async function regenSmsKey(fd: FormData) {
   await requireAdmin();
@@ -491,11 +450,3 @@ export async function regenSmsKey(fd: FormData) {
   await run(fd, "/admin/settings", "SMS апп-ын шинэ түлхүүр үүслээ — утсан дээрх апп-д шинээр оруулна уу", () => supabase.rpc("regen_sms_key"));
 }
 
-export async function disconnectTelegram(fd: FormData) {
-  await requireAdmin();
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("telegram_admin");
-  const cfg = data as TgConfig | null;
-  if (cfg?.bot_token) await tgApi(cfg.bot_token, "deleteWebhook");
-  await run(fd, "/admin/settings", "Telegram салгагдлаа", () => supabase.rpc("clear_telegram"));
-}
