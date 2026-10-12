@@ -484,6 +484,13 @@ export async function saveTelegram(fd: FormData) {
   redirect(back(fd, "/admin/settings", r.ok ? { ok: r.msg } : { err: r.msg }));
 }
 
+/** SMS апп-ын түлхүүрийг солино — хуучин түлхүүртэй утас холбогдохоо болино */
+export async function regenSmsKey(fd: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+  await run(fd, "/admin/settings", "SMS апп-ын шинэ түлхүүр үүслээ — утсан дээрх апп-д шинээр оруулна уу", () => supabase.rpc("regen_sms_key"));
+}
+
 export async function disconnectTelegram(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();

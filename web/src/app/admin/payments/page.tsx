@@ -16,6 +16,23 @@ type Row = Payment & {
   owner: { full_name: string | null; phone: string | null; email: string | null } | null;
 };
 
+type SmsRow = {
+  id: string;
+  amount: number;
+  value: string | null;
+  body: string | null;
+  result: "confirmed" | "already" | "short" | "unmatched";
+  created_at: string;
+  payment: { ref: string; amount: number } | null;
+};
+
+const SMS_RESULT: Record<SmsRow["result"], { label: string; cls: string }> = {
+  confirmed: { label: "✅ Автоматаар баталсан", cls: "bg-active-bg text-active-fg" },
+  already: { label: "Өмнө батлагдсан", cls: "bg-soft text-body" },
+  short: { label: "⚠️ Дүн дутуу", cls: "bg-pending-bg text-pending-fg" },
+  unmatched: { label: "❓ Код олдоогүй", cls: "bg-danger-bg text-[#9b1c1c]" },
+};
+
 const TABS: { key: PayStatus | "all"; label: string }[] = [
   { key: "submitted", label: "Шалгах" },
   { key: "awaiting", label: "Төлөөгүй" },
@@ -35,11 +52,13 @@ export default async function AdminPayments({ searchParams }: { searchParams: Pr
     .order(tab === "submitted" ? "submitted_at" : "created_at", { ascending: tab === "submitted" })
     .limit(200);
   if (tab !== "all") q = q.eq("status", tab);
-  const [{ data, error }, pending, { count: nSubmitted }] = await Promise.all([
+  const [{ data, error }, pending, { count: nSubmitted }, { data: smsData }] = await Promise.all([
     q,
     pendingCount(),
     supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "submitted"),
+    supabase.from("sms_income").select("id,amount,value,body,result,created_at, payment:payments(ref,amount)").order("created_at", { ascending: false }).limit(30),
   ]);
+  const sms = (smsData ?? []) as unknown as SmsRow[];
   const rows = (data ?? []) as Row[];
   const back = `/admin/payments?tab=${tab}`;
 
@@ -63,7 +82,7 @@ export default async function AdminPayments({ searchParams }: { searchParams: Pr
       <Flash ok={sp.ok} err={sp.err ?? error?.message} />
       <p className="m-0 text-[14px] text-muted max-w-[920px]">
         Хэрэглэгч «Төлбөр төлсөн» дармагц энд болон Telegram ботод «✅ Орлого орсон / ❌ Ороогүй» товчтой ирнэ. Дансны хуулгаас <strong>гүйлгээний утга</strong>, дүнгээр нь тулгана.
-        Аль нэгээс нь батлахад нөгөө нь автоматаар шинэчлэгдэнэ.
+        Аль нэгээс нь батлахад нөгөө нь автоматаар шинэчлэгдэнэ. <Link href="/admin/settings#sms">SMS апп</Link> холбосон бол код, дүн таарсан орлого автоматаар батлагдана.
       </p>
 
       {rows.length === 0 ? (
@@ -132,6 +151,32 @@ export default async function AdminPayments({ searchParams }: { searchParams: Pr
           })}
         </ul>
       )}
+
+      <section className="flex flex-col gap-2.5 max-w-[980px]">
+        <h2 className="m-0 text-[18px] font-bold">Ирсэн орлого (SMS апп)</h2>
+        {sms.length === 0 ? (
+          <p className="card m-0 px-6 py-6 text-center text-muted text-[14px]">
+            SMS апп-аас орлого ирээгүй байна. <Link href="/admin/settings#sms">Холбох заавар →</Link>
+          </p>
+        ) : (
+          <ul className="list-none p-0 m-0 card divide-y divide-[#ecede9]">
+            {sms.map((r) => (
+              <li key={r.id} className="px-4.5 py-3 flex flex-col gap-1">
+                <div className="flex justify-between items-center gap-3 flex-wrap">
+                  <span className="flex gap-2 items-center flex-wrap">
+                    <span className={`badge ${SMS_RESULT[r.result].cls}`}>{SMS_RESULT[r.result].label}</span>
+                    {r.payment && <span className="mono font-bold text-[13px] bg-yellow text-ink px-1.5 py-0.5 rounded">{r.payment.ref}</span>}
+                    {r.result === "short" && r.payment && <span className="text-[12px] text-muted">байх ёстой {money(r.payment.amount)}</span>}
+                    <span className="text-[12px] text-muted">{timeAgo(r.created_at)}</span>
+                  </span>
+                  <span className="h-display text-[17px]">{money(r.amount)}</span>
+                </div>
+                {r.body && <p className="m-0 text-[13px] text-body break-words">{r.body}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </PanelShell>
   );
 }

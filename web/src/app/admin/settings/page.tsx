@@ -1,19 +1,22 @@
 import { getSettings, requireAdmin } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import { disconnectTelegram, saveContractSettings, saveGrowthSettings, savePaymentSettings, saveSettings, saveTelegram } from "../../panel-actions";
+import { disconnectTelegram, regenSmsKey, saveContractSettings, saveGrowthSettings, savePaymentSettings, saveSettings, saveTelegram } from "../../panel-actions";
 import { createClient } from "@/lib/supabase/server";
 import { tgApi } from "@/lib/telegram";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { siteUrl } from "@/lib/site";
 import { termsFrom } from "@/lib/contract";
+import { CopyButton } from "../../(site)/agent/CopyButton";
+import { timeAgo } from "@/lib/format";
 
 export const metadata = { title: "Админ · Тохиргоо" };
 
 export default async function AdminSettings({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string; apk?: string; v?: string }> }) {
   const sp = await searchParams;
   const me = await requireAdmin();
-  const [s, pending, tg] = await Promise.all([getSettings(), pendingCount(), telegramStatus()]);
+  const [s, pending, tg, sms] = await Promise.all([getSettings(), pendingCount(), telegramStatus(), smsStatus()]);
+  const smsUrl = `${String(s.site_url ?? siteUrl()).replace(/\/+$/, "")}/api/sms`;
   const ct = termsFrom(s);
   const ex = s.offer_percent != null ? Math.round((50_000_000 * s.offer_percent) / 100).toLocaleString("en-US") + "₮" : "[ДҮН]";
   return (
@@ -135,6 +138,39 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
         )}
         <span className="text-[12px] text-muted">Токен зөвхөн өгөгдлийн санд нууцаар хадгалагдана, хэнд ч харагдахгүй. Webhook: {s.site_url ?? siteUrl()}/api/telegram (дээрх «Сайтын хаяг»).</span>
       </section>
+      <section id="sms" className="card p-5.5 flex flex-col gap-4 max-w-[920px]">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="m-0 text-[17px] font-bold">SMS апп · орлого автоматаар батлах</h2>
+          {sms.lastSeen ? (
+            <span className="badge bg-active-bg text-active-fg">Сүүлд холбогдсон: {timeAgo(sms.lastSeen)}</span>
+          ) : (
+            <span className="badge bg-soft text-body">Холбогдоогүй</span>
+          )}
+        </div>
+        <ol className="m-0 pl-5 text-[14px] text-body flex flex-col gap-1 leading-relaxed">
+          <li>Дансны орлогын SMS ирдэг Android утсан дээр <strong>«Орлого SMS»</strong> апп суулгаж, SMS зөвшөөрөл өгнө.</li>
+          <li>Апп → ⋮ → Тохиргоо: доорх <strong>серверийн хаяг</strong>, <strong>түлхүүр</strong>, банкны SMS ирдэг дугаарыг оруулна.</li>
+          <li>«Туршиж илгээх» → «✓ Сервер хүлээж авлаа» гарвал бэлэн.</li>
+          <li>Орлого орж ирэхэд гүйлгээний утгаас <code>MZXXXXXX</code> кодыг олж, дүн хүрэлцвэл төлбөр <strong>автоматаар</strong> батлагдана. Код олдоогүй, дүн дутуу орлого Telegram-д тусад нь ирнэ.</li>
+        </ol>
+        <div className="flex flex-wrap gap-3 items-end">
+          <label className="label flex-[2_1_320px] text-[14px]">Серверийн хаяг
+            <input readOnly value={smsUrl} className="input mono font-normal" />
+          </label>
+          <CopyButton text={smsUrl} label="Хуулах" />
+        </div>
+        <div className="flex flex-wrap gap-3 items-end">
+          <label className="label flex-[2_1_320px] text-[14px]">Түлхүүр
+            <input readOnly value={sms.key ?? ""} className="input mono font-normal" />
+          </label>
+          {sms.key && <CopyButton text={sms.key} label="Хуулах" />}
+          <form action={regenSmsKey}>
+            <input type="hidden" name="back" value="/admin/settings" />
+            <ConfirmButton message="Шинэ түлхүүр үүсгэх үү? Хуучин түлхүүртэй утас холбогдохоо болино." className="btn btn-sm btn-ghost">Солих</ConfirmButton>
+          </form>
+        </div>
+        <span className="text-[12px] text-muted">Түлхүүрийг зөвхөн өөрийн утсанд оруулна — түүнийг мэдсэн хүн «орлого орлоо» гэж илгээж чадна. Алдагдсан гэж үзвэл «Солих».</span>
+      </section>
       <form action={saveSettings} className="flex flex-col gap-4.5 max-w-[920px]">
         <input type="hidden" name="back" value="/admin/settings" />
         <section className="card p-5.5 flex flex-col gap-3.5">
@@ -185,6 +221,14 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
       </form>
     </PanelShell>
   );
+}
+
+/** SMS апп-ын түлхүүр, сүүлд холбогдсон цаг */
+async function smsStatus() {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("sms_admin");
+  const d = data as { api_key: string | null; last_seen_at: string | null } | null;
+  return { key: d?.api_key ?? null, lastSeen: d?.last_seen_at ?? null };
 }
 
 /** Telegram холболтын төлөв (токен хөтөч рүү очихгүй, зөвхөн сүүлийн 4 тэмдэгт) */
