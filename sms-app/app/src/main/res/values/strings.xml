@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Орлого SMS</string>
+    <string name="page">Серверийн хаяг (сайтын API URL)</string>
+    <string name="hint">https://web-mu-fawn-45.vercel.app/api/sms</string>
+    <string name="phone">Банкны дугаар (таслалаар олон дугаар бичиж болно)</string>
+    <string name="hint2">Жишээ: 1800,KhanBank</string>
+    <string name="apikey">Түлхүүр (Админ → Тохиргоо → SMS апп)</string>
+    <string name="hint3">урт санамсаргүй үг</string>
+    <string name="save">Хадгалах</string>
+    <string name="test">Туршиж илгээх</string>
+    <string name="empty">Одоогоор орлогын мессеж ирээгүй байна</string>
+    <string name="setting">Тохиргоо</string>
+    <string name="retry">Дахин илгээх</string>
+</resources>

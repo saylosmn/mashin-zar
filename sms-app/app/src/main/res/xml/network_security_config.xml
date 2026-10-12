@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- http:// хаяг (жишээ нь локал тест) ч ажиллана. Production дээр https ашиглаарай. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

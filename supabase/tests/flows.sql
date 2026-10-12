@@ -337,4 +337,45 @@ select public.approve_ad(:'cad');
 reset role;
 select pg_temp.eq((select round(extract(epoch from featured_until - now()) / 86400)::int from public.ads where id = :'cad'), 7, 'шимтгэлтэй зар 7 хоног онцлох');
 
+-- 15. Банкны орлогын SMS-ээр төлбөр автоматаар батлах (fix-17)
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+set role authenticated;
+insert into public.ads(user_id, brand, model, plate_number, vin, phone, year_made, price, photos, plan)
+values ('00000000-0000-0000-0000-00000000000c','Toyota','Aqua','8888 УБА','NHP10-1','99112233',2015,18000000,'{a.jpg}','paid') returning id as sad \gset
+select pg_temp.fails($$select public.sms_admin()$$, 'хэрэглэгч SMS түлхүүр харахгүй');
+reset role;
+select id as spay, ref as sref, amount as samt from public.payments where ad_id = :'sad' \gset
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+set role authenticated;
+select (public.sms_admin()->>'api_key') as skey \gset
+reset role;
+set role anon;
+select pg_temp.fails($$select public.sms_ingest('wrong', '1000', '', 'x', '1800', 'd')$$, 'SMS: буруу түлхүүр');
+select pg_temp.fails($$select count(*) from public.sms_config$$, 'SMS түлхүүр нийтэд харагдахгүй');
+select pg_temp.eq(public.sms_ingest(:'skey', '1', 'TEST', 'TEST', 'test', 'd')->>'result', 'test', 'SMS: туршилт');
+select pg_temp.eq(public.sms_ingest(:'skey', '', '', 'ZARLAGA', '1800', 'd0')->>'result', 'skip', 'SMS: дүнгүй бол алгасна');
+select pg_temp.eq(public.sms_ingest(:'skey', (:samt - 1)::text, :'sref', 'ORLOGO: ' || (:samt - 1) || ' MNT utga: ' || :'sref', '1800', 'd1')->>'result',
+  'short', 'SMS: дүн дутуу бол батлахгүй');
+select pg_temp.eq(public.sms_ingest(:'skey', '5000', 'MZZZZZZZ', 'ORLOGO: 5,000.00 MNT utga: busad', '1800', 'd2')->>'result',
+  'unmatched', 'SMS: код олдоогүй');
+select pg_temp.eq(public.sms_ingest(:'skey', :samt::text, '', 'Khan bank: dansand ORLOGO: ' || :samt || '.00 MNT, Guilgeenii utga: ' || lower(substr(:'sref', 1, 4)) || ' ' || lower(substr(:'sref', 5)) || ', uldegdel', '1800', 'd3')->>'result',
+  'confirmed', 'SMS: код (жижиг үсэг, зайтай) таарч батлав');
+select pg_temp.eq(public.sms_ingest(:'skey', :samt::text, '', 'Khan bank: dansand ORLOGO: ' || :samt || '.00 MNT, Guilgeenii utga: ' || lower(substr(:'sref', 1, 4)) || ' ' || lower(substr(:'sref', 5)) || ', uldegdel', '1800', 'd3')->>'result',
+  'duplicate', 'SMS: давхар ирэхэд дахин бүртгэхгүй');
+select pg_temp.eq(public.sms_ingest(:'skey', :samt::text, :'sref', 'ORLOGO utga ' || :'sref', '1800', 'd4')->>'result', 'already', 'SMS: аль хэдийн батлагдсан');
+select pg_temp.fails($$select count(*) from public.sms_income$$, 'SMS жагсаалт нийтэд харагдахгүй');
+reset role;
+select pg_temp.eq((select (status, decided_via, decided_name)::text from public.payments where id = :'spay'), '(confirmed,sms,"SMS · банк")', 'төлбөр SMS-ээр батлагдсан');
+select pg_temp.eq((select count(*)::int from public.notifications where type = 'payment_ok' and ad_id = :'sad'), 1, 'хэрэглэгчид «баталгаажлаа» мэдэгдэл');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+set role authenticated;
+select pg_temp.eq((select count(*)::int from public.sms_income), 0, 'хэрэглэгч ирсэн SMS харахгүй');
+reset role;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+set role authenticated;
+select pg_temp.eq((select string_agg(result, ',' order by result) from public.sms_income), 'already,confirmed,short,unmatched', 'админ ирсэн SMS-ийг харна');
+select public.regen_sms_key();
+select pg_temp.eq((public.sms_admin()->>'api_key') <> :'skey', true, 'түлхүүр солигдсон');
+reset role;
+
 \echo 'Бүх SQL тест амжилттай'
