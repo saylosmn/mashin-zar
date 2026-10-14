@@ -44,7 +44,7 @@ type Report = {
     plate_number: string;
     contract_id: string | null;
   } | null;
-  manager: { full_name: string | null; email: string | null } | null;
+  author: { full_name: string | null; email: string | null } | null;
   agent_id?: string | null;
   agent_amount?: number | null;
   agent_share?: number | null;
@@ -66,7 +66,7 @@ type AdOpt = {
 type AgentOpt = { id: string; full_name: string | null; agent_code: string | null };
 
 const SELECT =
-  "*, ad:ads(id,brand,model,year_made,plate_number,contract_id), manager:profiles!sale_reports_manager_id_fkey(full_name,email), agent:profiles!sale_reports_agent_id_fkey(full_name,agent_code)";
+  "*, ad:ads(id,brand,model,year_made,plate_number,contract_id), author:profiles!sale_reports_manager_id_fkey(full_name,email), agent:profiles!sale_reports_agent_id_fkey(full_name,agent_code)";
 const ST = {
   pending: { label: "Хүлээгдэж буй", bg: C.pendingBg, fg: C.pendingFg },
   approved: { label: "Батлагдсан", bg: C.activeBg, fg: C.activeFg },
@@ -258,7 +258,7 @@ function ReportCard({
             {r.ad ? `${r.ad.brand} ${r.ad.model} · ${r.ad.year_made}` : "Устгагдсан зар"}
           </T>
           <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
-            {r.ad?.plate_number ?? ""} · {r.manager?.full_name ?? r.manager?.email ?? "Админ"} · {timeAgo(r.created_at)}
+            {r.ad?.plate_number ?? ""} · {r.author?.full_name ?? r.author?.email ?? "Админ"} · {timeAgo(r.created_at)}
           </T>
         </View>
         <View

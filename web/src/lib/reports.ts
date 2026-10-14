@@ -34,11 +34,11 @@ export type ReportRow = {
     contract_id: string | null;
     status: string;
   } | null;
-  manager: { full_name: string | null; email: string | null } | null;
+  author: { full_name: string | null; email: string | null } | null;
 };
 
 export const REPORT_SELECT =
-  "*, ad:ads(id,brand,model,year_made,plate_number,price,contract_id,status), manager:profiles!sale_reports_manager_id_fkey(full_name,email), agent:profiles!sale_reports_agent_id_fkey(full_name,email,agent_code)";
+  "*, ad:ads(id,brand,model,year_made,plate_number,price,contract_id,status), author:profiles!sale_reports_manager_id_fkey(full_name,email), agent:profiles!sale_reports_agent_id_fkey(full_name,email,agent_code)";
 
 /** Идэвхтэй агентууд (тайлангийн маягтад) */
 export async function agentOptions(): Promise<AgentOption[]> {

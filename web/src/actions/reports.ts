@@ -26,7 +26,7 @@ export async function submitSaleReport(fd: FormData) {
     p_note: String(fd.get("note") || "") || null,
     p_agent: String(fd.get("agent_id") || "") || null,
   });
-  // Менежер байхгүй болсон: админ өөрөө оруулсан тайланг шууд батална (зар зарагдсан болж, агентын хувь бодогдоно).
+  // Админ өөрөө бүртгэж буй тул шууд батална: зар зарагдсан болж, агентын хувь бодогдоно
   if (!error && rid) {
     const { error: revErr } = await supabase.rpc("review_sale_report", { p_id: rid, p_approve: true, p_note: null });
     revalidatePath("/", "layout");

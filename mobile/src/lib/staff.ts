@@ -12,7 +12,7 @@ export type StaffAd = Ad & { owner: Owner | null };
 /** Зар + зар тавьсан хүний мэдээлэл (зөвхөн админд RLS зөвшөөрнө) */
 export const STAFF_AD_SELECT = "*, owner:profiles!ads_user_id_fkey(full_name,email,phone,city)";
 
-/** Панел зөвхөн админд (менежер эрх хасагдсан). */
+/** Удирдлагын хэсэг зөвхөн админд */
 export const isStaff = (p?: Profile | null) => p?.role === "admin";
 export const isAdmin = (p?: Profile | null) => p?.role === "admin";
 

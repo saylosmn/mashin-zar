@@ -28,7 +28,7 @@ export function ReportList({ rows, admin, back }: { rows: ReportRow[]; admin?: b
                 )}
               </span>
               <span className="text-[12px] text-muted">
-                {r.ad?.plate_number ?? ""} · {r.manager?.full_name ?? r.manager?.email ?? "Админ"} · илгээсэн{" "}
+                {r.ad?.plate_number ?? ""} · {r.author?.full_name ?? r.author?.email ?? "Админ"} · илгээсэн{" "}
                 {dateShort(r.created_at)}
               </span>
             </div>
