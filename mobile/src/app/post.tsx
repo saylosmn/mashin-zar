@@ -2,109 +2,102 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
-import { Image } from "expo-image";
 import { Feather } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNetInfo } from "@react-native-community/netinfo";
+import {
+  PAID_STEPS,
+  agentCodeInput,
+  draftError,
+  emptyAdFields,
+  planCards,
+  publishAd,
+  toDraft,
+  type AdFields,
+  type PublishStep,
+} from "@shared/ad-post";
+
+import { termsFrom, tierLines } from "@shared/contract";
+import type { Plan } from "@shared/types";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { C, F } from "@/lib/theme";
-import { BRANDS } from "@shared/cars";
-import { OptionPicker } from "@/components/OptionPicker";
-import { errMsg } from "@/lib/format";
-import { BackButton, Button, Field, Input, T, s } from "@/components/ui";
+import { C } from "@/lib/theme";
+import { errMsg, money } from "@/lib/format";
+
 import { SignaturePad } from "@/components/SignaturePad";
 import { ContractView } from "@/components/ContractView";
-import { termsFrom, tierLines } from "@shared/contract";
-import { money } from "@/lib/format";
-import type { Plan } from "@shared/types";
-import { WEB_URL } from "@/lib/staff";
+import { BackButton, Button, Field, Input, ScreenHeader, T, s } from "@/components/ui";
+import { adBackend, prepareContractPdf } from "@/features/post/backend";
+import { BottomBar, PhotoGrid, PlanCard, Progress, type Pic } from "@/features/post/parts";
+import { AdDetailsForm } from "@/features/post/AdDetailsForm";
 
-type Pic = { uri: string; id: string };
-/** Зэрэг байршуулах зургийн тоо */
-const PARALLEL = 3;
+type Stage = "form" | "plan" | "contract" | "paid";
+type Agent = { code: string; id: string; name: string };
 
-async function compress(uri: string) {
-  const ctx = ImageManipulator.manipulate(uri);
-  ctx.resize({ width: 1600 });
-  const img = await ctx.renderAsync();
-  const out = await img.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
-  return out.uri;
-}
+const pageStyle = { flex: 1, backgroundColor: C.paper };
+const kbBehavior = Platform.OS === "ios" ? "padding" : undefined;
+const headerStyle = { paddingHorizontal: 16, paddingVertical: 8 };
 
-export default function Post() {
+export default function PostScreen() {
   const { profile, settings, session } = useAuth();
   const uid = session?.user.id ?? profile?.id ?? "";
-  const insets = useSafeAreaInsets();
   const net = useNetInfo();
-  const { max_photos: maxP, min_photos: minP, cutoff_year: cy } = settings;
+  const { max_photos: maxPhotos, min_photos: minPhotos, cutoff_year: cutoff } = settings;
+  const dealer = profile?.role === "dealer";
+  const ct = termsFrom(settings);
+  const featuredPrice = settings.featured_price ?? 50000;
+  const featuredDays = settings.featured_days ?? 7;
+  const cards = planCards(ct.terms, {
+    featuredPrice,
+    featuredDays,
+    commissionFeaturedDays: settings.commission_featured_days ?? 7,
+  });
+
   const [pics, setPics] = useState<Pic[]>([]);
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
-  const [trim, setTrim] = useState("");
-  const [yearMade, setYearMade] = useState("");
-  const [yearImp, setYearImp] = useState("");
-  const [plate, setPlate] = useState("");
-  const [vin, setVin] = useState("");
-  const [phone, setPhone] = useState(profile?.phone ?? "");
-  const [options, setOptions] = useState<string[]>([]);
-  const [mods, setMods] = useState("");
-  const [desc, setDesc] = useState("");
-  const [price, setPrice] = useState("");
+  const [fields, setFields] = useState<AdFields>(() => emptyAdFields(profile?.phone ?? ""));
   const [agentCode, setAgentCode] = useState("");
-  const [agent, setAgentState] = useState<{ code: string; id: string; name: string } | null>(null);
-  const agentIdRef = useRef<string | null>(null);
-  const setAgent = (a: { code: string; id: string; name: string } | null) => {
-    agentIdRef.current = a?.id ?? null;
-    setAgentState(a);
-  };
-  const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState<null | { done: number; step: 1 | 2 | 3 }>(null);
-  /** form → plan (2 сонголт) → contract (шимтгэлтэй) эсвэл paid (онцлох төлбөртэй) */
-  const [stage, setStage] = useState<"form" | "plan" | "contract" | "paid">("form");
+  const [agent, setAgent] = useState<Agent | null>(null);
+  const [stage, setStage] = useState<Stage>("form");
   const [plan, setPlan] = useState<Plan>("commission");
   const [signName, setSignName] = useState(profile?.full_name ?? "");
   const [signature, setSignature] = useState<string | null>(null);
   const [agree, setAgree] = useState(false);
   const [drawing, setDrawing] = useState(false);
-  const ct = termsFrom(settings);
-  const dealer = profile?.role === "dealer";
-  // Гарын үсэг зурсан гэрээ — илгээх үед алдаа гарвал дахин оролдоход шинээр гэрээ үүсгэхгүй
-  const contractRef = useRef<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<{ step: PublishStep; done: number } | null>(null);
+  // Гарын үсэг зурсан гэрээ: дараагийн алхам унавал дахин оролдоход ашиглана
+  const contract = useRef<{ key: string; id: string } | null>(null);
 
-  // Гэрээнд орсон мэдээлэл өөрчлөгдвөл өмнөх гэрээг дахин ашиглахгүй
-  useEffect(() => {
-    contractRef.current = null;
-  }, [plate, vin, brand, model, price, yearMade, phone, signName]);
-
-  // Android-ын "буцах" товч: илгээж байхад хаахгүй, гэрээ/төлбөр → сонголт → маягт руу буцна
-  const isBusy = !!busy;
-  useFocusEffect(
-    useCallback(() => {
-      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-        if (isBusy) return true;
-        if (stage !== "form") {
-          setStage(stage === "plan" ? "form" : "plan");
-          setErr(null);
-          return true;
-        }
-        return false;
-      });
-      return () => sub.remove();
-    }, [isBusy, stage]),
-  );
+  const set =
+    <K extends keyof AdFields>(k: K) =>
+    (v: AdFields[K]) =>
+      setFields((f) => ({ ...f, [k]: v }));
+  const draft = toDraft(fields);
 
   useEffect(() => {
     if (profile && !profile.profile_completed)
       router.replace({ pathname: "/complete-profile", params: { next: "post" } });
   }, [profile]);
 
-  const y = Number(yearMade);
-  const cat = y ? (y >= cy ? "new" : "old") : null;
+  const back = useCallback(() => {
+    setError(null);
+    setStage((st) => (st === "plan" ? "form" : "plan"));
+  }, []);
 
-  async function pick(camera = false) {
-    const room = maxP - pics.length;
+  // Android-ын "буцах" товч: илгээж байхад хаахгүй, гэрээ/төлбөр → сонголт → маягт
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (busy) return true;
+        if (stage === "form") return false;
+        back();
+        return true;
+      });
+      return () => sub.remove();
+    }, [busy, stage, back]),
+  );
+
+  async function pick(camera: boolean) {
+    const room = maxPhotos - pics.length;
     if (room <= 0) return;
     const perm = camera
       ? await ImagePicker.requestCameraPermissionsAsync()
@@ -120,387 +113,154 @@ export default function Post() {
           quality: 0.9,
         });
     if (res.canceled) return;
-    setPics((p) => [
-      ...p,
-      ...res.assets.slice(0, room).map((a) => ({ uri: a.uri, id: `${a.assetId ?? a.uri}-${Math.random()}` })),
-    ]);
+    const added = res.assets.slice(0, room).map((a) => ({ uri: a.uri, id: `${a.assetId ?? a.uri}-${Math.random()}` }));
+    setPics((p) => [...p, ...added]);
   }
 
-  function makeCover(i: number) {
-    setPics((p) => [p[i], ...p.filter((_, j) => j !== i)]);
-  }
-
-  async function submit() {
-    setErr(null);
-    const priceNum = Number(price.replace(/\D/g, ""));
-    if (pics.length < minP) return setErr(`Хамгийн багадаа ${minP} зураг оруулна уу.`);
-    if (!brand.trim() || !model.trim()) return setErr("Марк, загвараа оруулна уу.");
-    if (!y || y < 1950 || y > new Date().getFullYear() + 1) return setErr("Үйлдвэрлэсэн оноо зөв оруулна уу.");
-    if (!plate.trim() || !vin.trim()) return setErr("Улсын болон арлын дугаараа оруулна уу.");
-    if (phone.replace(/\D/g, "").length < 8) return setErr("Утасны дугаараа оруулна уу.");
-    if (!priceNum) return setErr("Үнээ оруулна уу.");
-    // Агентын код (заавал биш)
-    const code = agentCode.trim().toUpperCase();
-    if (!code) setAgent(null);
-    else if (agent?.code !== code) {
-      const { data } = await supabase.rpc("agent_by_code", { p_code: code });
+  /** Маягтыг шалгаад сонголт руу (авто худалдаа бол шууд нийтэлнэ) */
+  async function next() {
+    setError(null);
+    const e = draftError(draft, pics.length, minPhotos);
+    if (e) return setError(e);
+    let found = agent;
+    if (!agentCode) found = null;
+    else if (agent?.code !== agentCode) {
+      const { data } = await supabase.rpc("agent_by_code", { p_code: agentCode });
       const row = Array.isArray(data) ? (data[0] as { id: string; name: string } | undefined) : undefined;
-      if (!row) return setErr("Агентын код олдсонгүй. Кодоо шалгах эсвэл хоосон орхино уу.");
-      setAgent({ code, id: row.id, name: row.name });
+      if (!row) return setError("Агентын код олдсонгүй. Кодоо шалгах эсвэл хоосон орхино уу.");
+      found = { code: agentCode, ...row };
     }
-    // Авто худалдаа: гэрээгүй, шууд нийтлэнэ
-    if (dealer) return send(true, "commission");
+    setAgent(found);
+    if (dealer) return send(null, found);
     setStage("plan");
   }
 
-  /** Зар илгээнэ: шимтгэлтэй бол гэрээнд гарын үсэг зурсны дараа, төлбөртэй/авто худалдаа бол гэрээгүй */
-  async function send(noContract = false, chosen: Plan = "commission") {
-    setErr(null);
-    const priceNum = Number(price.replace(/\D/g, ""));
-    if (!noContract) {
-      if (!signName.trim()) return setErr("Овог нэрээ бичнэ үү.");
-      if (!signature) return setErr("Гарын үсгээ зурна уу.");
-      if (!agree) return setErr("Гэрээг уншиж зөвшөөрснөө тэмдэглэнэ үү.");
+  async function send(chosen: Plan | null, withAgent = agent) {
+    setError(null);
+    const withContract = chosen === "commission";
+    if (withContract) {
+      if (!signName.trim()) return setError("Овог нэрээ бичнэ үү.");
+      if (!signature) return setError("Гарын үсгээ зурна уу.");
+      if (!agree) return setError("Гэрээг уншиж зөвшөөрснөө тэмдэглэнэ үү.");
     }
-    if (net.isConnected === false) return setErr("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
-
-    const uploaded: string[] = [];
-    setBusy({ done: 0, step: 1 });
+    if (net.isConnected === false) return setError("Интернэт холболт алга. Холболтоо шалгаад дахин илгээнэ үү.");
     try {
-      // 1) Зургуудыг эхэлж байршуулна (зэрэг 3 хүртэл), дарааллыг хадгална
-      const paths: string[] = new Array(pics.length);
-      let nextIdx = 0;
-      let done = 0;
-      let failed = false;
-      const worker = async () => {
-        while (!failed && nextIdx < pics.length) {
-          const i = nextIdx++;
-          try {
-            const small = await compress(pics[i].uri);
-            const buf = await fetch(small).then((r) => r.arrayBuffer());
-            const path = `${uid}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-            const { error } = await supabase.storage.from("ad-photos").upload(path, buf, { contentType: "image/jpeg" });
-            if (error) throw error;
-            uploaded.push(path);
-            paths[i] = path;
-            done++;
-            setBusy({ done, step: 1 });
-          } catch (e) {
-            failed = true;
-            throw e;
-          }
-        }
-      };
-      const results = await Promise.allSettled(Array.from({ length: Math.min(PARALLEL, pics.length) }, worker));
-      const bad = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
-      if (bad) throw bad.reason;
-
-      // 2) Гэрээнд гарын үсэг зурна (өмнө нь амжилттай зурсан бол дахин ашиглана)
-      let contractId: string | null = null;
-      if (!noContract) {
-        setBusy({ done: pics.length, step: 2 });
-        if (!contractRef.current) {
-          const { data: cid, error: cErr } = await supabase.rpc("sign_contract", {
-            p_full_name: signName.trim(),
-            p_phone: phone.replace(/[^\d+]/g, ""),
-            p_brand: brand.trim(),
-            p_model: model.trim(),
-            p_year: y,
-            p_plate: plate.trim().toUpperCase(),
-            p_vin: vin.trim().toUpperCase(),
-            p_price: priceNum,
-            p_signature: signature,
-            p_ua: `Autoshop.mn апп (${Platform.OS})`,
-          });
-          if (cErr) throw cErr;
-          contractRef.current = cid as string;
-        }
-        contractId = contractRef.current;
-      }
-      setBusy({ done: pics.length, step: 3 });
-      const { data: row, error } = await supabase
-        .from("ads")
-        .insert({
-          user_id: uid,
-          brand: brand.trim(),
-          model: model.trim(),
-          trim: trim.trim() || null,
-          plate_number: plate.trim().toUpperCase(),
-          vin: vin.trim().toUpperCase(),
-          phone: phone.replace(/[^\d+]/g, ""),
-          year_made: y,
-          year_imported: Number(yearImp) || null,
-          options,
-          modifications: mods.trim() || null,
-          description: desc.trim() || null,
-          price: priceNum,
-          photos: paths,
-          contract_id: contractId,
-          agent_id: agentIdRef.current,
-          ...(dealer ? {} : { plan: chosen }),
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
-      if (contractId && session?.access_token) {
-        fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }).catch(() => {});
-      }
-      contractRef.current = null;
-      // Төлбөртэй сонголт: шууд дансны мэдээлэл, «Төлсөн» товчтой дэлгэц рүү
-      if (chosen === "paid" && row?.id)
-        return router.replace({ pathname: "/pay/[id]", params: { id: row.id as string, created: "1" } });
+      const api = adBackend(
+        uid,
+        pics.map((p) => p.uri),
+      );
+      const res = await publishAd(
+        api,
+        {
+          userId: uid,
+          draft,
+          photoCount: pics.length,
+          plan: chosen,
+          agentId: withAgent?.id ?? null,
+          signer: signName.trim(),
+          signature: withContract ? signature : null,
+          contract,
+        },
+        (step, done) => setBusy({ step, done }),
+      );
+      if (res.contractId && session?.access_token) prepareContractPdf(res.contractId, session.access_token);
+      if (chosen === "paid") return router.replace({ pathname: "/pay/[id]", params: { id: res.id, created: "1" } });
       router.replace({
         pathname: "/success",
         params: {
-          title: `${brand} ${model} · ${y}`,
-          price: String(priceNum),
-          cover: paths[0],
+          title: `${draft.brand} ${draft.model} · ${draft.year_made}`,
+          price: String(draft.price),
+          cover: res.cover,
           dealer: dealer ? "1" : "0",
         },
       });
     } catch (e) {
-      if (uploaded.length)
-        await supabase.storage
-          .from("ad-photos")
-          .remove(uploaded)
-          .catch(() => {});
       setBusy(null);
-      setErr(`Илгээж чадсангүй: ${errMsg(e)}`);
+      setError(`Илгээж чадсангүй: ${errMsg(e)}`);
     }
   }
 
   if (busy)
     return (
-      <View
-        style={{ flex: 1, backgroundColor: C.paper, padding: 24, paddingTop: 56, justifyContent: "center", gap: 24 }}
-        accessibilityLiveRegion="polite"
-      >
-        <View style={{ alignItems: "center", gap: 12 }}>
-          <Feather name="upload-cloud" size={56} color={C.ink} />
-          <T w="display" style={{ fontSize: 22 }}>
-            Зар илгээж байна
+      <Progress
+        step={busy.step}
+        done={busy.done}
+        total={pics.length}
+        labels={[
+          "Зураг байршуулах",
+          dealer ? "Мэдээлэл шалгах" : plan === "paid" ? "Онцлох төлбөртэй сонголт" : "Гэрээнд гарын үсэг зурах",
+          dealer ? "Нийтлэх" : plan === "paid" ? "Илгээх" : "Шалгалтад илгээх",
+        ]}
+      />
+    );
+
+  if (stage === "plan")
+    return (
+      <View style={pageStyle}>
+        <ScreenHeader eyebrow="Сонголт" title="Зараа хэрхэн байршуулах вэ?" onBack={back} style={headerStyle} />
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
+          <PlanCard
+            {...cards.commission}
+            highlight
+            onPick={() => {
+              setError(null);
+              setAgree(false);
+              setSignature(null);
+              setPlan("commission");
+              setStage("contract");
+            }}
+          />
+          <PlanCard
+            {...cards.paid}
+            onPick={() => {
+              setError(null);
+              setPlan("paid");
+              setStage("paid");
+            }}
+          />
+          <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>
+            Шимтгэлийн шат: {tierLines(ct.terms).join("; ")}.
           </T>
-          <T style={{ color: C.body, textAlign: "center" }}>Уншиж байна, түр хүлээнэ үү. Аппаас гаралгүй байгаарай.</T>
-        </View>
-        <View style={{ gap: 10 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <T w="semibold" style={{ fontSize: 14 }}>
-              {busy.step === 1
-                ? "Зураг байршуулж байна"
-                : busy.step === 2
-                  ? "Гэрээ баталгаажуулж байна"
-                  : "Зар илгээж байна"}
-            </T>
-            <T w="monoBold" style={{ fontSize: 14 }}>
-              {busy.done} / {pics.length}
-            </T>
-          </View>
-          <View
-            accessibilityRole="progressbar"
-            style={{ height: 12, borderRadius: 6, backgroundColor: C.line, overflow: "hidden" }}
-          >
-            <View
-              style={{
-                width: `${(busy.done / Math.max(pics.length, 1)) * 100}%`,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: C.yellow,
-              }}
-            />
-          </View>
-        </View>
-        <View style={[s.section, { gap: 14 }]}>
-          {[
-            [`Зураг байршуулах`, true],
-            [
-              dealer ? "Мэдээлэл шалгах" : plan === "paid" ? "Онцлох төлбөртэй сонголт" : "Гэрээнд гарын үсэг зурах",
-              busy.step >= 2,
-            ],
-            [dealer ? "Нийтлэх" : plan === "paid" ? "Илгээх" : "Шалгалтад илгээх", busy.step === 3],
-          ].map(([t, on], i) => (
-            <View key={String(t)} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  backgroundColor: on ? C.ink : "transparent",
-                  borderWidth: on ? 0 : 2,
-                  borderColor: C.pale,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {on && <Feather name="check" size={14} color={C.yellow} />}
-              </View>
-              <T w={i === busy.step - 1 ? "semibold" : "body"} style={{ color: on ? C.ink : C.muted, fontSize: 14 }}>
-                {t}
-              </T>
-            </View>
-          ))}
-        </View>
+        </ScrollView>
       </View>
     );
 
-  if (stage === "plan" || stage === "paid") {
-    const maxPct = Math.max(ct.terms.after, ...ct.terms.tiers.map((t) => t.percent));
-    const fPrice = settings.featured_price ?? 50000;
-    const fDays = settings.featured_days ?? 7;
-    const cDays = settings.commission_featured_days ?? 7;
+  if (stage === "paid")
     return (
-      <View style={{ flex: 1, backgroundColor: C.paper }}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            paddingHorizontal: 16,
-            paddingTop: 8,
-            paddingBottom: 8,
-          }}
-        >
-          <BackButton
-            onPress={() => {
-              setStage(stage === "paid" ? "plan" : "form");
-              setErr(null);
-            }}
-          />
-          <View style={{ flex: 1 }}>
-            <T style={{ fontSize: 12, color: C.muted }}>{stage === "plan" ? "Сонголт" : "Сүүлийн алхам"}</T>
-            <T w="display" style={{ fontSize: 19 }}>
-              {stage === "plan" ? "Зараа хэрхэн байршуулах вэ?" : "Онцлох зар · шимтгэлгүй"}
+      <View style={pageStyle}>
+        <ScreenHeader eyebrow="Сүүлийн алхам" title="Онцлох зар · шимтгэлгүй" onBack={back} style={headerStyle} />
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 200 }}>
+          <View style={{ backgroundColor: C.ink, borderRadius: 18, padding: 18, gap: 6 }}>
+            <T style={{ color: C.pale, fontSize: 13 }}>
+              {draft.brand} {draft.model} · {draft.year_made} · {money(draft.price)}
             </T>
+            <T w="display" style={{ color: C.yellow, fontSize: 28 }}>
+              {money(featuredPrice)}
+            </T>
+            <T style={{ color: C.paper, fontSize: 14 }}>⭐ {featuredDays} хоног онцлох · шимтгэлгүй</T>
           </View>
-        </View>
-        {stage === "plan" ? (
-          <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
-            <PlanCard
-              title="Шимтгэлтэй · агент зарна"
-              price={`Одоо 0₮ · зарагдвал ${maxPct}% хүртэл`}
-              points={[
-                cDays > 0 ? `⭐ ${cDays} хоног онцлох зар — үнэгүй` : "Зар нийтэд үнэгүй харагдана",
-                "Манай агентууд худалдан авагч хайж, хурдан зарж өгнө",
-                "Шимтгэлийг зөвхөн машин зарагдсаны дараа төлнө (гэрээтэй)",
-              ]}
-              cta="Сонгох · гэрээ"
-              highlight
-              onPick={() => {
-                setErr(null);
-                setAgree(false);
-                setSignature(null);
-                setPlan("commission");
-                setStage("contract");
-              }}
-            />
-            <PlanCard
-              title="Онцлох зар · шимтгэлгүй"
-              price={`${money(fPrice)} нэг удаа`}
-              points={[
-                `⭐ ${fDays} хоног онцлох — жагсаалтын эхэнд`,
-                "Зарагдахад ямар ч шимтгэл төлөхгүй, өөрөө зарна",
-                "Дансаар шилжүүлээд «Төлсөн» дарна — баталгаажмагц нийтлэгдэнэ",
-              ]}
-              cta="Сонгох · төлбөр"
-              onPick={() => {
-                setErr(null);
-                setPlan("paid");
-                setStage("paid");
-              }}
-            />
-            <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>
-              Шимтгэлийн шат: {tierLines(ct.terms).join("; ")}.
-            </T>
-          </ScrollView>
-        ) : (
-          <>
-            <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 200 }}>
-              <View style={{ backgroundColor: C.ink, borderRadius: 18, padding: 18, gap: 6 }}>
-                <T style={{ color: C.pale, fontSize: 13 }}>
-                  {brand.trim()} {model.trim()} · {y} · {money(Number(price.replace(/\D/g, "")))}
-                </T>
-                <T w="display" style={{ color: C.yellow, fontSize: 28 }}>
-                  {money(fPrice)}
-                </T>
-                <T style={{ color: C.paper, fontSize: 14 }}>⭐ {fDays} хоног онцлох · шимтгэлгүй</T>
-              </View>
-              {[
-                "«Зар илгээх» дарахад зар хадгалагдаж, дансны мэдээлэл гарна.",
-                "Гүйлгээний утгад таны кодыг бичиж шилжүүлнэ.",
-                "«Төлбөр төлсөн» дарна — орлого баталгаажмагц зар шууд нийтлэгдэж, онцлох болно.",
-              ].map((t, i) => (
-                <View key={t} style={{ flexDirection: "row", gap: 10 }}>
-                  <T w="monoBold" style={{ fontSize: 14 }}>
-                    {i + 1}.
-                  </T>
-                  <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{t}</T>
-                </View>
-              ))}
-            </ScrollView>
-            <View
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                bottom: 0,
-                paddingHorizontal: 20,
-                paddingTop: 12,
-                paddingBottom: Math.max(insets.bottom, 16),
-                backgroundColor: C.card,
-                borderTopWidth: 1,
-                borderColor: C.line,
-                gap: 8,
-              }}
-            >
-              <FooterError err={err} />
-              <Button
-                title="Зар илгээх · төлбөр рүү"
-                variant="yellow"
-                icon="arrow-right"
-                onPress={() => send(true, "paid")}
-              />
+          {PAID_STEPS.map((t, i) => (
+            <View key={t} style={{ flexDirection: "row", gap: 10 }}>
+              <T w="monoBold" style={{ fontSize: 14 }}>
+                {i + 1}.
+              </T>
+              <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{t}</T>
             </View>
-          </>
-        )}
+          ))}
+        </ScrollView>
+        <BottomBar error={error}>
+          <Button title="Зар илгээх · төлбөр рүү" variant="yellow" icon="arrow-right" onPress={() => send("paid")} />
+        </BottomBar>
       </View>
     );
-  }
 
   if (stage === "contract")
     return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1, backgroundColor: C.paper }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            paddingHorizontal: 16,
-            paddingTop: 8,
-            paddingBottom: 8,
-          }}
-        >
-          <BackButton
-            onPress={() => {
-              setStage("plan");
-              setErr(null);
-            }}
-          />
-          <View style={{ flex: 1 }}>
-            <T style={{ fontSize: 12, color: C.muted }}>Сүүлийн алхам</T>
-            <T w="display" style={{ fontSize: 19 }}>
-              Зуучлалын гэрээ
-            </T>
-          </View>
-        </View>
+      <KeyboardAvoidingView behavior={kbBehavior} style={pageStyle}>
+        <ScreenHeader eyebrow="Сүүлийн алхам" title="Зуучлалын гэрээ" onBack={back} style={headerStyle} />
         <ScrollView
           scrollEnabled={!drawing}
-          contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: err ? 220 : 150 }}
+          contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: error ? 220 : 150 }}
           keyboardShouldPersistTaps="handled"
         >
           <View style={[s.section, { backgroundColor: C.card }]}>
@@ -509,13 +269,13 @@ export default function Post() {
                 company: ct.company,
                 terms: ct.terms,
                 fullName: signName || null,
-                phone: phone.replace(/[^\d+]/g, ""),
-                brand: brand.trim(),
-                model: model.trim(),
-                yearMade: y || null,
-                plate: plate.trim().toUpperCase(),
-                vin: vin.trim().toUpperCase(),
-                price: Number(price.replace(/\D/g, "")) || null,
+                phone: draft.phone,
+                brand: draft.brand,
+                model: draft.model,
+                yearMade: draft.year_made || null,
+                plate: draft.plate_number,
+                vin: draft.vin,
+                price: draft.price || null,
               }}
             />
           </View>
@@ -554,41 +314,23 @@ export default function Post() {
             </T>
           </Pressable>
         </ScrollView>
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            paddingHorizontal: 20,
-            paddingTop: 12,
-            paddingBottom: Math.max(insets.bottom, 16),
-            backgroundColor: C.card,
-            borderTopWidth: 1,
-            borderColor: C.line,
-            gap: 8,
-          }}
-        >
-          <FooterError err={err} />
+        <BottomBar error={error}>
           <Button
             title="Зөвшөөрч, зар илгээх"
             variant="yellow"
             icon="check"
             disabled={!signature || !agree}
-            onPress={() => send(false, "commission")}
+            onPress={() => send("commission")}
           />
           <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>
-            Гарын үсэгтэй гэрээний PDF “Миний зар” хэсэгт хадгалагдана
+            Гарын үсэгтэй гэрээний PDF «Миний зар» хэсэгт хадгалагдана
           </T>
-        </View>
+        </BottomBar>
       </KeyboardAvoidingView>
     );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={{ flex: 1, backgroundColor: C.paper }}
-    >
+    <KeyboardAvoidingView behavior={kbBehavior} style={pageStyle}>
       <View
         style={{
           flexDirection: "row",
@@ -609,7 +351,7 @@ export default function Post() {
         </View>
       </View>
       <ScrollView
-        contentContainerStyle={{ padding: 20, gap: 26, paddingBottom: err ? 210 : 140 }}
+        contentContainerStyle={{ padding: 20, gap: 26, paddingBottom: error ? 210 : 140 }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ gap: 10 }}>
@@ -618,331 +360,27 @@ export default function Post() {
               1 · Зураг
             </T>
             <T w="mono" style={{ fontSize: 13, color: C.muted }}>
-              {pics.length} / {maxP}
+              {pics.length} / {maxPhotos}
             </T>
           </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {pics.map((p, i) => (
-              <Pressable
-                key={p.id}
-                onLongPress={() => makeCover(i)}
-                onPress={() => i > 0 && makeCover(i)}
-                accessibilityLabel={`Зураг ${i + 1}${i === 0 ? ", нүүр зураг" : ", дарж нүүр болгох"}`}
-                style={{
-                  width: "23%",
-                  aspectRatio: 1,
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  borderWidth: i === 0 ? 2 : 0,
-                  borderColor: C.ink,
-                }}
-              >
-                <Image source={{ uri: p.uri }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
-                {i === 0 && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      left: 4,
-                      bottom: 4,
-                      backgroundColor: C.ink,
-                      borderRadius: 3,
-                      paddingHorizontal: 4,
-                      paddingVertical: 1,
-                    }}
-                  >
-                    <T w="monoBold" style={{ color: C.yellow, fontSize: 9 }}>
-                      НҮҮР
-                    </T>
-                  </View>
-                )}
-                <Pressable
-                  accessibilityLabel={`Зураг ${i + 1} хасах`}
-                  hitSlop={6}
-                  onPress={() => setPics((x) => x.filter((q) => q.id !== p.id))}
-                  style={{
-                    position: "absolute",
-                    right: 3,
-                    top: 3,
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
-                    backgroundColor: "rgba(17,19,23,.8)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Feather name="x" size={14} color={C.paper} />
-                </Pressable>
-              </Pressable>
-            ))}
-            {pics.length < maxP && (
-              <>
-                <Pressable
-                  onPress={() => pick(false)}
-                  accessibilityLabel="Зургийн сангаас нэмэх"
-                  style={{
-                    width: "23%",
-                    aspectRatio: 1,
-                    borderRadius: 10,
-                    borderWidth: 1.5,
-                    borderStyle: "dashed",
-                    borderColor: "#9AA0A9",
-                    backgroundColor: C.card,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 2,
-                  }}
-                >
-                  <Feather name="image" size={20} color={C.ink} />
-                  <T style={{ fontSize: 11 }}>Нэмэх</T>
-                </Pressable>
-                <Pressable
-                  onPress={() => pick(true)}
-                  accessibilityLabel="Камераар авах"
-                  style={{
-                    width: "23%",
-                    aspectRatio: 1,
-                    borderRadius: 10,
-                    borderWidth: 1.5,
-                    borderStyle: "dashed",
-                    borderColor: "#9AA0A9",
-                    backgroundColor: C.card,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 2,
-                  }}
-                >
-                  <Feather name="camera" size={20} color={C.ink} />
-                  <T style={{ fontSize: 11 }}>Камер</T>
-                </Pressable>
-              </>
-            )}
-          </View>
+          <PhotoGrid pics={pics} max={maxPhotos} onChange={setPics} onPick={pick} />
           <T style={{ fontSize: 12, color: C.muted }}>
-            Эхний зураг нүүр зураг болно. Аль нэг зураг дээр дарж нүүр болгоно. {minP}–{maxP} зураг.
+            Эхний зураг нүүр зураг болно. Аль нэг зураг дээр дарж нүүр болгоно. {minPhotos}–{maxPhotos} зураг.
           </T>
         </View>
 
-        <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>
-            2 · Машин ба сер
-          </T>
-          <Field label="Марк">
-            <Input value={brand} onChangeText={setBrand} placeholder="Toyota" />
-          </Field>
-          {!brand || !BRANDS[brand] ? (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              {Object.keys(BRANDS)
-                .filter((b) => !brand || b.toLowerCase().startsWith(brand.toLowerCase()))
-                .slice(0, 8)
-                .map((b) => (
-                  <Pressable
-                    key={b}
-                    onPress={() => setBrand(b)}
-                    style={{
-                      paddingHorizontal: 10,
-                      height: 32,
-                      borderRadius: 16,
-                      backgroundColor: C.card,
-                      borderWidth: 1,
-                      borderColor: C.line2,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <T style={{ fontSize: 13 }}>{b}</T>
-                  </Pressable>
-                ))}
-            </View>
-          ) : null}
-          <Field label="Загвар">
-            <Input value={model} onChangeText={setModel} placeholder="Prius" />
-          </Field>
-          {BRANDS[brand] && !BRANDS[brand].includes(model) ? (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              {BRANDS[brand]
-                .filter((m) => !model || m.toLowerCase().startsWith(model.toLowerCase()))
-                .slice(0, 10)
-                .map((m) => (
-                  <Pressable
-                    key={m}
-                    onPress={() => setModel(m)}
-                    style={{
-                      paddingHorizontal: 10,
-                      height: 32,
-                      borderRadius: 16,
-                      backgroundColor: C.card,
-                      borderWidth: 1,
-                      borderColor: C.line2,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <T style={{ fontSize: 13 }}>{m}</T>
-                  </Pressable>
-                ))}
-            </View>
-          ) : null}
-          <Field label="Аль сер">
-            <Input value={trim} onChangeText={setTrim} placeholder="ZVW55 · S Touring" />
-          </Field>
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>
-            3 · Он
-          </T>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Field label="Үйлдвэрлэсэн он">
-                <Input
-                  value={yearMade}
-                  onChangeText={setYearMade}
-                  keyboardType="number-pad"
-                  maxLength={4}
-                  mono
-                  placeholder="2017"
-                />
-              </Field>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Field label="Орж ирсэн он">
-                <Input
-                  value={yearImp}
-                  onChangeText={setYearImp}
-                  keyboardType="number-pad"
-                  maxLength={4}
-                  mono
-                  placeholder="2023"
-                />
-              </Field>
-            </View>
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              padding: 12,
-              backgroundColor: C.ink,
-              borderRadius: 10,
-            }}
-          >
-            {cat ? (
-              <>
-                <View style={{ backgroundColor: C.yellow, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 3 }}>
-                  <T w="monoBold" style={{ fontSize: 11 }}>
-                    {cat === "new" ? `${cy}+` : `${cy}-аас өмнө`}
-                  </T>
-                </View>
-                <T style={{ color: C.paper, fontSize: 13 }}>Ангилал оноор автоматаар тогтлоо</T>
-              </>
-            ) : (
-              <T style={{ color: C.pale, fontSize: 13 }}>Ангилал үйлдвэрлэсэн оноор автоматаар тогтоно</T>
-            )}
-          </View>
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>
-            4 · Дугаар ба холбоо барих
-          </T>
-          <Field label="Улсын дугаар">
-            <Input
-              value={plate}
-              onChangeText={setPlate}
-              autoCapitalize="characters"
-              strong
-              mono
-              placeholder="1234 УБА"
-              style={{ textAlign: "center", fontSize: 18, letterSpacing: 2 }}
-            />
-          </Field>
-          <Field label="Арлын дугаар">
-            <Input value={vin} onChangeText={setVin} autoCapitalize="characters" mono placeholder="ZVW55-8012345" />
-          </Field>
-          <Field label="Утасны дугаар">
-            <Input value={phone} onChangeText={setPhone} keyboardType="phone-pad" mono />
-          </Field>
-          <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>
-            Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн манай ажилтан бүтнээр нь харна.
-          </T>
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>
-            5 · Нэмэлт опшн
-          </T>
-          <OptionPicker value={options} onChange={setOptions} />
-        </View>
-
-        <Field label="6 · Нэмж хийсэн зүйлс">
-          <Input
-            value={mods}
-            onChangeText={setMods}
-            multiline
-            placeholder="Өвлийн шинэ дугуй, автозапуск, салоны бүрээс..."
-          />
-        </Field>
-        <Field label="7 · Нэмэлт тайлбар">
-          <Input
-            value={desc}
-            onChangeText={setDesc}
-            multiline
-            placeholder="Машины байдал, эзэмшлийн түүх, үзүүлэх цаг..."
-            style={{ minHeight: 110 }}
-          />
-        </Field>
-
-        <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>
-            8 · Үнэ
-          </T>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              height: 60,
-              borderWidth: 2,
-              borderColor: C.ink,
-              borderRadius: 14,
-              backgroundColor: C.card,
-              paddingHorizontal: 16,
-              gap: 8,
-            }}
-          >
-            <Input
-              value={price}
-              onChangeText={(t) => {
-                const d = t.replace(/\D/g, "");
-                setPrice(d ? d.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "");
-              }}
-              keyboardType="number-pad"
-              placeholder="48,500,000"
-              accessibilityLabel="Үнэ"
-              style={{ flex: 1, borderWidth: 0, height: 56, paddingHorizontal: 0, fontFamily: F.display, fontSize: 22 }}
-            />
-            <T w="display" style={{ fontSize: 20 }}>
-              ₮
-            </T>
-          </View>
-        </View>
+        <AdDetailsForm fields={fields} set={set} cutoff={cutoff} />
         <Field
           label="Агентын код (заавал биш)"
           hint={
-            agent && agent.code === agentCode.trim().toUpperCase()
+            agent && agent.code === agentCode
               ? `✓ Агент: ${agent.name}`
               : "Танд манай агент туслалцаа үзүүлсэн бол түүний кодыг оруулна уу."
           }
         >
           <Input
             value={agentCode}
-            onChangeText={(t) =>
-              setAgentCode(
-                t
-                  .toUpperCase()
-                  .replace(/[^A-Z0-9]/g, "")
-                  .slice(0, 12),
-              )
-            }
+            onChangeText={(t) => setAgentCode(agentCodeInput(t))}
             autoCapitalize="characters"
             autoCorrect={false}
             mono
@@ -950,111 +388,19 @@ export default function Post() {
           />
         </Field>
       </ScrollView>
-      <View
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          paddingHorizontal: 20,
-          paddingTop: 12,
-          paddingBottom: Math.max(insets.bottom, 16),
-          backgroundColor: C.card,
-          borderTopWidth: 1,
-          borderColor: C.line,
-          gap: 8,
-        }}
-      >
-        <FooterError err={err} />
+      <BottomBar error={error}>
         <Button
           title={dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"}
           variant="yellow"
           icon={dealer ? "check" : "arrow-right"}
-          onPress={submit}
+          onPress={next}
         />
         <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>
           {dealer
             ? "Авто худалдааны зар шууд нийтлэгдэнэ"
             : "Дараа нь: шимтгэлтэй (гэрээ, шалгалттай) эсвэл онцлох төлбөртэй (төлбөр ормогц шууд нийтлэгдэнэ)"}
         </T>
-      </View>
+      </BottomBar>
     </KeyboardAvoidingView>
-  );
-}
-
-/** Доод хэсэгт (илгээх товчны дээр) алдааг харуулна — урт маягтын төгсгөлд нуугдахгүй */
-function FooterError({ err }: { err: string | null }) {
-  if (!err) return null;
-  return (
-    <View
-      accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
-      style={{
-        flexDirection: "row",
-        gap: 8,
-        alignItems: "flex-start",
-        backgroundColor: C.dangerBg,
-        borderRadius: 12,
-        padding: 10,
-      }}
-    >
-      <Feather name="alert-circle" size={16} color="#9B1C1C" style={{ marginTop: 2 }} />
-      <T style={{ color: "#9B1C1C", fontSize: 13.5, lineHeight: 19, flex: 1 }}>{err}</T>
-    </View>
-  );
-}
-
-function PlanCard({
-  title,
-  price,
-  points,
-  cta,
-  onPick,
-  highlight = false,
-}: {
-  title: string;
-  price: string;
-  points: string[];
-  cta: string;
-  onPick: () => void;
-  highlight?: boolean;
-}) {
-  return (
-    <View
-      style={[
-        s.card,
-        { padding: 16, gap: 12, borderWidth: highlight ? 2 : 1, borderColor: highlight ? C.ink : C.line2 },
-      ]}
-    >
-      <View style={{ gap: 4 }}>
-        <T w="bold" style={{ fontSize: 17 }}>
-          {title}
-        </T>
-        <T w="display" style={{ fontSize: 15 }}>
-          {price}
-        </T>
-      </View>
-      <View style={{ gap: 8 }}>
-        {points.map((p) => (
-          <View key={p} style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                backgroundColor: C.yellow,
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 1,
-              }}
-            >
-              <Feather name="check" size={12} color={C.ink} />
-            </View>
-            <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{p}</T>
-          </View>
-        ))}
-      </View>
-      <Button title={cta} variant={highlight ? "ink" : "yellow"} icon="arrow-right" onPress={onPick} />
-    </View>
   );
 }
