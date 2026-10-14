@@ -9,7 +9,7 @@ export type AgentOption = { id: string; name: string };
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
 
-/** Менежерийн "зарагдсан" тайлангийн маягт — шимтгэлийг шууд тооцож харуулна. */
+/** "Зарагдсан" тайлангийн маягт (админ) — шимтгэлийг шууд тооцож харуулна. */
 export function SaleReportForm({ ads, defaultAd, action, back, agents = [], agentShare = 0 }: { ads: ReportAd[]; defaultAd?: string; action: (fd: FormData) => void; back: string; agents?: AgentOption[]; agentShare?: number }) {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ulaanbaatar" }).format(new Date());
   const [adId, setAdId] = useState(defaultAd && ads.some((a) => a.id === defaultAd) ? defaultAd : ads[0]?.id ?? "");
@@ -32,7 +32,7 @@ export function SaleReportForm({ ads, defaultAd, action, back, agents = [], agen
   return (
     <form action={action} className="card p-5 flex flex-col gap-4">
       <input type="hidden" name="back" value={back} />
-      <h2 className="m-0 text-[17px] font-bold">Зарагдсан тайлан илгээх</h2>
+      <h2 className="m-0 text-[17px] font-bold">Зарагдсан машин бүртгэх</h2>
       <label className="label text-[14px]">Аль зар зарагдсан бэ?
         <select
           name="ad_id"
@@ -83,7 +83,7 @@ export function SaleReportForm({ ads, defaultAd, action, back, agents = [], agen
           <span className="h-display text-[20px] text-yellow ml-auto">{fmt(calc.amount)}₮</span>
         </div>
       )}
-      <button className="btn btn-lg btn-yellow">Админд илгээх</button>
+      <button className="btn btn-lg btn-yellow">Бүртгэж батлах</button>
     </form>
   );
 }

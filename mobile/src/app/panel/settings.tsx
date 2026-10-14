@@ -62,7 +62,7 @@ export default function PanelSettings() {
 
         <View style={s.section}>
           <T w="bold" style={s.h2}>Санал</T>
-          <Field label="Санал тооцох хувь (%)" hint="Санал = зарын үнэ × энэ хувь. Хоосон бол менежер санал илгээж чадахгүй.">
+          <Field label="Санал тооцох хувь (%)" hint="Санал = зарын үнэ × энэ хувь. Хоосон бол санал илгээх боломжгүй.">
             <Input keyboardType="decimal-pad" value={pct} onChangeText={(t) => setPct(t.replace(/[^0-9.,]/g, ""))} placeholder="жишээ нь 85" />
           </Field>
         </View>
@@ -86,7 +86,7 @@ export default function PanelSettings() {
         <View style={s.section}>
           <T w="bold" style={s.h2}>Мэдэгдэл</T>
           <Toggle label="Зар батлагдахад бүх хэрэглэгчид мэдэгдэх" value={notifyAll} onChange={setNotifyAll} />
-          <Toggle label="Шинэ зар ирэхэд менежерүүдэд мэдэгдэх" value={notifyStaff} onChange={setNotifyStaff} />
+          <Toggle label="Шинэ зар ирэхэд админуудад мэдэгдэх" value={notifyStaff} onChange={setNotifyStaff} />
         </View>
 
         <Button title="Хадгалах" icon="save" variant="yellow" loading={saving} onPress={save} />

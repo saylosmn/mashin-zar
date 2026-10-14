@@ -95,7 +95,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <h1 className="h-display m-0 text-[clamp(26px,3vw,38px)]">Худалдаалагдаж буй машинууд</h1>
-          <span className="text-[14px] text-muted">Менежерээр шалгагдсан зарууд</span>
+          <span className="text-[14px] text-muted">Шалгагдсан зарууд</span>
         </div>
         <nav aria-label="Ангилал" className="flex flex-wrap gap-1 p-1 bg-soft rounded-xl">
           {tabs.map((t) => {

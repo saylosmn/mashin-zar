@@ -2,7 +2,7 @@ import type { Role } from "./types";
 
 /** Мэдэгдэл/push дээр дарахад апп-ын аль дэлгэц нээх (вэбийн notifyHref-тэй ижил дүрэм). */
 export function notifyRoute(type: string | undefined, adId: string | null | undefined, role?: Role | null): string {
-  const staff = role == null || role === "manager" || role === "admin"; // push-д эрх мэдэгдэхгүй тул ажилтны дэлгэц рүү
+  const staff = role == null || role === "admin"; // push-д эрх мэдэгдэхгүй тул ажилтны дэлгэц рүү
   switch (type) {
     case "sale_report":
     case "report_reviewed": return "/panel/reports";

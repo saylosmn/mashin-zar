@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
-import { requireStaff } from "@/lib/data";
+import { requireAdmin } from "@/lib/data";
 import { dateShort } from "@/lib/format";
 import { pendingCount } from "@/lib/panel";
 import { PanelShell } from "@/components/PanelShell";
 
-export const metadata = { title: "Менежер · Зар тавьсан хүмүүс" };
+export const metadata = { title: "Админ · Зар тавьсан хүмүүс" };
 
 export default async function ManagerUsers({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
-  const me = await requireStaff();
+  const me = await requireAdmin();
   const supabase = await createClient();
   const pending = await pendingCount();
   const { data: ads } = await supabase.from("ads").select("user_id,status");
@@ -29,7 +29,7 @@ export default async function ManagerUsers({ searchParams }: { searchParams: Pro
   const rows = (people ?? []).sort((a, b) => (stats.get(b.id)?.total ?? 0) - (stats.get(a.id)?.total ?? 0));
 
   return (
-    <PanelShell profile={me} area="manager" active="mgr-users" pending={pending}>
+    <PanelShell profile={me} area="admin" active="admin-sellers" pending={pending}>
       <div className="flex justify-between items-center gap-3 flex-wrap">
         <h1 className="h-display m-0 text-[28px]">Зар тавьсан хүмүүс</h1>
         <form className="flex gap-2"><input name="q" defaultValue={q} type="search" aria-label="Хайх" placeholder="Нэр, и-мэйл, утас" className="input h-11 w-64" /><button className="btn btn-ink">Хайх</button></form>

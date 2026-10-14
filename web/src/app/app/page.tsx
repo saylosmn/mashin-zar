@@ -2,11 +2,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import QRCode from "qrcode";
-import { Logo } from "@/components/Logo";
+import { Logo, LogoMark } from "@/components/Logo";
 import { LiveSync } from "@/components/LiveSync";
 import { apkInfo } from "@/lib/release";
 
-export const metadata: Metadata = { title: "Апп татах", description: "Машин зар Android апп татах" };
+export const metadata: Metadata = { title: "Апп татах", description: "Autoshop.mn Android апп татах" };
 
 export default async function AppDownload() {
   const h = await headers();
@@ -33,10 +33,8 @@ export default async function AppDownload() {
 
       <main className="flex-1 max-w-[960px] w-full mx-auto px-6 pb-16 flex flex-wrap items-center justify-center gap-x-16 gap-y-10">
         <div className="flex-[1_1_360px] max-w-[460px] flex flex-col items-start gap-6">
-          <div className="w-20 h-20 rounded-[22px] bg-ink-2 border border-ink-line flex items-center justify-center">
-            <span className="mono text-yellow font-bold text-[22px] border-2 border-paper rounded-md px-2 py-1">МЗ</span>
-          </div>
-          <h1 className="h-display m-0 text-[clamp(30px,5vw,48px)] leading-[1.1]">Машин зар апп</h1>
+          <LogoMark size={80} className="rounded-[22px] ring-1 ring-ink-line" />
+          <h1 className="h-display m-0 text-[clamp(30px,5vw,48px)] leading-[1.1]">Autoshop.mn апп</h1>
 
           {isIOS ? (
             <IosSteps />
@@ -84,7 +82,7 @@ function IosSteps() {
       </>,
     ],
     ["3", <><strong className="text-paper">“Add to Home Screen”</strong> (Нүүр дэлгэцэд нэмэх) → <strong className="text-paper">Add</strong></>],
-    ["4", <>Нүүр дэлгэц дээрх <strong className="text-paper">Машин зар</strong>-аа нээж нэвтэрнэ → <strong className="text-paper">“Мэдэгдэл асаах”</strong></>],
+    ["4", <>Нүүр дэлгэц дээрх <strong className="text-paper">Autoshop.mn</strong>-ээ нээж нэвтэрнэ → <strong className="text-paper">“Мэдэгдэл асаах”</strong></>],
   ];
   return (
     <div className="w-full flex flex-col gap-3">

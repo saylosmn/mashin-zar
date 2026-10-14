@@ -16,7 +16,7 @@ export default function Success() {
         </View>
         <View style={{ gap: 10, alignItems: "center" }}>
           <T w="display" style={{ fontSize: 25, textAlign: "center" }}>{live ? "Зар нийтлэгдлээ" : "Зар амжилттай үүслээ"}</T>
-          <T style={{ fontSize: 16, lineHeight: 24, color: C.body, textAlign: "center" }}>{live ? "Таны зар бүх хэрэглэгчид шууд харагдаж байна." : "Манай менежер удахгүй тантай холбогдоно.\nШалгагдсаны дараа зар нийтлэгдэнэ."}</T>
+          <T style={{ fontSize: 16, lineHeight: 24, color: C.body, textAlign: "center" }}>{live ? "Таны зар бүх хэрэглэгчид шууд харагдаж байна." : "Манай ажилтан удахгүй тантай холбогдоно.\nШалгагдсаны дараа зар нийтлэгдэнэ."}</T>
         </View>
         <View style={[s.card, { flexDirection: "row", gap: 12, padding: 12, alignSelf: "stretch", alignItems: "center" }]}>
           <Photo path={cover} style={{ width: 76, height: 76, borderRadius: 10 }} />
@@ -27,7 +27,7 @@ export default function Success() {
           </View>
         </View>
         {!live && <View style={{ alignSelf: "stretch", gap: 4 }}>
-          {[["1", "Зар илгээгдсэн", "done"], ["2", "Менежер холбогдож шалгана", "now"], ["3", "Зар нийтлэгдэж, бүх хэрэглэгчид мэдэгдэнэ", "next"]].map(([n, t, st]) => (
+          {[["1", "Зар илгээгдсэн", "done"], ["2", "Манай ажилтан холбогдож шалгана", "now"], ["3", "Зар нийтлэгдэж, бүх хэрэглэгчид мэдэгдэнэ", "next"]].map(([n, t, st]) => (
             <View key={n} style={{ flexDirection: "row", gap: 12, alignItems: "center", paddingVertical: 8 }}>
               <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: st === "done" ? C.ink : "transparent", borderWidth: st === "done" ? 0 : 2, borderColor: st === "now" ? C.ink : C.pale, alignItems: "center", justifyContent: "center" }}>
                 <T w="monoBold" style={{ fontSize: 12, color: st === "done" ? C.yellow : st === "now" ? C.ink : C.muted }}>{n}</T>

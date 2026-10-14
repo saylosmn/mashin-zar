@@ -25,7 +25,7 @@ insert into auth.users(id, email, email_confirmed_at) values
  ('00000000-0000-0000-0000-00000000000d','agent@x.mn', now()),
  ('00000000-0000-0000-0000-00000000000e','buyer@x.mn', now());
 update public.profiles set role = 'admin' where email = 'admin@x.mn';
-update public.profiles set role = 'manager' where email = 'mgr@x.mn';
+update public.profiles set role = 'admin' where email = 'mgr@x.mn';  -- менежер эрх хасагдсан (fix-19): 2 дахь админ
 update public.profiles set profile_completed = true, full_name = 'Бат Болд', phone = '99112233';
 
 -- 1. Агент урих → код үүснэ, кодоор олдоно
@@ -79,7 +79,7 @@ select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 set role authenticated;
 select pg_temp.fails(format($$select public.report_ad(%L, 'fake', null)$$, :'ad'), 'өөрийн зарыг мэдээлэхгүй');
 reset role;
-select pg_temp.eq((select count(*)::int from public.notifications where type = 'ad_flag'), 2, 'менежер, админд мэдэгдэл');
+select pg_temp.eq((select count(*)::int from public.notifications where type = 'ad_flag'), 2, 'админуудад мэдэгдэл');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 set role authenticated;
 select public.resolve_flag((select id from public.ad_flags limit 1), 'dismiss', null);
@@ -152,9 +152,9 @@ select public.log_client_error('web', 'TypeError at 99', 'stack', '/ads/2', 'UA'
 select pg_temp.fails($$select count(*) from public.error_logs$$, 'нэвтрээгүй хүн уншихгүй');
 reset role;
 select pg_temp.eq((select (count(*), max(hits))::text from public.error_logs), '(1,2)', 'ижил алдаа нэгтгэгдэнэ');
-select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e');
 set role authenticated;
-select pg_temp.eq((select count(*)::int from public.error_logs), 0, 'менежер алдааны бүртгэл харахгүй');
+select pg_temp.eq((select count(*)::int from public.error_logs), 0, 'хэрэглэгч алдааны бүртгэл харахгүй');
 reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 set role authenticated;
@@ -225,7 +225,7 @@ select pg_temp.fails($$insert into public.messages(conversation_id, sender_id, b
 reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 set role authenticated;
-select pg_temp.eq((select count(*)::int from public.messages), 3, 'менежер чат уншина');
+select pg_temp.eq((select count(*)::int from public.messages), 3, 'админ чат уншина');
 reset role;
 select pg_temp.eq(public.notify_url('message', null), '/messages', 'чатын push холбоос');
 
@@ -273,7 +273,7 @@ set role authenticated;
 select public.submit_payment(:'pay', 'Б.Болд, Хаан банк');
 select pg_temp.fails(format($$select public.submit_payment(%L, null)$$, :'pay'), 'давхар илгээхгүй');
 reset role;
-select pg_temp.eq((select count(*)::int from public.notifications where type = 'payment_submitted'), 1, 'админд төлбөрийн мэдэгдэл');
+select pg_temp.eq((select count(*)::int from public.notifications where type = 'payment_submitted'), 2, 'админ бүрт төлбөрийн мэдэгдэл (2 админ)');
 set role anon;
 select pg_temp.fails(format($$select public.decide_payment(%L, true)$$, :'pay'), 'нэвтрээгүй хүн төлбөр батлахгүй');
 reset role;
@@ -296,9 +296,9 @@ select pg_temp.eq((select percent from public.commission_for(:'pad')), 0::numeri
 select public.open_payment(:'pad') as pay2 \gset
 select public.submit_payment(:'pay2', null);
 reset role;
-select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e');
 set role authenticated;
-select pg_temp.fails(format($$select public.decide_payment(%L, true)$$, :'pay2'), 'менежер төлбөр батлахгүй');
+select pg_temp.fails(format($$select public.decide_payment(%L, true)$$, :'pay2'), 'хэрэглэгч төлбөр батлахгүй');
 reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 set role authenticated;
@@ -362,5 +362,45 @@ select pg_temp.eq((select string_agg(result, ',' order by result) from public.sm
 select public.regen_sms_key();
 select pg_temp.eq((public.sms_admin()->>'api_key') <> :'skey', true, 'түлхүүр солигдсон');
 reset role;
+
+-- 16. Менежер эрх хасагдсан + халдлагаас хамгаалалт (fix-19)
+reset role;
+select pg_temp.as_user('');
+select pg_temp.fails($$update public.profiles set role = 'manager' where email = 'buyer@x.mn'$$, 'менежер эрх байхгүй (constraint)');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+set role authenticated;
+select pg_temp.fails($$select public.invite_staff('new@x.mn', 'manager')$$, 'менежер урьж болохгүй');
+select pg_temp.eq(public.is_staff(), true, 'админ = ажилтан');
+select public.invite_staff('boss@x.mn', 'admin');
+reset role;
+select pg_temp.eq((select role from public.staff_invites where email = 'boss@x.mn'), 'admin', 'админы урилга');
+select pg_temp.eq(public.notify_url('staff_new_ad', '00000000-0000-0000-0000-0000000000ff'), '/admin/review?id=00000000-0000-0000-0000-0000000000ff', 'push холбоос /admin/review');
+select pg_temp.eq(public.notify_url('ad_flag', null), '/admin/flags', 'push холбоос /admin/flags');
+select pg_temp.eq(public.notify_url('report_reviewed', null), '/admin/reports', 'push холбоос /admin/reports');
+-- Хэрэглэгч өөрийгөө админ болгож чадахгүй (баганын эрх + trigger)
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e');
+set role authenticated;
+select pg_temp.eq(public.is_staff(), false, 'хэрэглэгч ажилтан биш');
+select pg_temp.fails($$update public.profiles set role = 'admin' where id = auth.uid()$$, 'өөрийгөө админ болгохгүй (RLS)');
+reset role;
+select pg_temp.fails($$update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-00000000000e'$$, 'өөрийгөө админ болгохгүй (trigger)');
+select pg_temp.fails($$update public.profiles set is_blocked = true where id = '00000000-0000-0000-0000-00000000000a'$$, 'хэрэглэгч бусдыг хаахгүй (trigger)');
+-- Зар оруулах хурдны хязгаар: өдөрт 10
+do $$
+begin
+  for i in 1..10 loop
+    insert into public.ads(user_id, brand, model, plate_number, vin, phone, year_made, price, photos, plan)
+    values ('00000000-0000-0000-0000-00000000000e', 'Kia', 'Ray', i || '00 УНА', 'VIN' || i, '99112233', 2015, 9000000, '{a.jpg}', 'paid');
+  end loop;
+end $$;
+select pg_temp.fails($$insert into public.ads(user_id, brand, model, plate_number, vin, phone, year_made, price, photos, plan)
+  values ('00000000-0000-0000-0000-00000000000e', 'Kia', 'Ray', '999 УНА', 'VIN99', '99112233', 2015, 9000000, '{a.jpg}', 'paid')$$, 'өдөрт 10-аас олон зар оруулахгүй');
+-- Зургийн сан: зөвхөн зураг
+set role authenticated;
+select pg_temp.fails($$insert into storage.objects(bucket_id, name) values ('ad-photos', '00000000-0000-0000-0000-00000000000e/x.svg')$$, 'зургийн санд SVG оруулахгүй');
+select pg_temp.fails($$insert into storage.objects(bucket_id, name) values ('ad-photos', '00000000-0000-0000-0000-00000000000a/x.jpg')$$, 'бусдын хавтаст зураг оруулахгүй');
+insert into storage.objects(bucket_id, name) values ('ad-photos', '00000000-0000-0000-0000-00000000000e/ok.jpg');
+reset role;
+select pg_temp.eq((select count(*)::int from storage.objects where name like '%/ok.jpg'), 1, 'өөрийн хавтаст JPG оруулна');
 
 \echo 'Бүх SQL тест амжилттай'

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
 import { Button, T } from "@/components/ui";
+import { BrandRow } from "@/components/Brand";
 
 export default function Login() {
   const { signInWithGoogle, session } = useAuth();
@@ -31,10 +32,7 @@ export default function Login() {
         <Pressable accessibilityRole="button" accessibilityLabel="Нэвтрэлгүйгээр үзэх" onPress={skip} hitSlop={12} style={{ position: "absolute", right: 0, paddingVertical: 6 }}>
           <T style={{ color: C.pale, fontSize: 14 }}>Алгасах ✕</T>
         </Pressable>
-        <View style={{ width: 44, height: 30, borderWidth: 2, borderColor: C.paper, borderRadius: 6, alignItems: "center", justifyContent: "center" }}>
-          <T w="monoBold" style={{ color: C.paper, fontSize: 13 }}>МЗ</T>
-        </View>
-        <T w="display" style={{ color: C.paper, fontSize: 16 }}>Машин зар</T>
+        <BrandRow size={16} color={C.paper} mark={34} />
       </View>
       <View style={{ flex: 1, justifyContent: "center", gap: 28 }}>
         <View style={{ gap: 12 }}>
@@ -47,7 +45,7 @@ export default function Login() {
             </View>
           </View>
           <T w="display" style={{ color: C.paper, fontSize: 32, lineHeight: 38 }}>Машинаа зар.{"\n"}Дараагийнхаа машиныг ол.</T>
-          <T style={{ color: C.pale, fontSize: 16, lineHeight: 24 }}>Улсын болон арлын дугаартай, 16 хүртэл зурагтай, менежерээр шалгагдсан зарууд.</T>
+          <T style={{ color: C.pale, fontSize: 16, lineHeight: 24 }}>Улсын болон арлын дугаартай, 16 хүртэл зурагтай, шалгагдсан зарууд.</T>
         </View>
       </View>
       <View style={{ gap: 14 }}>

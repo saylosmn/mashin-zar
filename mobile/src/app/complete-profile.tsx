@@ -24,7 +24,7 @@ export default function CompleteProfile() {
   async function save() {
     const ph = phone.replace(/[^\d+]/g, "");
     if (!name.trim() || ph.length < 8) return setErr("Нэр, утасны дугаараа (8+ орон) бөглөнө үү.");
-    if (!consent) return setErr("Менежер холбогдохыг зөвшөөрнө үү.");
+    if (!consent) return setErr("Манай ажилтан холбогдохыг зөвшөөрнө үү.");
     setBusy(true);
     setErr(null);
     const { error } = await supabase.from("profiles").update({ full_name: name.trim(), phone: ph, city, profile_completed: true }).eq("id", session?.user.id ?? "");
@@ -46,7 +46,7 @@ export default function CompleteProfile() {
         </View>
         <View style={{ gap: 8 }}>
           <T w="display" style={{ fontSize: 23, lineHeight: 29 }}>{creating ? "Зар тавихын өмнө профайлаа үүсгэнэ үү" : "Профайл засах"}</T>
-          <T style={{ fontSize: 14, color: C.muted, lineHeight: 21 }}>Менежер тантай энэ мэдээллээр холбогдоно. Нэг удаа бөглөхөд хангалттай.</T>
+          <T style={{ fontSize: 14, color: C.muted, lineHeight: 21 }}>Манай ажилтан тантай энэ мэдээллээр холбогдоно. Нэг удаа бөглөхөд хангалттай.</T>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 12 }}>
           <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
@@ -74,7 +74,7 @@ export default function CompleteProfile() {
             {consent && <Feather name="check" size={14} color={C.yellow} />}
           </View>
           <T style={{ flex: 1, fontSize: 13, lineHeight: 20, color: "#2B2F35" }}>
-            Менежер миний утсаар холбогдохыг зөвшөөрч,{" "}
+            Манай ажилтан миний утсаар холбогдохыг зөвшөөрч,{" "}
             <T style={{ fontSize: 13, textDecorationLine: "underline" }} onPress={() => openWebPanel("/terms")}>үйлчилгээний нөхцөл</T>,{" "}
             <T style={{ fontSize: 13, textDecorationLine: "underline" }} onPress={() => openWebPanel("/privacy")}>нууцлалын бодлогыг</T> хүлээн зөвшөөрч байна
           </T>

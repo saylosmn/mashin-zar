@@ -11,7 +11,7 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
       onClick={async () => {
         try {
           if (navigator.share && /Mobi|Android|iPhone/i.test(navigator.userAgent) && text.startsWith("http")) {
-            await navigator.share({ url: text, title: "Машин зар" });
+            await navigator.share({ url: text, title: "Autoshop.mn" });
             return;
           }
           await navigator.clipboard.writeText(text);

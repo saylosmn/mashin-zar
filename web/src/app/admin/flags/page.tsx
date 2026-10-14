@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { requireStaff } from "@/lib/data";
+import { requireAdmin } from "@/lib/data";
 import { STATUS, dateShort, money, timeAgo } from "@/lib/format";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
@@ -8,7 +8,7 @@ import { CarPhoto } from "@/components/CarPhoto";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { resolveFlag } from "../../panel-actions";
 
-export const metadata = { title: "Менежер · Гомдол" };
+export const metadata = { title: "Админ · Гомдол" };
 
 const REASON: Record<string, string> = {
   fake: "Хуурамч зар", sold: "Аль хэдийн зарагдсан", wrong_price: "Үнэ буруу",
@@ -24,7 +24,7 @@ type Flag = {
 
 export default async function FlagsPage({ searchParams }: { searchParams: Promise<{ tab?: string; ok?: string; err?: string }> }) {
   const sp = await searchParams;
-  const me = await requireStaff();
+  const me = await requireAdmin();
   const supabase = await createClient();
   const tab = sp.tab === "closed" ? "closed" : "open";
   let q = supabase
@@ -38,18 +38,18 @@ export default async function FlagsPage({ searchParams }: { searchParams: Promis
   // Нэг зарын олон гомдлыг бүлэглэнэ
   const groups = new Map<string, Flag[]>();
   for (const f of flags) groups.set(f.ad_id, [...(groups.get(f.ad_id) ?? []), f]);
-  const back = `/manager/flags${tab === "closed" ? "?tab=closed" : ""}`;
+  const back = `/admin/flags${tab === "closed" ? "?tab=closed" : ""}`;
 
   return (
-    <PanelShell profile={me} area={me.role === "admin" ? "admin" : "manager"} active="mgr-flags" pending={pending}>
+    <PanelShell profile={me} area="admin" active="admin-flags" pending={pending}>
       <div className="flex flex-wrap justify-between items-end gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="h-display m-0 text-[28px]">Гомдол</h1>
           <span className="text-[14px] text-muted">Хэрэглэгчдийн мэдээлсэн зарууд. Шалгаад нууж, эсвэл гомдлыг хаана.</span>
         </div>
         <nav className="flex gap-1.5" aria-label="Шүүлтүүр">
-          <Link href="/manager/flags" className={`h-9 px-3.5 rounded-full flex items-center text-[13px] no-underline ${tab === "open" ? "bg-ink text-yellow font-semibold" : "bg-card border border-line-2"}`}>Шийдвэрлээгүй</Link>
-          <Link href="/manager/flags?tab=closed" className={`h-9 px-3.5 rounded-full flex items-center text-[13px] no-underline ${tab === "closed" ? "bg-ink text-yellow font-semibold" : "bg-card border border-line-2"}`}>Шийдвэрлэсэн</Link>
+          <Link href="/admin/flags" className={`h-9 px-3.5 rounded-full flex items-center text-[13px] no-underline ${tab === "open" ? "bg-ink text-yellow font-semibold" : "bg-card border border-line-2"}`}>Шийдвэрлээгүй</Link>
+          <Link href="/admin/flags?tab=closed" className={`h-9 px-3.5 rounded-full flex items-center text-[13px] no-underline ${tab === "closed" ? "bg-ink text-yellow font-semibold" : "bg-card border border-line-2"}`}>Шийдвэрлэсэн</Link>
         </nav>
       </div>
       <Flash ok={sp.ok} err={sp.err ?? (error ? `Уншиж чадсангүй: ${error.message}` : undefined)} />
@@ -66,7 +66,7 @@ export default async function FlagsPage({ searchParams }: { searchParams: Promis
                   <CarPhoto path={a?.photos[0]} alt="" className="w-[88px] h-[66px] rounded-lg shrink-0" label="IMG" />
                   <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                     {a ? (
-                      <Link href={`/manager/ads?id=${a.id}`} className="font-bold text-[15px] no-underline">{a.brand} {a.model} · {a.year_made}</Link>
+                      <Link href={`/admin/review?id=${a.id}`} className="font-bold text-[15px] no-underline">{a.brand} {a.model} · {a.year_made}</Link>
                     ) : <span className="font-bold">Устгагдсан зар</span>}
                     {a && <span className="text-[13px] text-muted">{money(a.price)} · утас <span className="mono">{a.phone}</span> · {STATUS[a.status as keyof typeof STATUS]?.label ?? a.status}</span>}
                     <span className="text-[12px] font-semibold text-[#9b1c1c]">{list.length} гомдол</span>

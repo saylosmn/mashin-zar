@@ -54,7 +54,7 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
           <span className="w-10 h-10 rounded-xl bg-yellow text-ink flex items-center justify-center shrink-0"><IconCheck size={22} /></span>
           <div className="flex flex-col gap-0.5 flex-[1_1_300px]">
             <span className="font-bold text-[16px]">{dealer ? "Зар нийтлэгдлээ" : "Зар амжилттай үүслээ"}</span>
-            <span className="text-[14px] text-[#c9cdd3]">{dealer ? "Таны зар бүх хэрэглэгчид шууд харагдаж байна." : "Манай менежер удахгүй тантай холбогдоно."}</span>
+            <span className="text-[14px] text-[#c9cdd3]">{dealer ? "Таны зар бүх хэрэглэгчид шууд харагдаж байна." : "Манай ажилтан удахгүй тантай холбогдоно."}</span>
           </div>
           <Link href="/my" aria-label="Хаах" className="w-11 h-11 flex items-center justify-center text-paper"><IconClose size={18} /></Link>
         </div>
@@ -170,7 +170,7 @@ export default async function MyAdsPage({ searchParams }: { searchParams: Promis
   );
 }
 
-const pendingText = (a: Ad) => (a.plan === "paid" ? "Төлбөр баталгаажсаны дараа нийтлэгдэнэ" : "Менежер удахгүй холбогдоно");
+const pendingText = (a: Ad) => (a.plan === "paid" ? "Төлбөр баталгаажсаны дараа нийтлэгдэнэ" : "Манай ажилтан удахгүй холбогдоно");
 
 /** Нийтлэгдсэн зарын хугацаа, онцлох төлөв, нээлттэй төлбөр */
 function AdLife({ a, pay }: { a: Ad; pay?: OpenPay }) {

@@ -398,7 +398,7 @@ export function PostForm({
               <input name="phone" required type="tel" minLength={8} defaultValue={defaultPhone} className="input mono" />
             </label>
           </div>
-          <span className="text-[13px] text-muted">Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн менежер бүтнээр нь харна.</span>
+          <span className="text-[13px] text-muted">Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн манай ажилтан бүтнээр нь харна.</span>
         </section>
 
         <section className="card p-6 flex flex-col gap-3.5">
@@ -467,7 +467,7 @@ export function PostForm({
             <div role="progressbar" aria-valuemin={0} aria-valuemax={photos.length} aria-valuenow={busy.done} className="h-3 rounded-md bg-ink-line overflow-hidden">
               <div className="h-full bg-yellow rounded-md transition-all" style={{ width: `${(busy.done / Math.max(photos.length, 1)) * 100}%` }} />
             </div>
-            <span className="text-[14px] text-pale">{busy.step === 2 ? "Гэрээ баталгаажуулж байна…" : busy.step === 3 ? (dealer ? "Нийтэлж байна…" : plan === "paid" ? "Илгээж байна…" : "Менежерт илгээж байна…") : ""}</span>
+            <span className="text-[14px] text-pale">{busy.step === 2 ? "Гэрээ баталгаажуулж байна…" : busy.step === 3 ? (dealer ? "Нийтэлж байна…" : plan === "paid" ? "Илгээж байна…" : "Шалгалтад илгээж байна…") : ""}</span>
           </div>
         ) : (
           <>
@@ -488,7 +488,7 @@ export function PostForm({
             <button form="post-form" className="btn btn-lg btn-yellow">{dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"}</button>
             <p className="m-0 text-[13px] leading-relaxed text-pale">
               {dealer
-                ? "Авто худалдааны зар менежерийн шалгалтгүйгээр шууд нийтлэгдэнэ."
+                ? "Авто худалдааны зар шалгалтгүйгээр шууд нийтлэгдэнэ."
                 : `Дараагийн алхамд 2 сонголтоос нэгийг сонгоно: зарагдвал шимтгэл төлөх (онцлох зар үнэгүй, агент зарна), эсвэл ${money(plans.featuredPrice)} төлж шимтгэлгүй онцлох зар байршуулах.`}
             </p>
           </>

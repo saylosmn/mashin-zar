@@ -9,13 +9,14 @@ export const WEB_URL = "https://web-mu-fawn-45.vercel.app";
 export type Owner = { full_name: string | null; email: string | null; phone: string | null; city: string | null };
 export type StaffAd = Ad & { owner: Owner | null };
 
-/** Зар + зар тавьсан хүний мэдээлэл (зөвхөн менежер/админд RLS зөвшөөрнө) */
+/** Зар + зар тавьсан хүний мэдээлэл (зөвхөн админд RLS зөвшөөрнө) */
 export const STAFF_AD_SELECT = "*, owner:profiles!ads_user_id_fkey(full_name,email,phone,city)";
 
-export const isStaff = (p?: Profile | null) => p?.role === "manager" || p?.role === "admin";
+/** Панел зөвхөн админд (менежер эрх хасагдсан). */
+export const isStaff = (p?: Profile | null) => p?.role === "admin";
 export const isAdmin = (p?: Profile | null) => p?.role === "admin";
 
-/** Менежер/админы RPC дуудаад алдаа гарвал ойлгомжтой цонх харуулна. */
+/** Админы RPC дуудаад алдаа гарвал ойлгомжтой цонх харуулна. */
 export async function staffRpc<T = unknown>(name: string, args: Record<string, unknown>): Promise<{ ok: boolean; data: T | null }> {
   const { data, error } = await supabase.rpc(name, args);
   if (error) {
@@ -49,7 +50,7 @@ export async function openWebPanel(path: string) {
 
 export const digits = (s: string) => s.replace(/\D/g, "");
 
-/** Гарын үсэгтэй гэрээний PDF-ийг нээнэ (эзэмшигч, менежер, админ). */
+/** Гарын үсэгтэй гэрээний PDF-ийг нээнэ (эзэмшигч, админ). */
 export async function openContract(contractId: string) {
   try {
     const { data } = await supabase.auth.getSession();

@@ -101,7 +101,7 @@ export default async function AdminPayments({ searchParams }: { searchParams: Pr
                       <span className="text-[12px] text-muted">{timeAgo(p.submitted_at ?? p.created_at)}</span>
                     </div>
                     {p.ad ? (
-                      <Link href={p.ad.status === "pending" ? `/manager/ads?id=${p.ad.id}` : `/admin/ads/${p.ad.id}`} className="font-semibold text-[16px]">
+                      <Link href={p.ad.status === "pending" ? `/admin/review?id=${p.ad.id}` : `/admin/ads/${p.ad.id}`} className="font-semibold text-[16px]">
                         {p.ad.brand} {p.ad.model} · {p.ad.year_made}
                       </Link>
                     ) : (

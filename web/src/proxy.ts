@@ -1,5 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { RateLimiter, clientIp, isBadAgent, isScannerPath, rateRule, tooLarge } from "@/lib/shield";
+
+/** IP тутмын хурдны хязгаар (инстанс дотор; Vercel Firewall-ийн дүрэмтэй давхар) */
+const limiter = new RateLimiter();
+
+function blocked(status: number, msg: string, extra: Record<string, string> = {}) {
+  return new NextResponse(msg, {
+    status,
+    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...extra },
+  });
+}
 
 const PUBLIC_PATHS = [
   "/login", "/auth", "/setup-error", "/app", "/api/app-version", "/api/push", "/api/contracts", "/api/sms",
@@ -7,6 +18,17 @@ const PUBLIC_PATHS = [
 ];
 
 export async function proxy(request: NextRequest) {
+  // ---------- Халдлагаас хамгаалах (Supabase руу хүсэлт явуулахаас өмнө) ----------
+  const p = request.nextUrl.pathname;
+  if (isScannerPath(p)) return blocked(404, "Not found");
+  if (isBadAgent(request.headers.get("user-agent"))) return blocked(403, "Forbidden");
+  if (tooLarge(request.method, p, request.headers.get("content-length"))) return blocked(413, "Payload too large");
+  const rule = rateRule(request.method, p, request.headers.has("next-action"));
+  const verdict = rule ? limiter.check(clientIp(request.headers), rule) : true;
+  if (verdict !== true) {
+    return blocked(429, "Хэт олон хүсэлт илгээлээ. Түр хүлээгээд дахин оролдоно уу.", { "Retry-After": String(verdict) });
+  }
+
   // Supabase нь redirect URL-ийг зөвшөөрөөгүй үед Site URL руу ?code=... -тэй буцаадаг.
   // Тийм код ирвэл callback руу шилжүүлж нэвтрэлтийг дуусгана.
   const code = request.nextUrl.searchParams.get("code");

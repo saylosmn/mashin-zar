@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * Өгөгдлийн сангийн өөрчлөлтийг сонсож, хуудсыг refresh хийлгүйгээр шинэчилнэ.
  * - "mz-sync" нийтийн суваг: зөвхөн нийтэд харагдах зар, лизингийн нөхцөлийн өөрчлөлт
- * - хувийн сувгууд (RLS): "u:<id>" өөрийн мэдээлэл, "mz-staff" менежер/админ, "p:<id>" лизингийн компани
+ * - хувийн сувгууд (RLS): "u:<id>" өөрийн мэдээлэл, "mz-staff" админ, "p:<id>" лизингийн компани
  * - notifications: зөвхөн өөрийн мэдэгдэл (RLS)
  * router.refresh() нь серверээс шинэ өгөгдөл авчирдаг ч бөглөж буй формын утгыг алдагдуулахгүй.
  */
@@ -25,7 +25,7 @@ export function LiveSync({ userId, role, partnerId }: { userId?: string | null; 
     const sync = supabase.channel("mz-sync").on("broadcast", { event: "change" }, refresh).subscribe();
 
     const topics = userId
-      ? [`u:${userId}`, ...(role === "manager" || role === "admin" ? ["mz-staff"] : []), ...(role === "leasing" && partnerId ? [`p:${partnerId}`] : [])]
+      ? [`u:${userId}`, ...(role === "admin" ? ["mz-staff"] : []), ...(role === "leasing" && partnerId ? [`p:${partnerId}`] : [])]
       : [];
     let privateChannels: ReturnType<typeof supabase.channel>[] = [];
     let cancelled = false;

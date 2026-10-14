@@ -58,7 +58,7 @@ export default function PanelAd() {
     return r.ok;
   }
 
-  if (!isStaff(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Энэ хэсэг зөвхөн менежер, админд нээлттэй."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
+  if (!isStaff(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Энэ хэсэг зөвхөн админд нээлттэй."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
   if (loading)
     return (
       <View style={{ flex: 1, backgroundColor: C.paper }}>
@@ -193,7 +193,7 @@ export default function PanelAd() {
 
           {/* Тэмдэглэл */}
           <View style={s.section}>
-            <T w="bold" style={s.h2}>Менежерийн тэмдэглэл</T>
+            <T w="bold" style={s.h2}>Дотоод тэмдэглэл</T>
             {ad.contacted_at ? <T style={{ fontSize: 13, color: C.activeFg }}>✓ Холбогдсон · {timeAgo(ad.contacted_at)}</T> : null}
             <Input multiline value={note} onChangeText={setNote} placeholder="Ярилцсан зүйл, дараагийн алхам..." />
             <View style={{ flexDirection: "row", gap: 8 }}>

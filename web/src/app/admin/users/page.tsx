@@ -17,7 +17,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
   const pending = await pendingCount();
   const head = { count: "exact" as const, head: true };
   const [staffCount, userCount, dealerCount, agentCount] = await Promise.all([
-    supabase.from("profiles").select("id", head).in("role", ["manager", "admin"]),
+    supabase.from("profiles").select("id", head).eq("role", "admin"),
     supabase.from("profiles").select("id", head).eq("role", "user"),
     supabase.from("profiles").select("id", head).eq("role", "dealer"),
     supabase.from("profiles").select("id", head).eq("role", "agent"),
@@ -30,12 +30,12 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
   const earn = new Map<string, { total: number; unpaid: number }>();
   const page = Math.max(1, Number(sp.page) || 1);
   if (tab === "staff") {
-    const { data } = await supabase.from("profiles").select("*").in("role", ["manager", "admin"]).order("created_at");
+    const { data } = await supabase.from("profiles").select("*").eq("role", "admin").order("created_at");
     rows = (data ?? []) as Profile[];
     const { data: inv } = await supabase.from("staff_invites").select("*").order("created_at", { ascending: false });
     const emails = new Set(rows.map((r) => r.email?.toLowerCase()));
-    // Зөвхөн менежер/админы урилга (лизинг, авто худалдааны урилга өөр табд/хэсэгт)
-    invites = (inv ?? []).filter((i) => (i.role === "manager" || i.role === "admin") && !emails.has(i.email.toLowerCase()));
+    // Зөвхөн админы урилга (лизинг, авто худалдаа, агентын урилга өөр табд/хэсэгт)
+    invites = (inv ?? []).filter((i) => i.role === "admin" && !emails.has(i.email.toLowerCase()));
     const { data: managed } = await supabase.from("ads").select("manager_id,status").not("manager_id", "is", null);
     for (const a of managed ?? []) {
       const c = counts.get(a.manager_id!) ?? { approved: 0, sold: 0, ads: 0 };
@@ -99,7 +99,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
       <div className="flex justify-between items-center gap-3 flex-wrap">
         <h1 className="h-display m-0 text-[28px]">Аккаунтууд</h1>
         <nav aria-label="Төрөл" className="flex flex-wrap gap-1 p-1 bg-soft rounded-xl">
-          <Link href="/admin/users" aria-current={tab === "staff" ? "page" : undefined} className={`h-10 px-4 rounded-[9px] flex items-center text-[14px] no-underline ${tab === "staff" ? "bg-ink text-yellow font-semibold" : "text-body"}`}>Менежер · {staffCount.count ?? 0}</Link>
+          <Link href="/admin/users" aria-current={tab === "staff" ? "page" : undefined} className={`h-10 px-4 rounded-[9px] flex items-center text-[14px] no-underline ${tab === "staff" ? "bg-ink text-yellow font-semibold" : "text-body"}`}>Админ · {staffCount.count ?? 0}</Link>
           <Link href="/admin/users?tab=users" aria-current={tab === "users" ? "page" : undefined} className={`h-10 px-4 rounded-[9px] flex items-center text-[14px] no-underline ${tab === "users" ? "bg-ink text-yellow font-semibold" : "text-body"}`}>Хэрэглэгч · {(userCount.count ?? 0).toLocaleString("en-US")}</Link>
           <Link href="/admin/users?tab=dealers" aria-current={tab === "dealers" ? "page" : undefined} className={`h-10 px-4 rounded-[9px] flex items-center text-[14px] no-underline ${tab === "dealers" ? "bg-ink text-yellow font-semibold" : "text-body"}`}>Авто худалдаа · {dealerCount.count ?? 0}</Link>
           <Link href="/admin/users?tab=agents" aria-current={tab === "agents" ? "page" : undefined} className={`h-10 px-4 rounded-[9px] flex items-center text-[14px] no-underline ${tab === "agents" ? "bg-ink text-yellow font-semibold" : "text-body"}`}>Агент · {agentCount.count ?? 0}</Link>
@@ -111,18 +111,16 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         <>
           <form action={inviteStaff} className="bg-ink text-paper rounded-2xl p-5 flex flex-wrap gap-3 items-end">
             <input type="hidden" name="back" value={back} />
-            <span className="basis-full h-display text-[16px]">Шинэ менежерийн аккаунт нээх</span>
+            <span className="basis-full h-display text-[16px]">Шинэ админ нэмэх</span>
+            <span className="basis-full text-[13px] text-pale -mt-1">Админ бүх эрхтэй: зар батлах, төлбөр, тайлан, аккаунт, тохиргоо. Зөвхөн итгэлтэй хүнд олгоно уу.</span>
             <label className="label text-paper flex-[1_1_200px]">Нэр<input name="name" className="input h-11" placeholder="Овог нэр" /></label>
             <label className="label text-paper flex-[1_1_220px]">Google и-мэйл<input name="email" type="email" required className="input h-11" placeholder="name@gmail.com" /></label>
             <label className="label text-paper flex-[1_1_150px]">Утас<input name="phone" type="tel" className="input h-11" placeholder="9911 2233" /></label>
-            <label className="label text-paper flex-[0_1_140px]">Эрх
-              <select name="role" className="input h-11"><option value="manager">Менежер</option><option value="admin">Админ</option></select>
-            </label>
-            <button className="btn btn-yellow h-11">Аккаунт нээх</button>
+            <button className="btn btn-yellow h-11">Админ нэмэх</button>
           </form>
           <div className="table-wrap">
             <table className="table min-w-[820px]">
-              <thead><tr><th>Менежер</th><th>И-мэйл</th><th>Эрх</th><th>Баталсан зар</th><th>Зарагдсан</th><th>Төлөв</th><th>Үйлдэл</th></tr></thead>
+              <thead><tr><th>Админ</th><th>И-мэйл</th><th>Эрх</th><th>Баталсан зар</th><th>Зарагдсан</th><th>Төлөв</th><th>Үйлдэл</th></tr></thead>
               <tbody>
                 {rows.map((m) => {
                   const c = counts.get(m.id) ?? { approved: 0, sold: 0, ads: 0 };
@@ -131,7 +129,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                     <tr key={m.id}>
                       <td><div className="flex items-center gap-2.5"><span className="w-[34px] h-[34px] rounded-full bg-ink text-yellow flex items-center justify-center font-bold text-[13px]">{initial(m.full_name ?? m.email)}</span><span className="font-semibold">{m.full_name ?? "—"}{self ? " (та)" : ""}</span></div></td>
                       <td className="text-body">{m.email}</td>
-                      <td>{m.role === "admin" ? "Админ" : "Менежер"}</td>
+                      <td>Админ</td>
                       <td className="mono">{c.approved}</td>
                       <td className="mono">{c.sold}</td>
                       <td>{m.is_blocked ? <span className="badge bg-sold-bg text-sold-fg">Хаагдсан</span> : <span className="badge bg-active-bg text-active-fg">Идэвхтэй</span>}</td>
@@ -157,7 +155,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                   <tr key={i.email}>
                     <td className="font-semibold">{i.full_name ?? "—"}</td>
                     <td className="text-body">{i.email}</td>
-                    <td>{i.role === "admin" ? "Админ" : "Менежер"}</td>
+                    <td>Админ</td>
                     <td className="mono">—</td><td className="mono">—</td>
                     <td><span className="badge bg-pending-bg text-pending-fg">Нэвтрэхийг хүлээж буй</span></td>
                     <td>
@@ -171,7 +169,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
               </tbody>
             </table>
           </div>
-          <span className="text-[13px] text-muted">Хаагдсан аккаунт панел руу нэвтэрч чадахгүй. Шинэ менежер өөрийн Google и-мэйлээр нэвтэрмэгц эрх нь автоматаар идэвхжинэ.</span>
+          <span className="text-[13px] text-muted">Хаагдсан аккаунт панел руу нэвтэрч чадахгүй. Шинэ админ өөрийн Google и-мэйлээр нэвтэрмэгц эрх нь автоматаар идэвхжинэ.</span>
         </>
       ) : tab === "agents" ? (
         <>
@@ -240,7 +238,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
           <form action={inviteDealer} className="bg-ink text-paper rounded-2xl p-5 flex flex-wrap gap-3 items-end">
             <input type="hidden" name="back" value={back} />
             <span className="basis-full h-display text-[16px]">Авто худалдаа нэмэх</span>
-            <span className="basis-full text-[13px] text-pale -mt-1">Байнгын харилцагч. Зар нь менежерийн шалгалтгүй, гэрээгүйгээр шууд нийтлэгдэж, өөрсдөө засаж, нууж, зарагдсан болгоно.</span>
+            <span className="basis-full text-[13px] text-pale -mt-1">Байнгын харилцагч. Зар нь шалгалтгүй, гэрээгүйгээр шууд нийтлэгдэж, өөрсдөө засаж, нууж, зарагдсан болгоно.</span>
             <label className="label text-paper flex-[1_1_200px]">Авто худалдааны нэр<input name="shop" required className="input h-11" placeholder="Мега Авто" /></label>
             <label className="label text-paper flex-[1_1_220px]">Google и-мэйл<input name="email" type="email" required defaultValue={sp.email ?? ""} className="input h-11" placeholder="name@gmail.com" /></label>
             <label className="label text-paper flex-[1_1_150px]">Утас<input name="phone" type="tel" className="input h-11" placeholder="9911 2233" /></label>

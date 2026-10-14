@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         try {
           await webpush.sendNotification(
             m.sub,
-            JSON.stringify({ title: String(m.title ?? "Машин зар").slice(0, 120), body: String(m.body ?? "").slice(0, 300), url: safeUrl(m.url), tag: typeof m.tag === "string" ? m.tag.slice(0, 80) : undefined }),
+            JSON.stringify({ title: String(m.title ?? "Autoshop.mn").slice(0, 120), body: String(m.body ?? "").slice(0, 300), url: safeUrl(m.url), tag: typeof m.tag === "string" ? m.tag.slice(0, 80) : undefined }),
             { TTL: 60 * 60 * 24, urgency: "high" },
           );
           sent++;

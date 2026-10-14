@@ -143,7 +143,7 @@ export default function AdDetail() {
 
           {ad.status === "pending" && (
             <View style={{ backgroundColor: C.pendingBg, borderRadius: 12, padding: 12 }}>
-              <T style={{ color: C.pendingFg, fontSize: 14, lineHeight: 20 }}>Энэ зар менежерийн шалгалтыг хүлээж байна. Батлагдсаны дараа бусдад харагдана.</T>
+              <T style={{ color: C.pendingFg, fontSize: 14, lineHeight: 20 }}>Энэ зар шалгалтыг хүлээж байна. Батлагдсаны дараа бусдад харагдана.</T>
             </View>
           )}
 

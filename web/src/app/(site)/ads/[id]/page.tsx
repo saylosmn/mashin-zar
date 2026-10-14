@@ -25,7 +25,7 @@ const load = cache(async (id: string) => {
   const supabase = await createClient();
   const { data: pub } = await supabase.from("public_ads").select("*").eq("id", id).maybeSingle();
   if (pub) return pub as View;
-  // Өөрийн эсвэл менежерийн харах хүлээгдэж буй зар
+  // Өөрийн эсвэл админы харах хүлээгдэж буй зар
   const { data: own } = await supabase.from("ads").select("*").eq("id", id).maybeSingle();
   if (!own) return null;
   const a = own as Ad;
@@ -118,7 +118,7 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
           <StatusBadge status={ad.status as AdStatus} />
           <span className="text-[14px] text-body">
             {ad.status === "pending"
-              ? "Энэ зар менежерийн шалгалтыг хүлээж байна. Батлагдсаны дараа бусдад харагдана."
+              ? "Энэ зар шалгалтыг хүлээж байна. Батлагдсаны дараа бусдад харагдана."
               : ad.status === "rejected"
                 ? "Энэ зар татгалзагдсан тул бусдад харагдахгүй."
                 : ad.status === "hidden"

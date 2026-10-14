@@ -17,7 +17,7 @@ const TYPE_LABEL: Record<string, string> = {
   ad_rejected: "Таны зар",
   offer: "Санал",
   sold: "Таны зар",
-  staff_new_ad: "Менежерт",
+  staff_new_ad: "Админд",
   broadcast: "Зарлал",
   sale_report: "Тайлан",
   report_reviewed: "Тайлан",

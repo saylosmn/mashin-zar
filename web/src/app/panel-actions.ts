@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin, requireStaff, requireUser } from "@/lib/data";
+import { requireAdmin, requireUser } from "@/lib/data";
 
 function back(fd: FormData, fallback: string, extra: Record<string, string>) {
   const to = String(fd.get("back") || fallback);
@@ -19,59 +19,59 @@ async function run(fd: FormData, fallback: string, ok: string, fn: () => Promise
   redirect(back(fd, fallback, error ? { err: error.message } : { ok }));
 }
 
-// ---------- Менежер ----------
+// ---------- Зар шалгах (админ) ----------
 export async function approveAd(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const id = String(fd.get("id"));
   const supabase = await createClient();
   const { error } = await supabase.rpc("approve_ad", { p_ad: id });
   revalidatePath("/", "layout");
-  redirect(back(fd, "/manager/ads", error ? { err: error.message } : { ok: "Зар батлагдаж, хэрэглэгчдэд мэдэгдэл илгээгдлээ" }));
+  redirect(back(fd, "/admin/review", error ? { err: error.message } : { ok: "Зар батлагдаж, хэрэглэгчдэд мэдэгдэл илгээгдлээ" }));
 }
 
 export async function rejectAd(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const supabase = await createClient();
   const id = String(fd.get("id"));
   const note = String(fd.get("note") || "") || null;
   const { error } = await supabase.rpc("reject_ad", { p_ad: id, p_note: note });
   revalidatePath("/", "layout");
-  redirect(back(fd, "/manager/ads", error ? { err: error.message } : { ok: "Зар татгалзагдлаа" }));
+  redirect(back(fd, "/admin/review", error ? { err: error.message } : { ok: "Зар татгалзагдлаа" }));
 }
 
 export async function markContacted(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/manager/ads", "Холбогдсон гэж тэмдэглэлээ", () =>
+  await run(fd, "/admin/review", "Холбогдсон гэж тэмдэглэлээ", () =>
     supabase.rpc("mark_contacted", { p_ad: String(fd.get("id")), p_note: String(fd.get("note") || "") || null }),
   );
 }
 
 export async function saveNote(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/manager/ads", "Тэмдэглэл хадгалагдлаа", () =>
+  await run(fd, "/admin/review", "Тэмдэглэл хадгалагдлаа", () =>
     supabase.rpc("save_note", { p_ad: String(fd.get("id")), p_note: String(fd.get("note") || "") }),
   );
 }
 
 export async function sendOffer(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const id = String(fd.get("id"));
   const supabase = await createClient();
   const { error } = await supabase.rpc("send_offer", { p_ad: id });
   revalidatePath("/", "layout");
-  redirect(back(fd, "/manager/ads", error ? { err: error.message } : { ok: "Санал хэрэглэгчид илгээгдлээ" }));
+  redirect(back(fd, "/admin/review", error ? { err: error.message } : { ok: "Санал хэрэглэгчид илгээгдлээ" }));
 }
 
 export async function markSold(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const id = String(fd.get("id"));
   const price = Number(String(fd.get("price") || "").replace(/\D/g, "")) || null;
   const supabase = await createClient();
   const { error } = await supabase.rpc("mark_sold", { p_ad: id, p_price: price });
   revalidatePath("/", "layout");
-  redirect(back(fd, "/manager/all", error ? { err: error.message } : { ok: "Зарагдсан гэж тэмдэглэлээ" }));
+  redirect(back(fd, "/admin/ads", error ? { err: error.message } : { ok: "Зарагдсан гэж тэмдэглэлээ" }));
 }
 
 // ---------- Админ ----------
@@ -89,10 +89,10 @@ export async function inviteStaff(fd: FormData) {
   const supabase = await createClient();
   const email = String(fd.get("email") || "").trim();
   if (!/^\S+@\S+\.\S+$/.test(email)) redirect("/admin/users?err=" + encodeURIComponent("И-мэйл буруу байна"));
-  await run(fd, "/admin/users", `${email} менежерийн эрхтэй боллоо. Тэр Google-ээр нэвтэрмэгц панел нээгдэнэ.`, () =>
+  await run(fd, "/admin/users", `${email} админ эрхтэй боллоо. Тэр Google-ээр нэвтэрмэгц панел нээгдэнэ.`, () =>
     supabase.rpc("invite_staff", {
       p_email: email,
-      p_role: String(fd.get("role") || "manager"),
+      p_role: "admin",
       p_name: String(fd.get("name") || "") || null,
       p_phone: String(fd.get("phone") || "") || null,
     }),
@@ -102,7 +102,7 @@ export async function inviteStaff(fd: FormData) {
 export async function removeStaff(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/admin/users", "Менежерийн эрх хасагдлаа", () => supabase.rpc("remove_staff", { p_user: String(fd.get("id")) }));
+  await run(fd, "/admin/users", "Админ эрх хасагдлаа", () => supabase.rpc("remove_staff", { p_user: String(fd.get("id")) }));
 }
 
 export async function deleteInvite(fd: FormData) {
@@ -205,10 +205,10 @@ function soldAtFrom(d: string) {
 }
 
 export async function submitSaleReport(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const supabase = await createClient();
   const price = Number(String(fd.get("price") || "").replace(/\D/g, ""));
-  const { error } = await supabase.rpc("submit_sale_report", {
+  const { data: rid, error } = await supabase.rpc("submit_sale_report", {
     p_ad: String(fd.get("ad_id") || ""),
     p_price: price || null,
     p_sold_at: soldAtFrom(String(fd.get("sold_at") || "")),
@@ -217,8 +217,14 @@ export async function submitSaleReport(fd: FormData) {
     p_note: String(fd.get("note") || "") || null,
     p_agent: String(fd.get("agent_id") || "") || null,
   });
+  // Менежер байхгүй болсон: админ өөрөө оруулсан тайланг шууд батална (зар зарагдсан болж, агентын хувь бодогдоно).
+  if (!error && rid) {
+    const { error: revErr } = await supabase.rpc("review_sale_report", { p_id: rid, p_approve: true, p_note: null });
+    revalidatePath("/", "layout");
+    redirect(back(fd, "/admin/reports", revErr ? { err: `Тайлан хадгалагдсан ч батлагдсангүй: ${revErr.message}` } : { ok: "Тайлан батлагдаж, зар зарагдсан боллоо" }));
+  }
   revalidatePath("/", "layout");
-  redirect(back(fd, "/manager/reports", error ? { err: error.message } : { ok: "Тайлан админд илгээгдлээ" }));
+  redirect(back(fd, "/admin/reports", { err: error?.message ?? "Тайлан хадгалагдсангүй" }));
 }
 
 export async function reviewSaleReport(fd: FormData) {
@@ -363,20 +369,20 @@ export async function setAgentPaid(fd: FormData) {
 }
 
 export async function setAdAgent(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/manager/ads", "Агент оноогдлоо", () =>
+  await run(fd, "/admin/review", "Агент оноогдлоо", () =>
     supabase.rpc("set_ad_agent", { p_ad: String(fd.get("id")), p_agent: String(fd.get("agent_id") || "") || null }),
   );
 }
 
 // ---------- Гомдол ----------
 export async function resolveFlag(fd: FormData) {
-  await requireStaff();
+  await requireAdmin();
   const supabase = await createClient();
   const action = String(fd.get("action"));
   const msg = action === "hide" ? "Зар нуугдаж, эзэнд мэдэгдэл очлоо" : action === "dismiss" ? "Гомдол хаагдлаа" : "Шийдвэрлэсэн гэж тэмдэглэлээ";
-  await run(fd, "/manager/flags", msg, () =>
+  await run(fd, "/admin/flags", msg, () =>
     supabase.rpc("resolve_flag", { p_id: String(fd.get("id")), p_action: action, p_note: String(fd.get("note") || "") || null }),
   );
 }

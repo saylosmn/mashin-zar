@@ -53,7 +53,7 @@ export function ReportAdSheet({ adId, visible, onClose }: { adId: string; visibl
             </View>
             {done ? (
               <>
-                <T style={{ fontSize: 15, lineHeight: 22 }}>✓ Баярлалаа. Менежер шалгаж, шаардлагатай бол арга хэмжээ авна.</T>
+                <T style={{ fontSize: 15, lineHeight: 22 }}>✓ Баярлалаа. Бид шалгаж, шаардлагатай бол арга хэмжээ авна.</T>
                 <Button title="Хаах" onPress={close} />
               </>
             ) : (

@@ -89,7 +89,7 @@ export async function unregisterPush() {
 export const PUSH_REASON: Record<Exclude<PushStatus, { ok: true }>["reason"], string> = {
   unsupported: "Энэ орчинд (Expo Go эсвэл вэб) push ажиллахгүй. Сайтаас татсан APK-г суулгана уу.",
   emulator: "Эмулятор дээр push ажиллахгүй. Жинхэнэ утсан дээр туршина уу.",
-  denied: "Мэдэгдлийн зөвшөөрөл хаалттай байна. Утасны Тохиргоо → Апп → Машин зар → Мэдэгдэл хэсгийг асаана уу.",
+  denied: "Мэдэгдлийн зөвшөөрөл хаалттай байна. Утасны Тохиргоо → Апп → Autoshop.mn → Мэдэгдэл хэсгийг асаана уу.",
   "no-project": "Апп-ын тохиргоонд EAS projectId алга (шинэ APK build хэрэгтэй).",
   token: "Push токен авч чадсангүй. Интернэт, Google Play үйлчилгээ асаалттай эсэхийг шалгана уу.",
   save: "Токеныг серверт хадгалж чадсангүй.",

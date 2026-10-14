@@ -50,5 +50,5 @@ export function contactLine() {
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
   const phone = process.env.NEXT_PUBLIC_CONTACT_PHONE;
   const parts = [email && `и-мэйл: ${email}`, phone && `утас: ${phone}`].filter(Boolean);
-  return parts.length ? parts.join(", ") : "сайт болон апп-аар дамжуулан менежертэй холбогдоно уу";
+  return parts.length ? parts.join(", ") : "сайт болон апп-аар дамжуулан бидэнтэй холбогдоно уу";
 }

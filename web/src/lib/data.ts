@@ -40,15 +40,10 @@ export async function requireUser(next?: string): Promise<Profile> {
   return p;
 }
 
-export async function requireStaff(): Promise<Profile> {
-  const p = await requireUser();
-  if (p.role !== "manager" && p.role !== "admin") redirect("/");
-  return p;
-}
-
+/** Админ шаардана (менежер эрх хасагдсан тул панел зөвхөн админд). */
 export async function requireAdmin(): Promise<Profile> {
   const p = await requireUser();
-  if (p.role !== "admin") redirect(p.role === "manager" ? "/manager" : "/");
+  if (p.role !== "admin") redirect("/");
   return p;
 }
 

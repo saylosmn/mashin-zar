@@ -68,7 +68,7 @@ export default async function LeasingPanel({ searchParams }: { searchParams: Pro
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="h-display m-0 text-[28px]">{allMode ? "Лизингийн бүх хүсэлт" : partner.name}</h1>
-          <span className="text-[14px] text-muted">{allMode ? "Бүх лизингийн компанид очсон хүсэлт, тэдний шийдвэр, баримт хэн хэзээ нээсэн" : "Машин зарын худалдан авагчдын лизингийн хүсэлтүүд"}</span>
+          <span className="text-[14px] text-muted">{allMode ? "Бүх лизингийн компанид очсон хүсэлт, тэдний шийдвэр, баримт хэн хэзээ нээсэн" : "Autoshop.mn-ийн худалдан авагчдын лизингийн хүсэлтүүд"}</span>
         </div>
         {isAdmin && (
           <form className="flex gap-2 items-center">

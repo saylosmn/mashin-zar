@@ -11,7 +11,7 @@ import { errMsg, timeAgo } from "@/lib/format";
 import { Button, StateView, T } from "@/components/ui";
 import type { Notification } from "@/lib/types";
 
-const LABEL: Record<string, string> = { new_ad: "Шинэ зар", ad_approved: "Таны зар", ad_rejected: "Таны зар", offer: "Санал", sold: "Таны зар", staff_new_ad: "Менежерт", broadcast: "Зарлал", sale_report: "Тайлан", report_reviewed: "Тайлан", loan_request: "Лизинг", loan_update: "Лизинг" };
+const LABEL: Record<string, string> = { new_ad: "Шинэ зар", ad_approved: "Таны зар", ad_rejected: "Таны зар", offer: "Санал", sold: "Таны зар", staff_new_ad: "Админд", broadcast: "Зарлал", sale_report: "Тайлан", report_reviewed: "Тайлан", loan_request: "Лизинг", loan_update: "Лизинг" };
 
 function NotificationsInner() {
   const { profile, refreshProfile, settings, session } = useAuth();

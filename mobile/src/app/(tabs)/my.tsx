@@ -51,7 +51,7 @@ function MyAdsInner() {
   }, [uid]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
-  // Менежер батлах, санал илгээх, зарагдсан болгоход төлөв шууд солигдоно
+  // Админ батлах, санал илгээх, зарагдсан болгоход төлөв шууд солигдоно
   useLiveSync(() => load(), ["ads", "payments"]);
 
   async function remove(a: Ad) {
@@ -157,7 +157,7 @@ function MyAdsInner() {
               {(a.status !== "sold" || a.contract_id) && (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: dealer ? "flex-start" : "space-between", borderTopWidth: 1, borderColor: "#ECEDE9", paddingTop: 10, gap: 8 }}>
                   <T style={{ fontSize: 12, color: a.offer_amount ? C.pendingFg : C.muted, flex: dealer ? undefined : 1, flexBasis: dealer ? "100%" : undefined }} w={a.offer_amount ? "semibold" : "body"}>
-                    {a.offer_amount ? `Санал: ${money(a.offer_amount)}` : a.status === "pending" ? (a.plan === "paid" ? "Төлбөр баталгаажсаны дараа нийтлэгдэнэ" : "Менежер удахгүй холбогдоно") : a.status === "rejected" ? "Татгалзагдсан" : `${a.views} үзэлт`}
+                    {a.offer_amount ? `Санал: ${money(a.offer_amount)}` : a.status === "pending" ? (a.plan === "paid" ? "Төлбөр баталгаажсаны дараа нийтлэгдэнэ" : "Манай ажилтан удахгүй холбогдоно") : a.status === "rejected" ? "Татгалзагдсан" : `${a.views} үзэлт`}
                   </T>
                   {a.contract_id ? <Button small title="Гэрээ" icon="file-text" variant="ghost" onPress={() => openContract(a.contract_id!)} /> : null}
                   {(a.status === "active" || a.status === "hidden") && expiryInfo(a.expires_at).renewable ? (

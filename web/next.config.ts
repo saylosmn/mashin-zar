@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Ямар фреймворк ашигласныг халдагчид бүү харуул
+  poweredByHeader: false,
   // Гэрээний PDF-д кирилл фонт хэрэгтэй
   outputFileTracingIncludes: { "/api/contracts/**": ["./src/fonts/**"] },
   turbopack: {
@@ -18,7 +20,12 @@ const nextConfig: NextConfig = {
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=(), usb=(), serial=(), bluetooth=(), hid=()" },
+      // Өөр сайт манай цонхыг удирдах (tabnabbing, Spectre) болон файлыг шууд татахаас сэргийлнэ
+      { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+      { key: "Cross-Origin-Resource-Policy", value: "same-site" },
+      { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
+      { key: "Origin-Agent-Cluster", value: "?1" },
       {
         key: "Content-Security-Policy",
         value: [
@@ -26,6 +33,7 @@ const nextConfig: NextConfig = {
           "base-uri 'self'",
           "object-src 'none'",
           "frame-ancestors 'none'",
+          "frame-src 'none'",
           "img-src 'self' data: blob: https://*.supabase.co",
           "media-src 'self' blob: https://*.supabase.co",
           "font-src 'self' data: https://fonts.gstatic.com",
@@ -49,6 +57,18 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
         ],
       },
+    ];
+  },
+  // Менежерийн панел хасагдсан: хуучин холбоос, push мэдэгдлийг админ панел руу шилжүүлнэ
+  async redirects() {
+    return [
+      { source: "/manager", destination: "/admin", permanent: true },
+      { source: "/manager/ads", destination: "/admin/review", permanent: true },
+      { source: "/manager/flags", destination: "/admin/flags", permanent: true },
+      { source: "/manager/users", destination: "/admin/sellers", permanent: true },
+      { source: "/manager/reports", destination: "/admin/reports", permanent: true },
+      { source: "/manager/all", destination: "/admin/ads", permanent: true },
+      { source: "/manager/:path*", destination: "/admin", permanent: true },
     ];
   },
   experimental: {
