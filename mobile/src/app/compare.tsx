@@ -8,7 +8,7 @@ import { C } from "@/lib/theme";
 import { categoryLong, errMsg, money } from "@/lib/format";
 import { bestIndexes, useCompare } from "@/lib/compare";
 import { Button, Photo, Skeleton, StateView, T } from "@/components/ui";
-import type { PublicAd } from "@/lib/types";
+import type { PublicAd } from "@shared/types";
 
 const COL = 168;
 const LABEL = 112;

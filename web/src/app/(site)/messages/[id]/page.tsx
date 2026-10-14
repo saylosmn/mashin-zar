@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/data";
 import { money } from "@/lib/format";
 import { CarPhoto } from "@/components/CarPhoto";
 import { ChatThread } from "./ChatThread";
-import type { ChatInfo, Message } from "@/lib/types";
+import type { ChatInfo, Message } from "@shared/types";
 
 export const metadata = { title: "Чат" };
 

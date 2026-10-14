@@ -10,15 +10,15 @@ import { useNetInfo } from "@react-native-community/netinfo";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C, F } from "@/lib/theme";
-import { BRANDS } from "@/lib/cars";
+import { BRANDS } from "@shared/cars";
 import { OptionPicker } from "@/components/OptionPicker";
 import { errMsg } from "@/lib/format";
 import { Button, Field, Input, T, s } from "@/components/ui";
 import { SignaturePad } from "@/components/SignaturePad";
 import { ContractView } from "@/components/ContractView";
-import { termsFrom, tierLines } from "@/lib/contract";
+import { termsFrom, tierLines } from "@shared/contract";
 import { money } from "@/lib/format";
-import type { Plan } from "@/lib/types";
+import type { Plan } from "@shared/types";
 import { WEB_URL } from "@/lib/staff";
 
 type Pic = { uri: string; id: string };

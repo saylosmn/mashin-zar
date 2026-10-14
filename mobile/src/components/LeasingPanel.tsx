@@ -7,9 +7,9 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useLiveSync } from "@/lib/live";
 import { C } from "@/lib/theme";
-import { errMsg, timeAgo } from "@/lib/format";
+import { errMsg, num, timeAgo } from "@/lib/format";
 import { confirm, openWebPanel, staffRpc } from "@/lib/staff";
-import { DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, LOAN_STATUS, MARITAL, docLabel, docPage, fmtNum, requirementLines, type LoanRequest, type LoanStatus, type Partner } from "@/lib/loan";
+import { DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, LOAN_STATUS, MARITAL, docLabel, docPage, requirementLines, type LoanRequest, type LoanStatus, type Partner } from "@/lib/loan";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "./ui";
 
 type Tab = LoanStatus | "all" | "terms";
@@ -144,8 +144,8 @@ export function LeasingPanel({ withBack }: { withBack?: boolean }) {
       )}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         <Kpi dark label="Шинэ хүсэлт" value={String(count("new"))} onPress={() => pickTab("new")} />
-        <Kpi label="Энэ сар" value={String(month.length)} sub={`${fmtNum(month.reduce((t, r) => t + (r.price - r.down_payment), 0))}₮ зээл`} />
-        <Kpi label="Зөвшөөрсөн" value={String(approved.length)} sub={`${fmtNum(approved.reduce((t, r) => t + (r.price - r.down_payment), 0))}₮`} />
+        <Kpi label="Энэ сар" value={String(month.length)} sub={`${num(month.reduce((t, r) => t + (r.price - r.down_payment), 0))}₮ зээл`} />
+        <Kpi label="Зөвшөөрсөн" value={String(approved.length)} sub={`${num(approved.reduce((t, r) => t + (r.price - r.down_payment), 0))}₮`} />
         <Kpi label="Хөрвөлт" value={decided ? `${Math.round((approved.length / decided) * 100)}%` : "—"} sub="Шийдвэрлэснээс" />
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
@@ -230,11 +230,11 @@ function RequestCard({ r, onDone, partnerName }: { r: LoanRequest; onDone: () =>
         <T w="semibold" style={{ fontSize: 14, textDecorationLine: r.ad_id ? "underline" : "none" }}>{r.car}</T>
       </Pressable>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-        <Cell k="Машины үнэ" v={`${fmtNum(r.price)}₮`} />
-        <Cell k="Урьдчилгаа" v={`${fmtNum(r.down_payment)}₮`} />
-        <Cell k="Зээлийн дүн" v={`${fmtNum(r.price - r.down_payment)}₮`} />
+        <Cell k="Машины үнэ" v={`${num(r.price)}₮`} />
+        <Cell k="Урьдчилгаа" v={`${num(r.down_payment)}₮`} />
+        <Cell k="Зээлийн дүн" v={`${num(r.price - r.down_payment)}₮`} />
         <Cell k="Хугацаа" v={`${r.term_months} сар · ${Number(r.rate_annual)}%`} />
-        <Cell k="Сарын төлбөр" v={`${fmtNum(r.monthly_payment)}₮`} strong />
+        <Cell k="Сарын төлбөр" v={`${num(r.monthly_payment)}₮`} strong />
       </View>
       {r.checks && r.checks.length > 0 ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -277,7 +277,7 @@ const termsFrom = (p: Partner): TermsForm => ({
   rate: String(Number(p.rate_annual)), min_down: String(Number(p.min_down_pct)), max_term: String(p.max_term_months),
   min_age: String(p.min_age ?? 18), max_age: String(p.max_age ?? 65), min_work: String(p.min_work_months ?? 6),
   min_business: String(p.min_business_months ?? 12), max_dti: String(Number(p.max_dti ?? 50)),
-  min_car_year: p.min_car_year ? String(p.min_car_year) : "", cosigner_over: p.cosigner_over != null ? fmtNum(Number(p.cosigner_over)) : "",
+  min_car_year: p.min_car_year ? String(p.min_car_year) : "", cosigner_over: p.cosigner_over != null ? num(Number(p.cosigner_over)) : "",
   note: p.requirements_note ?? "",
 });
 
@@ -351,7 +351,7 @@ function Terms({ partner, editable, onSaved }: { partner: Partner; editable: boo
         {numField("min_car_year", "Машины он ≥", false, "Хязгааргүй")}
       </View>
       <Field label="Хамтран зээлдэгч шаардах зээл (₮-өөс дээш)">
-        <Input mono keyboardType="number-pad" value={f.cosigner_over} onChangeText={(v) => set("cosigner_over")(v.replace(/\D/g, "") ? fmtNum(Number(v.replace(/\D/g, ""))) : "")} placeholder="Шаардахгүй" />
+        <Input mono keyboardType="number-pad" value={f.cosigner_over} onChangeText={(v) => set("cosigner_over")(v.replace(/\D/g, "") ? num(Number(v.replace(/\D/g, ""))) : "")} placeholder="Шаардахгүй" />
       </Field>
       <T w="semibold" style={{ fontSize: 14 }}>Заавал хавсаргах баримт</T>
       <View style={{ gap: 6 }}>
@@ -481,7 +481,7 @@ function ApplicantDetails({ r }: { r: LoanRequest }) {
   const [open, setOpen] = useState(false);
   const a = r.applicant ?? {};
   const hasApplicant = Object.keys(a).length > 0;
-  const m = (n?: number) => (n == null ? "—" : `${fmtNum(n)}₮`);
+  const m = (n?: number) => (n == null ? "—" : `${num(n)}₮`);
   const rows: [string, string][] = [
     ["Регистр", `${a.register_no ?? "—"}${a.age != null ? ` · ${a.age} нас` : ""}`],
     ["Хаяг", [a.city, a.district, a.address].filter(Boolean).join(", ") || "—"],

@@ -7,7 +7,7 @@ import { C } from "@/lib/theme";
 import { errMsg, money, timeAgo } from "@/lib/format";
 import { useLiveSync } from "@/lib/live";
 import { Button, CardSkeleton, Photo, StateView, T, s } from "@/components/ui";
-import type { ChatRow } from "@/lib/types";
+import type { ChatRow } from "@shared/types";
 
 function MessagesInner() {
   const [rows, setRows] = useState<ChatRow[] | null>(null);

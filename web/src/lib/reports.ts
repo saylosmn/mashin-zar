@@ -1,8 +1,8 @@
 import "server-only";
 import { createClient } from "./supabase/server";
-import { termsFrom, type ContractTerms } from "./contract";
+import { termsFrom, type ContractTerms } from "@shared/contract";
 import type { AgentOption, ReportAd } from "@/components/SaleReportForm";
-import type { Settings } from "./types";
+import type { Settings } from "@shared/types";
 
 export type ReportRow = {
   id: string; ad_id: string; sold_price: number; sold_at: string; buyer_name: string | null; buyer_phone: string | null;

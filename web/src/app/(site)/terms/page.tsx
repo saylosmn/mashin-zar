@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/data";
-import { termsFrom, tierLines } from "@/lib/contract";
+import { termsFrom, tierLines } from "@shared/contract";
 import { money } from "@/lib/format";
 import { LegalPage, contactLine } from "@/components/LegalPage";
 

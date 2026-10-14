@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/data";
-import { termsFrom } from "@/lib/contract";
+import { termsFrom } from "@shared/contract";
 import { LegalPage, contactLine } from "@/components/LegalPage";
 
 export const metadata: Metadata = {

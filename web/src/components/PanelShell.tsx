@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 import { OfflineBanner } from "./OfflineBanner";
 import { LiveSync } from "./LiveSync";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile } from "@/lib/types";
+import type { Profile } from "@shared/types";
 
 /** Шийдвэрлээгүй гомдлын тоо (цэсний тэмдэг). Хүснэгт байхгүй үед 0. */
 async function openFlags() {

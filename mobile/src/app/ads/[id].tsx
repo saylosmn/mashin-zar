@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { errMsg, initial, money, timeAgo } from "@/lib/format";
 import { Button, CatChip, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
-import type { Ad, PublicAd } from "@/lib/types";
+import type { Ad, PublicAd } from "@shared/types";
 import { useLiveSync } from "@/lib/live";
 import { adCache } from "@/lib/cache";
 import type { Partner } from "@/lib/loan";
@@ -16,7 +16,7 @@ import { LoanCalculator } from "@/components/LoanCalculator";
 import { requireLogin } from "@/lib/guest";
 import { ReportAdSheet } from "@/components/ReportAdSheet";
 import { useCompare, COMPARE_MAX } from "@/lib/compare";
-import { expiryInfo } from "@/lib/commission";
+import { expiryInfo } from "@shared/commission";
 
 const W = Dimensions.get("window").width;
 

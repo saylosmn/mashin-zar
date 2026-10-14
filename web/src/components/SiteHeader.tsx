@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 import { IconBell, IconPlus, IconSearch } from "./icons";
 import { initial } from "@/lib/format";
 import { LoginLink } from "./LoginLink";
-import type { Profile } from "@/lib/types";
+import type { Profile } from "@shared/types";
 
 export function SiteHeader({ profile, unread, q, chats = 0 }: { profile: Profile | null; unread: number; q?: string; chats?: number }) {
   const staff = profile?.role === "admin";

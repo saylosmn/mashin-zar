@@ -1,4 +1,4 @@
-import { CONTRACT_TITLE, contractDate, contractSections, type ContractData } from "@/lib/contract";
+import { CONTRACT_TITLE, contractDate, contractSections, type ContractData } from "@shared/contract";
 
 /** Гэрээний текстийг дэлгэц дээр харуулах (PDF-тэй ижил агуулга). */
 export function ContractView({ data }: { data: ContractData }) {

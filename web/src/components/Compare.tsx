@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { COMPARE_KEY, COMPARE_MAX, compareHref, parseIds, toggleId } from "@/lib/compare";
+import { COMPARE_KEY, COMPARE_MAX, compareHref, parseIds, toggleId } from "@shared/compare";
 
 /** Харьцуулах жагсаалт: localStorage + таб хооронд синк. Storage ажиллахгүй үед зөвхөн санах ойд. */
 let memory: string[] = [];

@@ -9,7 +9,7 @@ import { GuestGate } from "@/components/GuestGate";
 import { C } from "@/lib/theme";
 import { errMsg, timeAgo } from "@/lib/format";
 import { Button, StateView, T } from "@/components/ui";
-import type { Notification } from "@/lib/types";
+import type { Notification } from "@shared/types";
 
 const LABEL: Record<string, string> = { new_ad: "Шинэ зар", ad_approved: "Таны зар", ad_rejected: "Таны зар", offer: "Санал", sold: "Таны зар", staff_new_ad: "Админд", broadcast: "Зарлал", sale_report: "Тайлан", report_reviewed: "Тайлан", loan_request: "Лизинг", loan_update: "Лизинг" };
 

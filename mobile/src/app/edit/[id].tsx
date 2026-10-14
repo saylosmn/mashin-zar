@@ -13,7 +13,7 @@ import { errMsg } from "@/lib/format";
 import { digits } from "@/lib/staff";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 import { OptionPicker } from "@/components/OptionPicker";
-import type { Ad } from "@/lib/types";
+import type { Ad } from "@shared/types";
 
 type Pic = { key: string; path?: string; uri: string };
 

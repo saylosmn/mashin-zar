@@ -1,4 +1,4 @@
-import type { Role } from "./types";
+import type { Role } from "@shared/types";
 
 /** Мэдэгдэл/push дээр дарахад апп-ын аль дэлгэц нээх (вэбийн notifyHref-тэй ижил дүрэм). */
 export function notifyRoute(type: string | undefined, adId: string | null | undefined, role?: Role | null): string {

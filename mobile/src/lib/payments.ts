@@ -1,14 +1,17 @@
+import { PAY_STATUS_LABEL } from "@shared/payments";
+import type { PayStatus } from "@shared/types";
 import { C } from "./theme";
-import type { PayStatus } from "./types";
 
-/** Төлбөрийн төлөвийн нэр, өнгө (вэбийн web/src/lib/payments.ts-тэй ижил нэршил) */
-export const PAY_STATUS: Record<PayStatus, { label: string; bg: string; fg: string }> = {
-  awaiting: { label: "Төлбөр хүлээгдэж байна", bg: C.pendingBg, fg: C.pendingFg },
-  submitted: { label: "Төлбөр шалгагдаж байна", bg: C.pendingBg, fg: C.pendingFg },
-  confirmed: { label: "Төлбөр баталгаажсан", bg: C.activeBg, fg: C.activeFg },
-  rejected: { label: "Төлбөр орж ирээгүй", bg: C.dangerBg, fg: C.danger },
-  cancelled: { label: "Цуцлагдсан", bg: C.soft, fg: C.body },
+export { PLAN_LABEL, needsAction } from "@shared/payments";
+
+const COLORS: Record<PayStatus, { bg: string; fg: string }> = {
+  awaiting: { bg: C.pendingBg, fg: C.pendingFg },
+  submitted: { bg: C.pendingBg, fg: C.pendingFg },
+  confirmed: { bg: C.activeBg, fg: C.activeFg },
+  rejected: { bg: C.dangerBg, fg: C.danger },
+  cancelled: { bg: C.soft, fg: C.body },
 };
 
-/** Хэрэглэгч одоо төлөх/дахин илгээх шаардлагатай эсэх */
-export const needsAction = (s: PayStatus) => s === "awaiting" || s === "rejected";
+export const PAY_STATUS = Object.fromEntries(
+  (Object.keys(COLORS) as PayStatus[]).map((s) => [s, { label: PAY_STATUS_LABEL[s], ...COLORS[s] }]),
+) as Record<PayStatus, { label: string; bg: string; fg: string }>;

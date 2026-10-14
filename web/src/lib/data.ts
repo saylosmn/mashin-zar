@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
-import type { Profile, Settings } from "./types";
+import type { Profile, Settings } from "@shared/types";
 
 export const getProfile = cache(async (): Promise<Profile | null> => {
   const supabase = await createClient();

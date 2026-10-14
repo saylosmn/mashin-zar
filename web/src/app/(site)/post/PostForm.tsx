@@ -3,15 +3,15 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { BRANDS } from "@/lib/cars";
+import { BRANDS } from "@shared/cars";
 import { OptionPicker } from "@/components/OptionPicker";
 import { errMsg } from "@/lib/format";
 import { IconCamera, IconCheck, IconClose, IconSpinner } from "@/components/icons";
 import { SignaturePad } from "@/components/SignaturePad";
 import { ContractView } from "@/components/ContractView";
-import { tierLines, type ContractTerms } from "@/lib/contract";
+import { tierLines, type ContractTerms } from "@shared/contract";
 import { money } from "@/lib/format";
-import type { Plan } from "@/lib/types";
+import type { Plan } from "@shared/types";
 import { checkAgentCode } from "../actions";
 
 type Photo = { id: string; file: File; url: string };

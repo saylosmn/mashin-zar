@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { dayLabel, timeHM } from "@/lib/chat";
-import type { Message } from "@/lib/types";
+import { dayLabel, timeHM } from "@shared/chat";
+import type { Message } from "@shared/types";
 
 /**
  * Мессежийн жагсаалт + бичих талбар. Шинэ мессеж ирэхэд LiveSync (хувийн суваг u:<id>) хуудсыг

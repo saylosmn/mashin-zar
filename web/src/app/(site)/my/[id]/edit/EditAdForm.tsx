@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { errMsg, photoUrl } from "@/lib/format";
 import { IconCamera, IconClose, IconSpinner } from "@/components/icons";
 import { OptionPicker } from "@/components/OptionPicker";
-import type { Ad } from "@/lib/types";
+import type { Ad } from "@shared/types";
 
 type Pic = { key: string; path?: string; file?: File; url: string };
 

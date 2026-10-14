@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - "mobile/**"
+      - "shared/**"
       - ".github/workflows/mobile.yml"
   workflow_dispatch:
     inputs:

@@ -7,10 +7,10 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C, F } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
-import { dayLabel, timeHM } from "@/lib/chat";
+import { dayLabel, timeHM } from "@shared/chat";
 import { useLiveSync } from "@/lib/live";
 import { Button, Photo, Skeleton, StateView, T } from "@/components/ui";
-import type { ChatInfo, Message } from "@/lib/types";
+import type { ChatInfo, Message } from "@shared/types";
 
 const QUICK = ["Сайн байна уу, машин зарагдаагүй байна уу?", "Хэзээ, хаана үзэж болох вэ?", "Үнэ тохирох уу?"];
 type AdHead = { id: string; brand: string; model: string; year_made: number; price: number; photos: string[]; seller_name: string; seller_shop?: string | null };

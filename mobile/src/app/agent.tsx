@@ -8,7 +8,7 @@ import { C } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
 import { WEB_URL } from "@/lib/staff";
 import { Button, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
-import type { AdStatus } from "@/lib/types";
+import type { AdStatus } from "@shared/types";
 
 type Report = {
   id: string; status: "pending" | "approved" | "rejected"; sold_price: number; sold_at: string;

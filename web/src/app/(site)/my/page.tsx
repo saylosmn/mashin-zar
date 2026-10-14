@@ -7,11 +7,11 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { AdCard } from "@/components/AdCard";
 import { IconCheck, IconClose } from "@/components/icons";
 import { deleteMyAd, renewAd } from "../actions";
-import { expiryInfo, isFeatured } from "@/lib/commission";
+import { expiryInfo, isFeatured } from "@shared/commission";
 import { PAY_STATUS, needsAction } from "@/lib/payments";
 import { dealerSetStatus } from "@/app/panel-actions";
 import { ConfirmButton } from "@/components/ConfirmButton";
-import type { Ad, AdStatus, Payment, PublicAd } from "@/lib/types";
+import type { Ad, AdStatus, Payment, PublicAd } from "@shared/types";
 
 type OpenPay = Pick<Payment, "ad_id" | "status" | "ref">;
 

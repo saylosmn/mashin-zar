@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ContractTerms } from "@/lib/contract";
-import { agentAmount, commissionAmount, commissionFor } from "@/lib/commission";
+import type { ContractTerms } from "@shared/contract";
+import { agentAmount, commissionAmount, commissionFor } from "@shared/commission";
 
 export type ReportAd = { id: string; label: string; price: number; approved_at: string | null; created_at: string; terms: ContractTerms; agent_id?: string | null };
 export type AgentOption = { id: string; name: string };

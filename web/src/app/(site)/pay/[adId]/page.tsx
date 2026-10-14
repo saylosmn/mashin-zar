@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings, requireUser } from "@/lib/data";
 import { dateShort, money } from "@/lib/format";
-import { expiryInfo, isFeatured } from "@/lib/commission";
+import { expiryInfo, isFeatured } from "@shared/commission";
 import { PAY_STATUS } from "@/lib/payments";
 import { CarPhoto } from "@/components/CarPhoto";
 import { IconCheck } from "@/components/icons";
-import type { Ad, Payment } from "@/lib/types";
+import type { Ad, Payment } from "@shared/types";
 import { CopyButton } from "../../agent/CopyButton";
 import { startPayment, submitPayment } from "../../actions";
 

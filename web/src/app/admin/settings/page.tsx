@@ -5,7 +5,7 @@ import { regenSmsKey, saveContractSettings, saveGrowthSettings, savePaymentSetti
 import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { siteUrl } from "@/lib/site";
-import { termsFrom } from "@/lib/contract";
+import { termsFrom } from "@shared/contract";
 import { CopyButton } from "../../(site)/agent/CopyButton";
 import { timeAgo } from "@/lib/format";
 

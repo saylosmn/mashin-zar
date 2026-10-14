@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/data";
 import { money, timeAgo } from "@/lib/format";
 import { CarPhoto } from "@/components/CarPhoto";
-import type { ChatRow } from "@/lib/types";
+import type { ChatRow } from "@shared/types";
 
 export const metadata = { title: "Чат" };
 

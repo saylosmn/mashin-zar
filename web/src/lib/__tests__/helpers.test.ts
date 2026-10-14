@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { notifyHref } from "../notify-href";
 import { safeNext } from "../safe-next";
 import { normAgentCode, siteUrl } from "../site";
-import { DEFAULT_TERMS, termsFrom, tierLines } from "../contract";
+import { DEFAULT_TERMS, termsFrom, tierLines } from "@shared/contract";
 import { minDown, monthlyPayment, rdBirthDate, termOptions } from "../loan";
 
 describe("notifyHref", () => {

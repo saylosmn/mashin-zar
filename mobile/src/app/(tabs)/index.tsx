@@ -7,11 +7,11 @@ import { adCache } from "@/lib/cache";
 import { useAuth } from "@/lib/auth";
 import { C, F } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
-import { BRANDS } from "@/lib/cars";
+import { BRANDS } from "@shared/cars";
 import { AdCard, Button, CardSkeleton, StateView, T } from "@/components/ui";
 import { BrandRow } from "@/components/Brand";
 import { useLiveSync } from "@/lib/live";
-import type { PublicAd } from "@/lib/types";
+import type { PublicAd } from "@shared/types";
 
 const PAGE = 20;
 type Cat = "all" | "new" | "old";

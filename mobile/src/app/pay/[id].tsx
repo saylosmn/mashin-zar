@@ -8,10 +8,10 @@ import { useLiveSync } from "@/lib/live";
 import { C } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
 import { staffRpc } from "@/lib/staff";
-import { expiryInfo, isFeatured } from "@/lib/commission";
+import { expiryInfo, isFeatured } from "@shared/commission";
 import { PAY_STATUS } from "@/lib/payments";
 import { Button, Field, Input, Photo, Skeleton, StateView, T, s } from "@/components/ui";
-import type { Ad, Payment } from "@/lib/types";
+import type { Ad, Payment } from "@shared/types";
 
 /** Онцлох зарын төлбөр: дансны мэдээлэл, гүйлгээний утга, «Төлбөр төлсөн» (орлогыг SMS апп автоматаар батална) */
 export default function PayScreen() {

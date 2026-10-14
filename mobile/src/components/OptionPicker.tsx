@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { C, F } from "@/lib/theme";
-import { OPTION_GROUPS } from "@/lib/cars";
+import { OPTION_GROUPS } from "@shared/cars";
 import { Button, Input, T } from "./ui";
 
 /** Машины опшн сонгох: хайлт + бүлгүүд + өөрийн опшн */

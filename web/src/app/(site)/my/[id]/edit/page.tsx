@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings, requireUser } from "@/lib/data";
 import { EditAdForm } from "./EditAdForm";
-import type { Ad } from "@/lib/types";
+import type { Ad } from "@shared/types";
 
 export const metadata = { title: "Зар засах" };
 

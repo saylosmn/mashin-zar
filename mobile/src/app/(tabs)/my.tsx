@@ -7,10 +7,10 @@ import { GuestGate } from "@/components/GuestGate";
 import { C } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
 import { Button, CardSkeleton, Photo, StateView, StatusBadge, T, s } from "@/components/ui";
-import type { Ad, AdStatus, Payment, PublicAd } from "@/lib/types";
+import type { Ad, AdStatus, Payment, PublicAd } from "@shared/types";
 import { useLiveSync } from "@/lib/live";
 import { confirm, openContract, staffRpc } from "@/lib/staff";
-import { expiryInfo, isFeatured, recentlyRequested } from "@/lib/commission";
+import { expiryInfo, isFeatured, recentlyRequested } from "@shared/commission";
 import { PAY_STATUS, needsAction } from "@/lib/payments";
 
 type OpenPay = Pick<Payment, "ad_id" | "status" | "ref">;

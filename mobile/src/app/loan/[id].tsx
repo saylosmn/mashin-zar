@@ -7,18 +7,18 @@ import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
-import { errMsg } from "@/lib/format";
-import { CITIES } from "@/lib/cars";
+import { errMsg, num } from "@/lib/format";
+import { CITIES } from "@shared/cars";
 import {
-  DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, MARITAL, MAX_DOC_PAGES, ageFrom, docBase, docLabel, docPage, docPageKeys, fmtNum, minDown,
+  DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, MARITAL, MAX_DOC_PAGES, ageFrom, docBase, docHint, docLabel, docPage, docPageKeys, minDown,
   monthlyPayment, previewChecks, rdBirthDate, termOptions, type Applicant, type Partner,
 } from "@/lib/loan";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 
 const STEPS = ["Хувийн", "Ажил, орлого", "Холбоо барих", "Баримт", "Илгээх"];
 const digits = (v: string) => v.replace(/\D/g, "");
-const money = (v: string) => (digits(v) ? fmtNum(Number(digits(v))) : "");
-const num = (v: string) => Number(digits(v)) || 0;
+const money = (v: string) => (digits(v) ? num(Number(digits(v))) : "");
+const toInt = (v: string) => Number(digits(v)) || 0;
 const rid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 type AdLite = { id: string; user_id: string; brand: string; model: string; year_made: number; price: number; status: string };
@@ -150,9 +150,9 @@ export default function LoanApplication() {
           setRd(d.register_no ?? ""); if (d.city) setCity(d.city); setDistrict(d.district ?? ""); setAddress(d.address ?? "");
           setMarital(d.marital_status ?? ""); setHousehold(d.household_size ? String(d.household_size) : ""); setLicense(d.has_license ?? null);
           setEmp(d.employment_type ?? ""); setEmployer(d.employer ?? ""); setPosition(d.position ?? ""); setWork(d.work_months != null ? String(d.work_months) : "");
-          setIncome(d.monthly_income ? fmtNum(d.monthly_income) : ""); setOther(d.other_income ? fmtNum(d.other_income) : ""); setDebt(d.existing_debt_payment ? fmtNum(d.existing_debt_payment) : "");
+          setIncome(d.monthly_income ? num(d.monthly_income) : ""); setOther(d.other_income ? num(d.other_income) : ""); setDebt(d.existing_debt_payment ? num(d.existing_debt_payment) : "");
           setRefName(d.ref_name ?? ""); setRefPhone(d.ref_phone ?? ""); setRefRel(d.ref_relation ?? "");
-          if (d.cosigner) { setHasCos(true); setCosName(d.cosigner.name); setCosPhone(d.cosigner.phone); setCosRel(d.cosigner.relation ?? ""); setCosRd(d.cosigner.register_no ?? ""); setCosIncome(d.cosigner.monthly_income ? fmtNum(d.cosigner.monthly_income) : ""); }
+          if (d.cosigner) { setHasCos(true); setCosName(d.cosigner.name); setCosPhone(d.cosigner.phone); setCosRel(d.cosigner.relation ?? ""); setCosRd(d.cosigner.register_no ?? ""); setCosIncome(d.cosigner.monthly_income ? num(d.cosigner.monthly_income) : ""); }
         }
         // Ноорог байвал урьдчилан бөглөснөөс давуу
         const dr = readDraft(dKey);
@@ -244,8 +244,8 @@ export default function LoanApplication() {
   const p = partner;
   const needCos = p.cosigner_over != null && loan > Number(p.cosigner_over);
   const { checks, dti } = previewChecks({
-    partner: p, age, employment: emp, workMonths: Number(work) || 0, income: num(income), otherIncome: num(other),
-    cosignerIncome: hasCos ? num(cosIncome) : 0, debt: num(debt), monthly, hasOverdue: overdue, carYear: ad.year_made, loan, hasCosigner: hasCos,
+    partner: p, age, employment: emp, workMonths: Number(work) || 0, income: toInt(income), otherIncome: toInt(other),
+    cosignerIncome: hasCos ? toInt(cosIncome) : 0, debt: toInt(debt), monthly, hasOverdue: overdue, carYear: ad.year_made, loan, hasCosigner: hasCos,
   });
   const failed = checks.filter((c) => c.ok === false);
   const maxDti = Number(p.max_dti ?? 50);
@@ -265,7 +265,7 @@ export default function LoanApplication() {
       if (!emp) return "Орлогын эх үүсвэрээ сонгоно уу";
       if ((emp === "salary" || emp === "both") && !employer.trim()) return "Ажлын газраа оруулна уу";
       if (!/^\d{1,3}$/.test(work)) return "Ажилласан / бизнес эрхэлсэн хугацаагаа сараар оруулна уу";
-      if (num(income) <= 0) return "Сарын орлогоо оруулна уу";
+      if (toInt(income) <= 0) return "Сарын орлогоо оруулна уу";
       if (overdue === null) return "Хугацаа хэтэрсэн зээлтэй эсэхээ сонгоно уу";
     }
     if (st === 2) {
@@ -358,9 +358,9 @@ export default function LoanApplication() {
     const p_app = {
       full_name: fullName.trim(), phone: phone.trim(), register_no: rd, city, district, address, marital_status: marital,
       household_size: household, employment_type: emp, employer, position, work_months: work,
-      monthly_income: String(num(income)), other_income: String(num(other)), existing_debt_payment: String(num(debt)),
+      monthly_income: String(toInt(income)), other_income: String(toInt(other)), existing_debt_payment: String(toInt(debt)),
       has_overdue: overdue, has_license: license, ref_name: refName, ref_phone: refPhone, ref_relation: refRel, note,
-      cosigner: hasCos ? { name: cosName, phone: cosPhone, relation: cosRel, register_no: cosRd, monthly_income: String(num(cosIncome)) } : null,
+      cosigner: hasCos ? { name: cosName, phone: cosPhone, relation: cosRel, register_no: cosRd, monthly_income: String(toInt(cosIncome)) } : null,
     };
     const p_docs = Object.fromEntries(Object.entries(packDocs(docs)).filter(([k]) => docBase(k) !== "cosigner_id" || hasCos));
     const { error: e } = await supabase.rpc("submit_loan_request", { p_ad: ad!.id, p_partner: p.id, p_down: down, p_term: term, p_app, p_docs, p_consent: true });
@@ -397,10 +397,10 @@ export default function LoanApplication() {
         ) : null}
 
         <View style={{ backgroundColor: C.ink, borderRadius: 14, padding: 14, flexDirection: "row", flexWrap: "wrap", rowGap: 10 }}>
-          <Sum k="Урьдчилгаа" v={`${fmtNum(down)}₮`} />
+          <Sum k="Урьдчилгаа" v={`${num(down)}₮`} />
           <Sum k="Хугацаа" v={`${term} сар · ${Number(p.rate_annual)}%`} />
-          <Sum k="Зээл" v={`${fmtNum(loan)}₮`} />
-          <Sum k="Сарын төлбөр" v={`${fmtNum(monthly)}₮`} strong />
+          <Sum k="Зээл" v={`${num(loan)}₮`} />
+          <Sum k="Сарын төлбөр" v={`${num(monthly)}₮`} strong />
         </View>
 
         <View style={{ flexDirection: "row", gap: 4 }} accessibilityLabel={`Алхам ${step + 1} / ${STEPS.length}: ${STEPS[step]}`}>
@@ -467,7 +467,7 @@ export default function LoanApplication() {
               <T w="bold" style={s.h2}>Хамтран зээлдэгч</T>
               {needCos && (
                 <View style={{ backgroundColor: C.pendingBg, borderRadius: 12, padding: 12 }}>
-                  <T style={{ fontSize: 13, color: C.pendingFg, lineHeight: 19 }}>{p.name} {fmtNum(Number(p.cosigner_over))}₮-өөс дээш зээлд хамтран зээлдэгч шаарддаг.</T>
+                  <T style={{ fontSize: 13, color: C.pendingFg, lineHeight: 19 }}>{p.name} {num(Number(p.cosigner_over))}₮-өөс дээш зээлд хамтран зээлдэгч шаарддаг.</T>
                 </View>
               )}
               <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: hasCos }} onPress={() => setHasCos(!hasCos)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
@@ -511,7 +511,7 @@ export default function LoanApplication() {
                         <View style={{ backgroundColor: C.pendingBg, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}><T w="semibold" style={{ fontSize: 11, color: C.pendingFg }}>заавал</T></View>
                       ) : <T style={{ fontSize: 11, color: C.muted }}>заавал биш</T>}
                     </View>
-                    {!have && x.hint ? <T style={{ fontSize: 12, color: C.muted, lineHeight: 17 }}>{x.hint}</T> : null}
+                    {!have && docHint(x) ? <T style={{ fontSize: 12, color: C.muted, lineHeight: 17 }}>{docHint(x)}</T> : null}
                     {pages.map((k, i) => (
                       <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                         <T style={{ fontSize: 13, color: "#1D6B3A", flex: 1 }}>✓ {i + 1}-р хуудас{reused.current.has(docs[k]) ? " · өмнөх хүсэлтээс" : ""}</T>

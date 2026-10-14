@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanMessage, dayLabel, timeHM } from "../chat";
+import { cleanMessage, dayLabel, timeHM } from "@shared/chat";
 
 describe("чат", () => {
   const now = new Date("2026-10-11T15:00:00Z"); // УБ 23:00

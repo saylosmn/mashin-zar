@@ -1,6 +1,4 @@
-/**
- * Автомашин зуучлан борлуулах гэрээний текст (вэбийн web/src/lib/contract.ts-ийн хуулбар — өөрчилбөл хоёуланг нь).
- */
+// Зуучлалын гэрээний текст. Вэбийн гарын үсгийн алхам, PDF, апп бүгд үүнийг ашиглана.
 export type Tier = { days: number; percent: number };
 export type ContractTerms = { tiers: Tier[]; after: number };
 

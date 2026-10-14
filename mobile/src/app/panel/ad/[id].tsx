@@ -8,7 +8,7 @@ import { useLiveSync } from "@/lib/live";
 import { C } from "@/lib/theme";
 import { categoryLong, errMsg, money, timeAgo } from "@/lib/format";
 import { staffAdCache } from "@/lib/cache";
-import { isFeatured } from "@/lib/commission";
+import { isFeatured } from "@shared/commission";
 import { STAFF_AD_SELECT, confirm, digits, isAdmin, isStaff, openContract, staffRpc, type StaffAd } from "@/lib/staff";
 import { Button, Field, Input, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 

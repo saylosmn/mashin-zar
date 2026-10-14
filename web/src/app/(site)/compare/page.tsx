@@ -3,10 +3,10 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/data";
 import { categoryLong, money, num } from "@/lib/format";
-import { bestIndexes, parseIds } from "@/lib/compare";
+import { bestIndexes, parseIds } from "@shared/compare";
 import { CarPhoto } from "@/components/CarPhoto";
 import { CompareSync, RemoveFromCompare } from "./CompareClient";
-import type { PublicAd } from "@/lib/types";
+import type { PublicAd } from "@shared/types";
 
 export const metadata: Metadata = { title: "Машин харьцуулах", robots: { index: false } };
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { agentAmount, commissionAmount, commissionFor, expiryInfo, hoursAgo, isFeatured, recentlyRequested } from "../commission";
-import { DEFAULT_TERMS } from "../contract";
+import { agentAmount, commissionAmount, commissionFor, expiryInfo, hoursAgo, isFeatured, recentlyRequested } from "@shared/commission";
+import { DEFAULT_TERMS } from "@shared/contract";
 
 const pub = "2026-10-01T00:00:00Z";
 const at = (h: number) => new Date(new Date(pub).getTime() + h * 36e5);

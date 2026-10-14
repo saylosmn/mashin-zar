@@ -1,4 +1,4 @@
-import type { PublicAd } from "./types";
+import type { PublicAd } from "@shared/types";
 import type { StaffAd } from "./staff";
 
 /**

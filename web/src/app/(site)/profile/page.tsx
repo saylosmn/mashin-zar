@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { WebPushCard } from "@/components/WebPush";
 import { requireUser } from "@/lib/data";
-import { CITIES } from "@/lib/cars";
+import { CITIES } from "@shared/cars";
 import { saveProfile } from "../actions";
 import { safeNext } from "@/lib/safe-next";
 import { IconCheck } from "@/components/icons";

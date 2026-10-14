@@ -1,11 +1,17 @@
+import path from "node:path";
 import type { NextConfig } from "next";
+
+// ../shared-ийг вэб, апп хоёул ашигладаг тул build-ийн root нь repo-гийн root.
+const repoRoot = path.join(__dirname, "..");
 
 const nextConfig: NextConfig = {
   // Ямар фреймворк ашигласныг халдагчид бүү харуул
   poweredByHeader: false,
   // Гэрээний PDF-д кирилл фонт хэрэгтэй
   outputFileTracingIncludes: { "/api/contracts/**": ["./src/fonts/**"] },
+  outputFileTracingRoot: repoRoot,
   turbopack: {
+    root: repoRoot,
     rules: {
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],

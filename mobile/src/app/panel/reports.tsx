@@ -7,8 +7,8 @@ import { useAuth } from "@/lib/auth";
 import { useLiveSync } from "@/lib/live";
 import { C, F } from "@/lib/theme";
 import { errMsg, money, timeAgo } from "@/lib/format";
-import { termsFrom, type ContractTerms } from "@/lib/contract";
-import { agentAmount, commissionAmount, commissionFor } from "@/lib/commission";
+import { termsFrom, type ContractTerms } from "@shared/contract";
+import { agentAmount, commissionAmount, commissionFor } from "@shared/commission";
 import { confirm, digits, isAdmin, isStaff, openContract, staffRpc } from "@/lib/staff";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 

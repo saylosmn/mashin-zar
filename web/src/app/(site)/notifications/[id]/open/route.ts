@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { notifyHref } from "@/lib/notify-href";
-import type { Role } from "@/lib/types";
+import type { Role } from "@shared/types";
 
 /** Мэдэгдэл дээр дарахад: уншсан болгоод холбогдох хуудас руу шилжүүлнэ. */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

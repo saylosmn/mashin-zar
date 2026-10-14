@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseForRequest } from "@/lib/supabase/request";
 import { renderContractPdf } from "@/lib/contract-pdf";
-import { shortNo, type ContractTerms } from "@/lib/contract";
+import { shortNo, type ContractTerms } from "@shared/contract";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;

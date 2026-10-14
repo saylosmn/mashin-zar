@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CarPhoto } from "./CarPhoto";
 import { categoryLabel, money } from "@/lib/format";
-import type { PublicAd } from "@/lib/types";
+import type { PublicAd } from "@shared/types";
 
 export function AdCard({ ad, cutoff }: { ad: PublicAd; cutoff: number }) {
   return (

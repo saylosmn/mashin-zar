@@ -6,9 +6,9 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useLiveSync } from "@/lib/live";
 import { C } from "@/lib/theme";
-import { errMsg, timeAgo } from "@/lib/format";
+import { errMsg, num, timeAgo } from "@/lib/format";
 import { confirm, staffRpc } from "@/lib/staff";
-import { LOAN_STATUS, fmtNum, type LoanRequest } from "@/lib/loan";
+import { LOAN_STATUS, type LoanRequest } from "@/lib/loan";
 import { Button, Skeleton, T, s } from "@/components/ui";
 
 type Row = LoanRequest & { partner: { name: string; phone: string | null } | null };
@@ -103,9 +103,9 @@ export default function Loans() {
               </View>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              <Cell k="Урьдчилгаа" v={`${fmtNum(r.down_payment)}₮`} />
+              <Cell k="Урьдчилгаа" v={`${num(r.down_payment)}₮`} />
               <Cell k="Хугацаа" v={`${r.term_months} сар`} />
-              <Cell k="Сарын төлбөр" v={`${fmtNum(r.monthly_payment)}₮`} strong />
+              <Cell k="Сарын төлбөр" v={`${num(r.monthly_payment)}₮`} strong />
             </View>
             {r.partner_note ? <T style={{ fontSize: 13, backgroundColor: C.paper, padding: 8, borderRadius: 8 }}>Лизинг: {r.partner_note}</T> : null}
             <View style={{ flexDirection: "row", gap: 8 }}>

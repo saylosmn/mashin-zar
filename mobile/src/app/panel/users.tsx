@@ -9,7 +9,7 @@ import { C, F } from "@/lib/theme";
 import { errMsg, initial, roleLabel, timeAgo } from "@/lib/format";
 import { confirm, digits, isAdmin, isStaff, staffRpc } from "@/lib/staff";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
-import type { Profile } from "@/lib/types";
+import type { Profile } from "@shared/types";
 
 type Filter = "all" | "staff" | "dealer" | "blocked";
 type Row = Profile & { ads?: { count: number }[] };

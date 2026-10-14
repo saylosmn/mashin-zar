@@ -5,7 +5,7 @@ import { dateShort, money, num } from "@/lib/format";
 import { agentLink } from "@/lib/site";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CopyButton } from "./CopyButton";
-import type { AdStatus } from "@/lib/types";
+import type { AdStatus } from "@shared/types";
 
 export const metadata = { title: "Агент" };
 

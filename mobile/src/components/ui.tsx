@@ -19,7 +19,7 @@ import { Feather } from "@expo/vector-icons";
 import { C, F } from "@/lib/theme";
 import { STATUS, categoryLabel, money } from "@/lib/format";
 import { photoUrl } from "@/lib/supabase";
-import type { AdStatus, Category } from "@/lib/types";
+import type { AdStatus, Category } from "@shared/types";
 
 export function T({ style, w = "body", ...p }: TextProps & { w?: keyof typeof F }) {
   return <Text {...p} style={[{ fontFamily: F[w], color: C.ink, fontSize: 15 }, style]} />;

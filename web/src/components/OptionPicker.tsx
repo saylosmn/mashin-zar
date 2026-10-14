@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { OPTION_GROUPS } from "@/lib/cars";
+import { OPTION_GROUPS } from "@shared/cars";
 
 /** Машины опшн сонгох: хайлт + бүлгүүд + өөрийн опшн нэмэх */
 export function OptionPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {

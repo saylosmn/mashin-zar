@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COMPARE_MAX, bestIndexes, compareHref, parseIds, toggleId } from "../compare";
+import { COMPARE_MAX, bestIndexes, compareHref, parseIds, toggleId } from "@shared/compare";
 
 const A = "11111111-1111-4111-8111-111111111111";
 const B = "22222222-2222-4222-8222-222222222222";

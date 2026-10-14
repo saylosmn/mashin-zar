@@ -7,7 +7,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { registerPush, unregisterPush } from "./push";
 import { useLiveSync } from "./live";
-import type { Profile, Settings } from "./types";
+import type { Profile, Settings } from "@shared/types";
 
 WebBrowser.maybeCompleteAuthSession();
 

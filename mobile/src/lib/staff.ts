@@ -2,7 +2,7 @@ import { Alert } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "./supabase";
 import { errMsg } from "./format";
-import type { Ad, Profile } from "./types";
+import type { Ad, Profile } from "@shared/types";
 
 export const WEB_URL = "https://web-mu-fawn-45.vercel.app";
 

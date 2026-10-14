@@ -1,4 +1,4 @@
-import type { Notification, Role } from "./types";
+import type { Notification, Role } from "@shared/types";
 
 /** Мэдэгдэл дээр дарахад очих хуудас (SQL-ийн notify_url-тэй ижил дүрэм). */
 export function notifyHref(n: Pick<Notification, "type" | "ad_id">, role: Role | null | undefined): string {

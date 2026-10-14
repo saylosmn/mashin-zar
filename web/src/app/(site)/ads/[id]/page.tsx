@@ -12,10 +12,10 @@ import { LoanCalculator } from "./LoanCalculator";
 import { ViewCounter } from "./ViewCounter";
 import { ReportAdButton } from "./ReportAdButton";
 import { CompareToggle } from "@/components/Compare";
-import { expiryInfo } from "@/lib/commission";
+import { expiryInfo } from "@shared/commission";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import type { Partner } from "@/lib/loan";
-import type { Ad, AdStatus, PublicAd } from "@/lib/types";
+import type { Ad, AdStatus, PublicAd } from "@shared/types";
 
 type View = PublicAd & { plate_full?: string; vin_full?: string };
 

@@ -6,7 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
-import { CITIES } from "@/lib/cars";
+import { CITIES } from "@shared/cars";
 import { errMsg, initial } from "@/lib/format";
 import { Button, Field, Input, T } from "@/components/ui";
 

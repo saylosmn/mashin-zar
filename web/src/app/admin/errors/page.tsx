@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/data";
 import { timeAgo } from "@/lib/format";
-import { hoursAgo } from "@/lib/commission";
+import { hoursAgo } from "@shared/commission";
 import { pendingCount } from "@/lib/panel";
 import { Flash, Kpi, PanelShell } from "@/components/PanelShell";
 import { ConfirmButton } from "@/components/ConfirmButton";

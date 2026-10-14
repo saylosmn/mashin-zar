@@ -5,9 +5,9 @@ import { redirect } from "next/navigation";
 import { getProfile, getSettings } from "@/lib/data";
 import { AdCard } from "@/components/AdCard";
 import { IconBell, IconSearch } from "@/components/icons";
-import { BRANDS } from "@/lib/cars";
+import { BRANDS } from "@shared/cars";
 import { saveFilterAlert } from "./actions";
-import type { PublicAd } from "@/lib/types";
+import type { PublicAd } from "@shared/types";
 
 export const metadata = { alternates: { canonical: "/" } };
 

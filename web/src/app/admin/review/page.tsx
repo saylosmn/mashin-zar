@@ -8,11 +8,11 @@ import { CarPhoto } from "@/components/CarPhoto";
 import { StatusBadge } from "@/components/StatusBadge";
 import { IconPhone } from "@/components/icons";
 import { PAY_STATUS, PLAN_LABEL } from "@/lib/payments";
-import type { PayStatus } from "@/lib/types";
+import type { PayStatus } from "@shared/types";
 import { approveAd, markContacted, rejectAd, saveNote, sendOffer, setAdAgent } from "../../panel-actions";
 import { agentOptions } from "@/lib/reports";
 import { RejectForm } from "./RejectForm";
-import type { Ad, Profile } from "@/lib/types";
+import type { Ad, Profile } from "@shared/types";
 
 export const metadata = { title: "Админ · Шинэ зар ба санал" };
 

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSettings, requireAdmin } from "@/lib/data";
 import { categoryLong, dateShort, money, monthLabel, timeAgo } from "@/lib/format";
 import { monthStarts, pendingCount } from "@/lib/panel";
-import type { Ad } from "@/lib/types";
+import type { Ad } from "@shared/types";
 import { Kpi, PanelShell } from "@/components/PanelShell";
 import { BarChart } from "@/components/BarChart";
 

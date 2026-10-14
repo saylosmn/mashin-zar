@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { renderContractPdf } from "@/lib/contract-pdf";
-import type { ContractTerms } from "@/lib/contract";
+import type { ContractTerms } from "@shared/contract";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;

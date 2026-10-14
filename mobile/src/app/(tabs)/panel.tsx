@@ -11,7 +11,7 @@ import { STAFF_AD_SELECT, isAdmin, isStaff, type StaffAd } from "@/lib/staff";
 import { staffAdCache } from "@/lib/cache";
 import { LeasingPanel } from "@/components/LeasingPanel";
 import { Button, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
-import type { AdStatus } from "@/lib/types";
+import type { AdStatus } from "@shared/types";
 
 type Stats = { pending: number; active: number; soldMonth: number; soldMonthSum: number; users: number; offers: number; flags: number };
 const EMPTY: Stats = { pending: 0, active: 0, soldMonth: 0, soldMonthSum: 0, users: 0, offers: 0, flags: 0 };

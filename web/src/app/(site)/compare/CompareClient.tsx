@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCompare } from "@/components/Compare";
-import { compareHref, toggleId } from "@/lib/compare";
+import { compareHref, toggleId } from "@shared/compare";
 
 /** Хуваалцсан холбоосоор орж ирвэл жагсаалтыг URL-тай тааруулна (хоосон бол хадгалсныг ачаална). */
 export function CompareSync({ ids }: { ids: string[] }) {

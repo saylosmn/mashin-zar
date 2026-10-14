@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
-import { CONTRACT_TITLE, contractDate, contractSections, ubParts, type ContractData } from "./contract";
+import { CONTRACT_TITLE, contractDate, contractSections, ubParts, type ContractData } from "@shared/contract";
 
 const A4: [number, number] = [595.28, 841.89];
 const M = 46; // захын зай

@@ -4,10 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getSettings, requireUser } from "@/lib/data";
 import { timeAgo } from "@/lib/format";
 import { notifyHref } from "@/lib/notify-href";
-import { BRANDS } from "@/lib/cars";
+import { BRANDS } from "@shared/cars";
 import { IconBell, IconCheck } from "@/components/icons";
 import { markAllRead, saveNotifyPrefs } from "../actions";
-import type { Notification } from "@/lib/types";
+import type { Notification } from "@shared/types";
 
 export const metadata = { title: "Мэдэгдэл" };
 

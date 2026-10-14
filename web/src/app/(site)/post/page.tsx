@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { normAgentCode } from "@/lib/site";
 import { getSettings, requireUser } from "@/lib/data";
 import { PostForm } from "./PostForm";
-import { termsFrom } from "@/lib/contract";
+import { termsFrom } from "@shared/contract";
 
 export const metadata = { title: "Зар нэмэх" };
 

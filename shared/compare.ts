@@ -1,9 +1,9 @@
-/** Машин харьцуулах жагсаалт (хамгийн ихдээ 3 зар). URL: /compare?ids=a,b,c */
+// Харьцуулах жагсаалт: 3 хүртэл зар, URL нь /compare?ids=a,b,c
 export const COMPARE_MAX = 3;
 export const COMPARE_KEY = "mz-compare";
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** "a,b,c" эсвэл массиваас давхардалгүй, зөв UUID-уудыг (дараалал хадгалж) авна. */
 export function parseIds(input: string | string[] | null | undefined): string[] {
   const raw = Array.isArray(input) ? input : String(input ?? "").split(",");
   const out: string[] = [];
@@ -15,7 +15,7 @@ export function parseIds(input: string | string[] | null | undefined): string[] 
   return out;
 }
 
-/** Нэмэх/хасах. Дүүрсэн үед нэмбэл хамгийн эхнийхийг гаргана. */
+/** Дүүрсэн жагсаалтад нэмбэл хамгийн эхнийх нь гарна */
 export function toggleId(list: string[], id: string): string[] {
   const key = id.toLowerCase();
   if (list.includes(key)) return list.filter((x) => x !== key);
@@ -25,7 +25,7 @@ export function toggleId(list: string[], id: string): string[] {
 
 export const compareHref = (ids: string[]) => (ids.length ? `/compare?ids=${ids.join(",")}` : "/compare");
 
-/** Хүснэгтийн мөрөнд хамгийн сайн утгыг тодруулах: min (үнэ) эсвэл max (он). Тэнцүү бол бүгд. */
+/** Мөр бүрийн шилдэг утгын индекс (үнэ: min, он: max). Бүгд тэнцүү бол хоосон. */
 export function bestIndexes(values: (number | null | undefined)[], mode: "min" | "max"): number[] {
   const nums = values.map((v) => (typeof v === "number" && Number.isFinite(v) ? v : null));
   const valid = nums.filter((v): v is number => v != null);

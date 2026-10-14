@@ -6,7 +6,7 @@ import { Flash, PanelShell } from "@/components/PanelShell";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { money, timeAgo } from "@/lib/format";
 import { PAY_STATUS, PLAN_LABEL } from "@/lib/payments";
-import type { Payment, PayStatus, Plan } from "@/lib/types";
+import type { Payment, PayStatus, Plan } from "@shared/types";
 import { decidePayment } from "../../panel-actions";
 
 export const metadata = { title: "Админ · Төлбөрүүд" };

@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { errMsg } from "@/lib/format";
-import { CITIES } from "@/lib/cars";
+import { CITIES } from "@shared/cars";
 import {
-  DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, MARITAL, MAX_DOC_PAGES, ageFrom, docBase, docLabel, docPage, docPageKeys, monthlyPayment, previewChecks, rdBirthDate,
+  DEFAULT_REQUIRED_DOCS, EMPLOYMENT, LOAN_DOCS, MARITAL, MAX_DOC_PAGES, ageFrom, docBase, docHint, docLabel, docPage, docPageKeys, monthlyPayment, previewChecks, rdBirthDate,
   type Applicant, type Partner,
 } from "@/lib/loan";
 import { IconCheck, IconSpinner } from "@/components/icons";
@@ -370,7 +370,7 @@ export function LoanApplication({
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex-[1_1_220px] flex flex-col gap-0.5 min-w-0">
                         <span className="text-[14px] font-semibold">{x.label} {req ? <span className="badge bg-pending-bg text-pending-fg ml-1">заавал</span> : <span className="text-[12px] text-muted font-normal">· заавал биш</span>}</span>
-                        {!pages.length && x.hint ? <span className="text-[12px] text-muted">{x.hint}</span> : null}
+                        {!pages.length && docHint(x) ? <span className="text-[12px] text-muted">{docHint(x)}</span> : null}
                       </div>
                       {busyHere ? (
                         <span className="btn btn-sm btn-ghost"><IconSpinner size={16} /> Хуулж байна</span>
@@ -384,7 +384,7 @@ export function LoanApplication({
                       <ul className="list-none p-0 m-0 flex flex-col gap-1">
                         {pages.map((k) => (
                           <li key={k} className="flex items-center justify-between gap-2 text-[12px]">
-                            <span className="text-[#1D6B3A] truncate">✓ {docPage(k)}-р хуудас · {docs[k].name}</span>
+                            <span className="text-[#1D6B3A] truncate">✓ {docPage(k).page}-р хуудас · {docs[k].name}</span>
                             <button type="button" onClick={() => removeDoc(k)} disabled={!!uploading} className="text-[12px] text-[#9b1c1c] underline bg-transparent border-0 cursor-pointer">Хасах</button>
                           </li>
                         ))}

@@ -6,7 +6,7 @@ import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { adminUpdateAd } from "../../../panel-actions";
-import type { Ad } from "@/lib/types";
+import type { Ad } from "@shared/types";
 
 export const metadata = { title: "Админ · Зар засах" };
 

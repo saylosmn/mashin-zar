@@ -4,8 +4,8 @@ import { categoryLong, dateShort, money } from "@/lib/format";
 import { CarPhoto } from "./CarPhoto";
 import { StatusBadge } from "./StatusBadge";
 import { adminDeleteAd, approveAd, markSold, setFeatured } from "@/app/panel-actions";
-import { expiryInfo, isFeatured } from "@/lib/commission";
-import type { Ad, AdStatus } from "@/lib/types";
+import { expiryInfo, isFeatured } from "@shared/commission";
+import type { Ad, AdStatus } from "@shared/types";
 
 const PAGE = 30;
 type Row = Ad & { owner: { full_name: string | null } | null };

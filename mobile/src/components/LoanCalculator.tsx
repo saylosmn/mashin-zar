@@ -5,7 +5,8 @@ import { useAuth } from "@/lib/auth";
 import { requireLogin } from "@/lib/guest";
 import { Feather } from "@expo/vector-icons";
 import { C } from "@/lib/theme";
-import { DEFAULT_REQUIRED_DOCS, docLabel, fmtNum, minDown, monthlyPayment, requirementLines, termOptions, type Partner } from "@/lib/loan";
+import { DEFAULT_REQUIRED_DOCS, docLabel, minDown, monthlyPayment, requirementLines, termOptions, type Partner } from "@/lib/loan";
+import { num } from "@/lib/format";
 import { Button, Field, Input, T } from "./ui";
 
 /** Зарын дэлгэц дээрх лизингийн тооцоолуур + "Лизингээр авах" хүсэлт (вэбийн LoanCalculator-тай ижил) */
@@ -13,7 +14,7 @@ export function LoanCalculator({ adId, price, partners }: { adId: string; price:
   const { session } = useAuth();
   const [pid, setPid] = useState(partners[0].id);
   const p = partners.find((x) => x.id === pid) ?? partners[0];
-  const [down, setDown] = useState(() => fmtNum(minDown(price, p.min_down_pct)));
+  const [down, setDown] = useState(() => num(minDown(price, p.min_down_pct)));
   const terms = termOptions(p.max_term_months);
   const [term, setTerm] = useState(() => (terms.includes(24) ? 24 : terms[terms.length - 1]));
   const [showReq, setShowReq] = useState(false);
@@ -22,14 +23,14 @@ export function LoanCalculator({ adId, price, partners }: { adId: string; price:
   const min = minDown(price, p.min_down_pct);
   const principal = Math.max(0, price - downNum);
   const monthly = useMemo(() => monthlyPayment(principal, Number(p.rate_annual), term), [principal, p.rate_annual, term]);
-  const downErr = downNum < min ? `Урьдчилгаа хамгийн багадаа ${fmtNum(min)}₮ (${Number(p.min_down_pct)}%)` : downNum >= price ? "Урьдчилгаа үнээс бага байх ёстой" : null;
+  const downErr = downNum < min ? `Урьдчилгаа хамгийн багадаа ${num(min)}₮ (${Number(p.min_down_pct)}%)` : downNum >= price ? "Урьдчилгаа үнээс бага байх ёстой" : null;
   const pctChips = [Number(p.min_down_pct), 40, 50, 60].filter((v, i, a) => v < 90 && v >= Number(p.min_down_pct) && a.indexOf(v) === i);
 
   function pickPartner(id: string) {
     const np = partners.find((x) => x.id === id)!;
     setPid(id);
     const nm = minDown(price, np.min_down_pct);
-    if (downNum < nm) setDown(fmtNum(nm));
+    if (downNum < nm) setDown(num(nm));
     const t = termOptions(np.max_term_months);
     if (!t.includes(term)) setTerm(t[t.length - 1]);
   }
@@ -54,13 +55,13 @@ export function LoanCalculator({ adId, price, partners }: { adId: string; price:
           mono
           keyboardType="number-pad"
           value={down}
-          onChangeText={(t) => { const d = t.replace(/\D/g, ""); setDown(d ? fmtNum(Number(d)) : ""); }}
+          onChangeText={(t) => { const d = t.replace(/\D/g, ""); setDown(d ? num(Number(d)) : ""); }}
           style={downErr ? { borderColor: C.danger } : undefined}
         />
         <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
           {pctChips.map((pc) => {
             const v = minDown(price, pc);
-            return <Chip key={pc} small on={downNum === v} text={`${pc}%`} onPress={() => setDown(fmtNum(v))} />;
+            return <Chip key={pc} small on={downNum === v} text={`${pc}%`} onPress={() => setDown(num(v))} />;
           })}
         </View>
         {downErr ? <T style={{ fontSize: 12, color: C.danger }}>{downErr}</T> : null}
@@ -76,16 +77,16 @@ export function LoanCalculator({ adId, price, partners }: { adId: string; price:
         <View style={{ flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}>
             <T style={{ fontSize: 12, color: C.muted }}>Зээлийн дүн</T>
-            <T w="bold" style={{ fontSize: 15 }}>{fmtNum(principal)}₮</T>
+            <T w="bold" style={{ fontSize: 15 }}>{num(principal)}₮</T>
           </View>
           <View style={{ flex: 1 }}>
             <T style={{ fontSize: 12, color: C.muted }}>Нийт төлөх</T>
-            <T w="bold" style={{ fontSize: 15 }}>{fmtNum(monthly * term + downNum)}₮</T>
+            <T w="bold" style={{ fontSize: 15 }}>{num(monthly * term + downNum)}₮</T>
           </View>
         </View>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", borderTopWidth: 1, borderColor: C.line, paddingTop: 10 }}>
           <T style={{ fontSize: 13, color: C.muted }}>Сарын төлбөр</T>
-          <T w="display" style={{ fontSize: 22 }}>{fmtNum(monthly)}₮</T>
+          <T w="display" style={{ fontSize: 22 }}>{num(monthly)}₮</T>
         </View>
       </View>
       <T style={{ fontSize: 11, color: C.muted, marginTop: -6 }}>Урьдчилсан тооцоо. Эцсийн нөхцөлийг лизингийн компани тогтооно.</T>

@@ -5,7 +5,7 @@ import { dateShort, initial } from "@/lib/format";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
 import { deleteInvite, inviteAgent, inviteDealer, inviteStaff, removeAgent, removeDealer, removeStaff, setBlocked } from "../../panel-actions";
-import type { Profile } from "@/lib/types";
+import type { Profile } from "@shared/types";
 
 export const metadata = { title: "Админ · Аккаунтууд" };
 

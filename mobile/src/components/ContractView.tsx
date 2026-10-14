@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { C } from "@/lib/theme";
-import { CONTRACT_TITLE, contractDate, contractSections, type ContractData } from "@/lib/contract";
+import { CONTRACT_TITLE, contractDate, contractSections, type ContractData } from "@shared/contract";
 import { T } from "./ui";
 
 /** Гэрээний текст (PDF-тэй ижил агуулга) */
