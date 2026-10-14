@@ -2,7 +2,7 @@
   "expo": {
     "name": "Autoshop.mn",
     "slug": "mashin-zar",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,7 +20,10 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
       ],
       "googleServicesFile": "./google-services.json"
     },
@@ -73,14 +76,19 @@
       "typedRoutes": false
     },
     "extra": {
-      "eas": {}
+      "eas": {
+        "projectId": "c29a9795-5b0e-49c6-ad58-b18f9c07d55a"
+      },
+      "router": {}
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0
-    }
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/c29a9795-5b0e-49c6-ad58-b18f9c07d55a"
+    },
+    "owner": "saylos"
   }
 }
