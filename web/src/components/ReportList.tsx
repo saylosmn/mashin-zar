@@ -2,7 +2,7 @@ import Link from "next/link";
 import { dateShort, num } from "@/lib/format";
 import type { ReportRow } from "@/lib/reports";
 import { ConfirmButton } from "./ConfirmButton";
-import { reviewSaleReport, setAgentPaid } from "@/app/panel-actions";
+import { reviewSaleReport, setAgentPaid } from "@/actions/reports";
 
 const ST: Record<ReportRow["status"], { label: string; cls: string }> = {
   pending: { label: "Хүлээгдэж буй", cls: "bg-pending-bg text-pending-fg" },

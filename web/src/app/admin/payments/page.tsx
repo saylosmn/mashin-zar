@@ -7,7 +7,7 @@ import { ConfirmButton } from "@/components/ConfirmButton";
 import { money, timeAgo } from "@/lib/format";
 import { PAY_STATUS, PLAN_LABEL } from "@/lib/payments";
 import type { Payment, PayStatus, Plan } from "@shared/types";
-import { decidePayment } from "../../panel-actions";
+import { decidePayment } from "@/actions/payments";
 
 export const metadata = { title: "Админ · Төлбөрүүд" };
 

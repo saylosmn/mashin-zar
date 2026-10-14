@@ -57,7 +57,7 @@ describe("зар оруулах", () => {
     const api = fakeBackend();
     await publishAd(api, { ...base, plan: null, signature: null }, () => {});
     expect(api.signContract).not.toHaveBeenCalled();
-    expect(api.insertAd.mock.calls[0][0]).not.toHaveProperty("plan");
+    expect(vi.mocked(api.insertAd).mock.calls[0][0]).not.toHaveProperty("plan");
   });
 
   it("зар үүсгэж чадахгүй бол зургийг устгаж, дахин оролдоход гэрээг дахин ашиглана", async () => {

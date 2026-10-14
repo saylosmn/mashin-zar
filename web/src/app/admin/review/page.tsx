@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { IconPhone } from "@/components/icons";
 import { PAY_STATUS, PLAN_LABEL } from "@/lib/payments";
 import type { PayStatus } from "@shared/types";
-import { approveAd, markContacted, rejectAd, saveNote, sendOffer, setAdAgent } from "../../panel-actions";
+import { approveAd, markContacted, rejectAd, saveNote, sendOffer, setAdAgent } from "@/actions/ads";
 import { agentOptions } from "@/lib/reports";
 import { RejectForm } from "./RejectForm";
 import type { Ad, Profile } from "@shared/types";

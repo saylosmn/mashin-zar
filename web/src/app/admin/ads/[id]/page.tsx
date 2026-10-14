@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
 import { StatusBadge } from "@/components/StatusBadge";
-import { adminUpdateAd } from "../../../panel-actions";
+import { adminUpdateAd } from "@/actions/ads";
 import type { Ad } from "@shared/types";
 
 export const metadata = { title: "Админ · Зар засах" };

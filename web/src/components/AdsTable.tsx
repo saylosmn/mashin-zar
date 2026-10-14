@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { categoryLong, dateShort, money } from "@/lib/format";
 import { CarPhoto } from "./CarPhoto";
 import { StatusBadge } from "./StatusBadge";
-import { adminDeleteAd, approveAd, markSold, setFeatured } from "@/app/panel-actions";
+import { adminDeleteAd, approveAd, markSold, setFeatured } from "@/actions/ads";
 import { expiryInfo, isFeatured } from "@shared/commission";
 import type { Ad, AdStatus } from "@shared/types";
 

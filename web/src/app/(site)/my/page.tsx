@@ -9,7 +9,7 @@ import { IconCheck, IconClose } from "@/components/icons";
 import { deleteMyAd, renewAd } from "../actions";
 import { expiryInfo, isFeatured } from "@shared/commission";
 import { PAY_STATUS, needsAction } from "@/lib/payments";
-import { dealerSetStatus } from "@/app/panel-actions";
+import { dealerSetStatus } from "@/actions/ads";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import type { Ad, AdStatus, Payment, PublicAd } from "@shared/types";
 

@@ -5,7 +5,7 @@ import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { IconBell } from "@/components/icons";
-import { deleteBroadcast, resendBroadcast, sendBroadcast } from "../../panel-actions";
+import { deleteBroadcast, resendBroadcast, sendBroadcast } from "@/actions/notifications";
 
 export const metadata = { title: "Админ · Мэдэгдэл" };
 

@@ -15,7 +15,7 @@ import {
   type Partner,
 } from "@/lib/loan";
 import { Flash, Kpi, PanelShell } from "@/components/PanelShell";
-import { savePartnerTerms, updateLoanRequest } from "../panel-actions";
+import { savePartnerTerms, updateLoanRequest } from "@/actions/leasing";
 
 export const metadata = { title: "Лизингийн панел" };
 

@@ -7,7 +7,7 @@ import { REPORT_SELECT, agentOptions, reportableAds, type ReportRow } from "@/li
 import { Flash, Kpi, PanelShell } from "@/components/PanelShell";
 import { ReportList } from "@/components/ReportList";
 import { SaleReportForm } from "@/components/SaleReportForm";
-import { submitSaleReport } from "../../panel-actions";
+import { submitSaleReport } from "@/actions/reports";
 
 export const metadata = { title: "Админ · Тайлангууд" };
 

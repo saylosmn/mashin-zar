@@ -6,7 +6,7 @@ import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
 import { CarPhoto } from "@/components/CarPhoto";
 import { ConfirmButton } from "@/components/ConfirmButton";
-import { resolveFlag } from "../../panel-actions";
+import { resolveFlag } from "@/actions/ads";
 
 export const metadata = { title: "Админ · Гомдол" };
 

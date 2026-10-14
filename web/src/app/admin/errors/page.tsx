@@ -5,7 +5,7 @@ import { hoursAgo } from "@shared/commission";
 import { pendingCount } from "@/lib/panel";
 import { Flash, Kpi, PanelShell } from "@/components/PanelShell";
 import { ConfirmButton } from "@/components/ConfirmButton";
-import { clearErrors } from "../../panel-actions";
+import { clearErrors } from "@/actions/settings";
 
 export const metadata = { title: "Админ · Алдааны бүртгэл" };
 

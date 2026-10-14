@@ -4,16 +4,7 @@ import { requireAdmin } from "@/lib/data";
 import { dateShort, initial } from "@/lib/format";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import {
-  deleteInvite,
-  inviteAgent,
-  inviteDealer,
-  inviteStaff,
-  removeAgent,
-  removeDealer,
-  removeStaff,
-  setBlocked,
-} from "../../panel-actions";
+import { deleteInvite, inviteAgent, inviteDealer, inviteStaff, removeAgent, removeDealer, removeStaff, setBlocked } from "@/actions/accounts";
 import type { Profile } from "@shared/types";
 
 export const metadata = { title: "Админ · Аккаунтууд" };

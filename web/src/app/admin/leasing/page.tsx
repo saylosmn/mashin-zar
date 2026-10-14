@@ -5,7 +5,8 @@ import { dateShort } from "@/lib/format";
 import { pendingCount } from "@/lib/panel";
 import type { Partner, LoanStatus } from "@/lib/loan";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import { deleteInvite, inviteLeasingStaff, removeLeasingStaff, upsertPartner } from "../../panel-actions";
+import { deleteInvite } from "@/actions/accounts";
+import { inviteLeasingStaff, removeLeasingStaff, upsertPartner } from "@/actions/leasing";
 
 export const metadata = { title: "Админ · Лизинг" };
 

@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/data";
 import { dateShort, num } from "@/lib/format";
 import { LOAN_STATUS, type LoanRequest } from "@/lib/loan";
 import { ConfirmButton } from "@/components/ConfirmButton";
-import { cancelLoanRequest } from "@/app/panel-actions";
+import { cancelLoanRequest } from "@/actions/leasing";
 
 export const metadata = { title: "Лизингийн хүсэлтүүд" };
 
