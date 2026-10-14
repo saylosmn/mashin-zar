@@ -13,7 +13,7 @@ import { C, F } from "@/lib/theme";
 import { BRANDS } from "@shared/cars";
 import { OptionPicker } from "@/components/OptionPicker";
 import { errMsg } from "@/lib/format";
-import { Button, Field, Input, T, s } from "@/components/ui";
+import { BackButton, Button, Field, Input, T, s } from "@/components/ui";
 import { SignaturePad } from "@/components/SignaturePad";
 import { ContractView } from "@/components/ContractView";
 import { termsFrom, tierLines } from "@shared/contract";
@@ -363,25 +363,12 @@ export default function Post() {
             paddingBottom: 8,
           }}
         >
-          <Pressable
-            accessibilityLabel="Буцах"
+          <BackButton
             onPress={() => {
               setStage(stage === "paid" ? "plan" : "form");
               setErr(null);
             }}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: C.card,
-              borderWidth: 1,
-              borderColor: C.line2,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Feather name="chevron-left" size={22} color={C.ink} />
-          </Pressable>
+          />
           <View style={{ flex: 1 }}>
             <T style={{ fontSize: 12, color: C.muted }}>{stage === "plan" ? "Сонголт" : "Сүүлийн алхам"}</T>
             <T w="display" style={{ fontSize: 19 }}>
@@ -498,25 +485,12 @@ export default function Post() {
             paddingBottom: 8,
           }}
         >
-          <Pressable
-            accessibilityLabel="Буцах"
+          <BackButton
             onPress={() => {
               setStage("plan");
               setErr(null);
             }}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: C.card,
-              borderWidth: 1,
-              borderColor: C.line2,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Feather name="chevron-left" size={22} color={C.ink} />
-          </Pressable>
+          />
           <View style={{ flex: 1 }}>
             <T style={{ fontSize: 12, color: C.muted }}>Сүүлийн алхам</T>
             <T w="display" style={{ fontSize: 19 }}>
@@ -626,22 +600,7 @@ export default function Post() {
           borderColor: C.line,
         }}
       >
-        <Pressable
-          accessibilityLabel="Буцах"
-          onPress={() => router.back()}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            backgroundColor: C.card,
-            borderWidth: 1,
-            borderColor: C.line2,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Feather name="chevron-left" size={22} color={C.ink} />
-        </Pressable>
+        <BackButton />
         <View>
           <T w="display" style={{ fontSize: 17 }}>
             Зар нэмэх

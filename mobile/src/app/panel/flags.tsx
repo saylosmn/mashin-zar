@@ -1,14 +1,14 @@
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { errMsg, money, timeAgo } from "@/lib/format";
 import { confirm, isStaff, staffRpc } from "@/lib/staff";
 import { useLiveSync } from "@/lib/live";
-import { Button, CardSkeleton, Input, Photo, StateView, T, s } from "@/components/ui";
+import { BackButton, Button, CardSkeleton, Input, Photo, StateView, T, s } from "@/components/ui";
 import { FLAG_REASONS } from "@/components/ReportAdSheet";
 
 type Flag = {
@@ -89,22 +89,7 @@ export default function FlagsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: C.paper }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 16, paddingBottom: 8 }}>
-        <Pressable
-          accessibilityLabel="Буцах"
-          onPress={() => router.back()}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            backgroundColor: C.card,
-            borderWidth: 1,
-            borderColor: C.line,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Feather name="chevron-left" size={22} color={C.ink} />
-        </Pressable>
+        <BackButton />
         <T w="display" style={{ fontSize: 20 }}>
           Гомдол
         </T>

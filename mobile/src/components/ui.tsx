@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { C, F } from "@/lib/theme";
 import { STATUS, categoryLabel, money } from "@/lib/format";
 import { photoUrl } from "@/lib/supabase";
@@ -349,6 +350,68 @@ export function Input({ style, mono, strong, ...p }: TextInputProps & { mono?: b
         style as StyleProp<TextStyle>,
       ]}
     />
+  );
+}
+
+export function BackButton({
+  onPress = () => router.back(),
+  plain = false,
+  style,
+}: {
+  onPress?: () => void;
+  /** Хүрээгүй (header мөрөнд) */
+  plain?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Буцах"
+      onPress={onPress}
+      hitSlop={6}
+      style={[
+        { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+        !plain && { backgroundColor: C.card, borderWidth: 1, borderColor: C.line2 },
+        style,
+      ]}
+    >
+      <Feather name="chevron-left" size={22} color={C.ink} />
+    </Pressable>
+  );
+}
+
+/** Буцах товч + гарчиг (+ дээр нь жижиг бичиг, доор нь тайлбар, баруун талд үйлдэл) */
+export function ScreenHeader({
+  title,
+  eyebrow,
+  subtitle,
+  onBack,
+  right,
+  style,
+}: {
+  title: string;
+  eyebrow?: string;
+  subtitle?: string;
+  onBack?: () => void;
+  right?: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[{ flexDirection: "row", alignItems: "center", gap: 10 }, style]}>
+      <BackButton onPress={onBack} />
+      <View style={{ flex: 1 }}>
+        {eyebrow ? <T style={{ fontSize: 12, color: C.muted }}>{eyebrow}</T> : null}
+        <T w="display" style={{ fontSize: 19 }} numberOfLines={1}>
+          {title}
+        </T>
+        {subtitle ? (
+          <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
+            {subtitle}
+          </T>
+        ) : null}
+      </View>
+      {right}
+    </View>
   );
 }
 

@@ -9,7 +9,7 @@ import { C, F } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
 import { dayLabel, timeHM } from "@shared/chat";
 import { useLiveSync } from "@/lib/live";
-import { Button, Photo, Skeleton, StateView, T } from "@/components/ui";
+import { BackButton, Button, Photo, Skeleton, StateView, T } from "@/components/ui";
 import type { ChatInfo, Message } from "@shared/types";
 
 const QUICK = ["Сайн байна уу, машин зарагдаагүй байна уу?", "Хэзээ, хаана үзэж болох вэ?", "Үнэ тохирох уу?"];
@@ -162,14 +162,7 @@ export default function ChatScreen() {
           backgroundColor: C.card,
         }}
       >
-        <Pressable
-          accessibilityLabel="Буцах"
-          onPress={() => router.back()}
-          hitSlop={8}
-          style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
-        >
-          <Feather name="chevron-left" size={24} color={C.ink} />
-        </Pressable>
+        <BackButton plain style={{ width: 40, height: 40 }} />
         <Pressable
           disabled={!adId}
           onPress={() => adId && router.push(`/ads/${adId}`)}

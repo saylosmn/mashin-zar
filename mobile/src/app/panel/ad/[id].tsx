@@ -1,17 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Alert,
-  Dimensions,
-  FlatList,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+import { Alert, Dimensions, FlatList, KeyboardAvoidingView, Linking, Platform, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useLiveSync } from "@/lib/live";
@@ -20,7 +10,7 @@ import { categoryLong, errMsg, money, timeAgo } from "@/lib/format";
 import { staffAdCache } from "@/lib/cache";
 import { isFeatured } from "@shared/commission";
 import { STAFF_AD_SELECT, confirm, digits, isAdmin, isStaff, openContract, staffRpc, type StaffAd } from "@/lib/staff";
-import { Button, Field, Input, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
+import { BackButton, Button, Field, Input, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 
 const W = Dimensions.get("window").width;
 
@@ -138,23 +128,7 @@ export default function PanelAd() {
           ) : (
             <Photo style={{ width: W, height: 200 }} />
           )}
-          <Pressable
-            accessibilityLabel="Буцах"
-            onPress={() => router.back()}
-            style={{
-              position: "absolute",
-              left: 16,
-              top: 16,
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: C.card,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Feather name="chevron-left" size={22} color={C.ink} />
-          </Pressable>
+          <BackButton />
           {ad.photos.length > 0 && (
             <View
               style={{

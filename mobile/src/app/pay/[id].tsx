@@ -19,7 +19,7 @@ import { errMsg, money } from "@/lib/format";
 import { staffRpc } from "@/lib/staff";
 import { expiryInfo, isFeatured } from "@shared/commission";
 import { PAY_STATUS } from "@/lib/payments";
-import { Button, Field, Input, Photo, Skeleton, StateView, T, s } from "@/components/ui";
+import { BackButton, Button, Field, Input, Photo, Skeleton, StateView, T, s } from "@/components/ui";
 import type { Ad, Payment } from "@shared/types";
 
 /** Онцлох зарын төлбөр: дансны мэдээлэл, гүйлгээний утга, «Төлбөр төлсөн» (орлогыг SMS апп автоматаар батална) */
@@ -67,24 +67,7 @@ export default function PayScreen() {
   // Төлбөр батлагдахад шууд шинэчлэгдэнэ
   useLiveSync(() => load(), ["payments", "ads"]);
 
-  const back = (
-    <Pressable
-      accessibilityLabel="Буцах"
-      onPress={() => (router.canGoBack() ? router.back() : router.replace("/my"))}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: C.card,
-        borderWidth: 1,
-        borderColor: C.line,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Feather name="chevron-left" size={22} color={C.ink} />
-    </Pressable>
-  );
+  const back = <BackButton onPress={() => (router.canGoBack() ? router.back() : router.replace("/my"))} />;
 
   if (error)
     return (

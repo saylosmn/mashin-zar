@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { C, F } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
 import { digits } from "@/lib/staff";
-import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
+import { BackButton, Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 import { OptionPicker } from "@/components/OptionPicker";
 import type { Ad } from "@shared/types";
 
@@ -191,22 +191,7 @@ export default function EditAd() {
           paddingBottom: 8,
         }}
       >
-        <Pressable
-          accessibilityLabel="Буцах"
-          onPress={() => router.back()}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            backgroundColor: C.card,
-            borderWidth: 1,
-            borderColor: C.line2,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Feather name="chevron-left" size={22} color={C.ink} />
-        </Pressable>
+        <BackButton />
         <T w="display" style={{ fontSize: 20 }}>
           Зар засах
         </T>

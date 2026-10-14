@@ -18,7 +18,7 @@ import {
   termOptions,
   type Partner,
 } from "@/lib/loan";
-import { Button, Skeleton, StateView, T, s } from "@/components/ui";
+import { BackButton, Button, Skeleton, StateView, T, s } from "@/components/ui";
 import { Notice, StepBar, Summary } from "@/features/loan/controls";
 import { ContactsStep, IncomeStep, PersonalStep, ReviewStep } from "@/features/loan/steps";
 import { DocsStep } from "@/features/loan/DocsStep";
@@ -336,22 +336,7 @@ function Application({
 function Header({ title, subtitle, onBack }: { title: string; subtitle: string; onBack: () => void }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-      <Pressable
-        accessibilityLabel="Буцах"
-        onPress={onBack}
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          backgroundColor: C.card,
-          borderWidth: 1,
-          borderColor: C.line2,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Feather name="chevron-left" size={22} color={C.ink} />
-      </Pressable>
+      <BackButton onPress={onBack} />
       <View style={{ flex: 1 }}>
         <T w="display" style={{ fontSize: 19 }}>
           {title}

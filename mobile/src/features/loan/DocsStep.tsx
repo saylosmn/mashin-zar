@@ -1,4 +1,4 @@
-import { useState, type MutableRefObject } from "react";
+import { type MutableRefObject } from "react";
 import { Alert, Linking, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";

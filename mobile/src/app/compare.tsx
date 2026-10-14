@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { router } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { categoryLong, errMsg, money } from "@/lib/format";
 import { bestIndexes, useCompare } from "@/lib/compare";
-import { Button, Photo, Skeleton, StateView, T } from "@/components/ui";
+import { BackButton, Button, Photo, Skeleton, StateView, T } from "@/components/ui";
 import type { PublicAd } from "@shared/types";
 
 const COL = 168;
@@ -39,22 +39,7 @@ export default function CompareScreen() {
 
   const header = (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}>
-      <Pressable
-        accessibilityLabel="Буцах"
-        onPress={() => router.back()}
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          backgroundColor: C.card,
-          borderWidth: 1,
-          borderColor: C.line,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Feather name="chevron-left" size={22} color={C.ink} />
-      </Pressable>
+      <BackButton />
       <T w="display" style={{ fontSize: 20, flex: 1 }}>
         Харьцуулах
       </T>

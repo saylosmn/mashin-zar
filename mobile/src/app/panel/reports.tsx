@@ -20,7 +20,7 @@ import { errMsg, money, timeAgo } from "@/lib/format";
 import { termsFrom, type ContractTerms } from "@shared/contract";
 import { agentAmount, commissionAmount, commissionFor } from "@shared/commission";
 import { confirm, digits, isAdmin, isStaff, openContract, staffRpc } from "@/lib/staff";
-import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
+import { BackButton, Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 
 type Report = {
   id: string;
@@ -162,22 +162,7 @@ export default function Reports() {
         ListHeaderComponent={
           <View style={{ gap: 14, paddingBottom: 6 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Pressable
-                accessibilityLabel="Буцах"
-                onPress={() => router.back()}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  backgroundColor: C.card,
-                  borderWidth: 1,
-                  borderColor: C.line2,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Feather name="chevron-left" size={22} color={C.ink} />
-              </Pressable>
+              <BackButton />
               <View style={{ flex: 1 }}>
                 <T w="display" style={{ fontSize: 20 }}>
                   {admin ? "Тайлангууд" : "Тайлан"}

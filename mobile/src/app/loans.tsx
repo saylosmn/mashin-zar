@@ -9,7 +9,7 @@ import { C } from "@/lib/theme";
 import { errMsg, num, timeAgo } from "@/lib/format";
 import { confirm, staffRpc } from "@/lib/staff";
 import { LOAN_STATUS, type LoanRequest } from "@/lib/loan";
-import { Button, Skeleton, T, s } from "@/components/ui";
+import { BackButton, Button, Skeleton, T, s } from "@/components/ui";
 
 type Row = LoanRequest & { partner: { name: string; phone: string | null } | null };
 
@@ -80,22 +80,7 @@ export default function Loans() {
       }
       ListHeaderComponent={
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingBottom: 6 }}>
-          <Pressable
-            accessibilityLabel="Буцах"
-            onPress={() => router.back()}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: C.card,
-              borderWidth: 1,
-              borderColor: C.line2,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Feather name="chevron-left" size={22} color={C.ink} />
-          </Pressable>
+          <BackButton />
           <View style={{ flex: 1 }}>
             <T w="display" style={{ fontSize: 20 }}>
               Лизингийн хүсэлт

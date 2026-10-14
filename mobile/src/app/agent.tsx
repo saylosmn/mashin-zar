@@ -1,13 +1,13 @@
 import { useCallback, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Share, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { errMsg, money } from "@/lib/format";
 import { WEB_URL } from "@/lib/staff";
-import { Button, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
+import { BackButton, Button, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { AdStatus } from "@shared/types";
 
 type Report = {
@@ -60,24 +60,7 @@ export default function AgentScreen() {
     }, [load]),
   );
 
-  const back = (
-    <Pressable
-      accessibilityLabel="Буцах"
-      onPress={() => router.back()}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: C.card,
-        borderWidth: 1,
-        borderColor: C.line,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Feather name="chevron-left" size={22} color={C.ink} />
-    </Pressable>
-  );
+  const back = <BackButton />;
 
   if (profile && profile.role !== "agent" && profile.role !== "admin")
     return (

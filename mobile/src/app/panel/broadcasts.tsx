@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, View } from "react-native";
+import { Alert, FlatList, KeyboardAvoidingView, Platform, RefreshControl, View } from "react-native";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { C } from "@/lib/theme";
 import { errMsg, timeAgo } from "@/lib/format";
 import { confirm, isAdmin, staffRpc } from "@/lib/staff";
-import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
+import { BackButton, Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 
 type Row = {
   id: string;
@@ -106,22 +106,7 @@ export default function Broadcasts() {
   const header = (
     <View style={{ gap: 14, paddingBottom: 6 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Pressable
-          accessibilityLabel="Буцах"
-          onPress={() => router.back()}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            backgroundColor: C.card,
-            borderWidth: 1,
-            borderColor: C.line2,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Feather name="chevron-left" size={22} color={C.ink} />
-        </Pressable>
+        <BackButton />
         <View style={{ flex: 1 }}>
           <T w="display" style={{ fontSize: 20 }}>
             Мэдэгдэл

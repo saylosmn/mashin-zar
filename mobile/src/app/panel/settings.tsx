@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Switch, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Switch, View } from "react-native";
 import { router } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { digits, isAdmin, openWebPanel, staffRpc } from "@/lib/staff";
-import { Button, Field, Input, StateView, T, s } from "@/components/ui";
+import { BackButton, Button, Field, Input, StateView, T, s } from "@/components/ui";
 
 export default function PanelSettings() {
   const { profile, settings, refreshProfile } = useAuth();
@@ -66,22 +66,7 @@ export default function PanelSettings() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Pressable
-            accessibilityLabel="Буцах"
-            onPress={() => router.back()}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: C.card,
-              borderWidth: 1,
-              borderColor: C.line2,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Feather name="chevron-left" size={22} color={C.ink} />
-          </Pressable>
+          <BackButton />
           <T w="display" style={{ fontSize: 20 }}>
             Тохиргоо
           </T>

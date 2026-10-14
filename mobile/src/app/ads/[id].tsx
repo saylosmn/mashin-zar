@@ -17,7 +17,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { errMsg, initial, money, timeAgo } from "@/lib/format";
-import { Button, CatChip, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
+import { BackButton, Button, CatChip, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { Ad, PublicAd } from "@shared/types";
 import { useLiveSync } from "@/lib/live";
 import { adCache } from "@/lib/cache";
@@ -32,7 +32,7 @@ const W = Dimensions.get("window").width;
 
 export default function AdDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { session, settings, profile } = useAuth();
+  const { session, settings } = useAuth();
   const insets = useSafeAreaInsets();
   const [ad, setAd] = useState<PublicAd | null>(() => adCache.get(id) ?? null);
   const [loading, setLoading] = useState(() => !adCache.has(id));
@@ -161,23 +161,7 @@ export default function AdDetail() {
           ) : (
             <Photo style={{ width: W, height: 300 }} />
           )}
-          <Pressable
-            accessibilityLabel="Буцах"
-            onPress={() => router.back()}
-            style={{
-              position: "absolute",
-              left: 16,
-              top: 16,
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: C.card,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Feather name="chevron-left" size={22} color={C.ink} />
-          </Pressable>
+          <BackButton style={{ position: "absolute", left: 16, top: 16, borderWidth: 0 }} />
           {!mine && (
             <Pressable
               accessibilityLabel={fav ? "Хадгалснаас хасах" : "Хадгалах"}

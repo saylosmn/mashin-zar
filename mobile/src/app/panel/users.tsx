@@ -8,7 +8,7 @@ import { useLiveSync } from "@/lib/live";
 import { C, F } from "@/lib/theme";
 import { errMsg, initial, roleLabel, timeAgo } from "@/lib/format";
 import { confirm, digits, isAdmin, isStaff, staffRpc } from "@/lib/staff";
-import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
+import { BackButton, Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 import type { Profile } from "@shared/types";
 
 type Filter = "all" | "staff" | "dealer" | "blocked";
@@ -169,22 +169,7 @@ export default function Users() {
           paddingBottom: 6,
         }}
       >
-        <Pressable
-          accessibilityLabel="Буцах"
-          onPress={() => router.back()}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            backgroundColor: C.card,
-            borderWidth: 1,
-            borderColor: C.line2,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Feather name="chevron-left" size={22} color={C.ink} />
-        </Pressable>
+        <BackButton />
         <View style={{ flex: 1 }}>
           <T w="display" style={{ fontSize: 20 }}>
             Хэрэглэгчид

@@ -33,6 +33,7 @@ import {
   type Partner,
 } from "@/lib/loan";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "./ui";
+import { BackButton } from "@/components/ui";
 
 type Tab = LoanStatus | "all" | "terms";
 const TABS: { key: Tab; label: string }[] = [
@@ -131,24 +132,7 @@ export function LeasingPanel({ withBack }: { withBack?: boolean }) {
     ["loan_requests", "leasing_partners"],
   );
 
-  const backBtn = withBack ? (
-    <Pressable
-      accessibilityLabel="Буцах"
-      onPress={() => router.back()}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: C.card,
-        borderWidth: 1,
-        borderColor: C.line2,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Feather name="chevron-left" size={22} color={C.ink} />
-    </Pressable>
-  ) : null;
+  const backBtn = withBack ? <BackButton /> : null;
 
   if (!allowed)
     return (

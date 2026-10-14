@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/theme";
 import { CITIES } from "@shared/cars";
 import { errMsg, initial } from "@/lib/format";
-import { Button, Field, Input, T } from "@/components/ui";
+import { BackButton, Button, Field, Input, T } from "@/components/ui";
 
 export default function CompleteProfile() {
   const { next } = useLocalSearchParams<{ next?: string }>();
@@ -48,22 +48,7 @@ export default function CompleteProfile() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Pressable
-            accessibilityLabel="Буцах"
-            onPress={() => router.back()}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: C.card,
-              borderWidth: 1,
-              borderColor: C.line2,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Feather name="chevron-left" size={22} color={C.ink} />
-          </Pressable>
+          <BackButton />
           {next === "post" && <T style={{ fontSize: 13, color: C.muted }}>Алхам 1 / 2 · Профайл</T>}
         </View>
         <View style={{ gap: 8 }}>
