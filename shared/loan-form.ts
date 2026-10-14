@@ -1,5 +1,6 @@
-import { num } from "@/lib/format";
-import { MAX_DOC_PAGES, docLabel, docPage, docPageKeys, rdBirthDate, type Applicant } from "@/lib/loan";
+// Лизингийн анкетын state, шалгалт, ноорог. Вэб, апп хоёул ашиглана.
+import { num } from "./format";
+import { MAX_DOC_PAGES, docLabel, docPage, docPageKeys, rdBirthDate, type Applicant } from "./loan";
 
 export const STEPS = ["Хувийн", "Ажил, орлого", "Холбоо барих", "Баримт", "Илгээх"];
 
@@ -109,7 +110,7 @@ export function fromApplicant(base: LoanForm, fullName: string, phone: string, d
   };
 }
 
-export function validateStep(step: number, f: LoanForm, required: string[], docs: Record<string, string>) {
+export function validateStep(step: number, f: LoanForm, required: string[], docs: Record<string, unknown>) {
   if (step === 0) {
     if (!f.fullName.trim()) return "Овог нэрээ оруулна уу";
     if (digits(f.phone).length < 8) return "Утасны дугаараа зөв оруулна уу";
@@ -180,45 +181,60 @@ export function applicantPayload(f: LoanForm) {
 }
 
 /** Хуудсуудыг цоорхойгүй kind, kind_2 … дарааллаар дахин дугаарлана */
-export function packDocs(docs: Record<string, string>): Record<string, string> {
-  const groups = new Map<string, { page: number; path: string }[]>();
-  for (const [k, path] of Object.entries(docs)) {
-    if (!path) continue;
+export function packDocs<T>(docs: Record<string, T | null | undefined>): Record<string, T> {
+  const groups = new Map<string, { page: number; doc: T }[]>();
+  for (const [k, doc] of Object.entries(docs)) {
+    if (!doc) continue;
     const { base, page } = docPage(k);
-    groups.set(base, [...(groups.get(base) ?? []), { page, path }]);
+    groups.set(base, [...(groups.get(base) ?? []), { page, doc }]);
   }
-  const out: Record<string, string> = {};
+  const out: Record<string, T> = {};
   for (const [base, list] of groups) {
     const keys = docPageKeys(base);
     list
       .sort((a, b) => a.page - b.page)
       .slice(0, MAX_DOC_PAGES)
-      .forEach((x, i) => (out[keys[i]] = x.path));
+      .forEach((x, i) => (out[keys[i]] = x.doc));
   }
   return out;
 }
 
-// Апп хаагдсан ч бөглөсөн анкет алга болохгүйн тулд ноорог хадгална.
-export type Draft = { v: 1; step: number; batch: string; reused: string[]; docs: Record<string, string>; f: LoanForm };
+// Хуудас/апп хаагдсан ч бөглөсөн анкет алга болохгүйн тулд localStorage-д ноорог хадгална
+// (апп дээр expo-sqlite-ийн localStorage). 7 хоногоос хуучин ноорог устна.
+export type Draft<D> = {
+  v: 1;
+  at: number;
+  step: number;
+  batch: string;
+  reused: string[];
+  docs: Record<string, D>;
+  f: LoanForm;
+};
+
+const DRAFT_TTL = 7 * 864e5;
 
 export const draftKey = (adId: string, partnerId: string) => `loan-draft:${adId}:${partnerId}`;
 
-export function readDraft(key: string): Draft | null {
+export function readDraft<D>(key: string): Draft<D> | null {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
-    const d = JSON.parse(raw) as Draft;
-    return d?.v === 1 && d.f ? d : null;
+    const d = JSON.parse(raw) as Draft<D>;
+    if (d?.v !== 1 || !d.f || Date.now() - (d.at ?? 0) > DRAFT_TTL) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return d;
   } catch {
     return null;
   }
 }
 
-export function writeDraft(key: string, d: Draft | null) {
+export function writeDraft<D>(key: string, d: Omit<Draft<D>, "v" | "at"> | null) {
   try {
-    if (d) localStorage.setItem(key, JSON.stringify(d));
+    if (d) localStorage.setItem(key, JSON.stringify({ ...d, v: 1, at: Date.now() }));
     else localStorage.removeItem(key);
   } catch {
-    // storage дүүрсэн эсвэл хаалттай: ноорог хадгалахгүй л болно
+    // storage дүүрсэн эсвэл хаалттай (хувийн цонх): ноорог хадгалахгүй л болно
   }
 }

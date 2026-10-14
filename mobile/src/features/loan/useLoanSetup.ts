@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { errMsg } from "@/lib/format";
 import { LOAN_DOCS, docBase, type Applicant, type Partner } from "@/lib/loan";
-import { emptyForm, fromApplicant, packDocs, readDraft, type Draft, type LoanForm } from "./form";
+import { emptyForm, fromApplicant, packDocs, readDraft, type Draft, type LoanForm } from "@shared/loan-form";
 
 export type AdLite = {
   id: string;
@@ -24,7 +24,7 @@ type Setup = {
   form: LoanForm;
   docs: Record<string, string>;
   reused: string[];
-  draft: Draft | null;
+  draft: Draft<string> | null;
 };
 
 /**
@@ -88,7 +88,7 @@ export function useLoanSetup(
         }
         if (prev?.applicant) form = fromApplicant(form, prev.full_name, prev.phone, prev.applicant);
 
-        const draft = readDraft(draftKey);
+        const draft = readDraft<string>(draftKey);
         if (draft) {
           form = { ...form, ...draft.f };
           docs = packDocs(draft.docs ?? {});

@@ -33,7 +33,7 @@ import {
   writeDraft,
   type LoanForm,
   type SetField,
-} from "@/features/loan/form";
+} from "@shared/loan-form";
 
 const LAST_STEP = STEPS.length - 1;
 const newBatchId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -146,7 +146,7 @@ function Application({
   useEffect(() => {
     if (submitted) return;
     const t = setTimeout(
-      () => writeDraft(dKey, { v: 1, step, batch: batch.current, reused: [...reused.current], docs, f: form }),
+      () => writeDraft(dKey, { step, batch: batch.current, reused: [...reused.current], docs, f: form }),
       400,
     );
     return () => clearTimeout(t);

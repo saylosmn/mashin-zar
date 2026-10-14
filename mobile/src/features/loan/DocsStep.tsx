@@ -8,7 +8,7 @@ import { errMsg } from "@/lib/format";
 import { LOAN_DOCS, MAX_DOC_PAGES, docHint, docLabel, docPageKeys, type Partner } from "@/lib/loan";
 import { Button, T, s } from "@/components/ui";
 import { Notice } from "./controls";
-import { packDocs } from "./form";
+import { packDocs } from "@shared/loan-form";
 
 type Docs = Record<string, string>;
 

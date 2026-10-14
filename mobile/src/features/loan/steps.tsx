@@ -5,7 +5,7 @@ import { CITIES } from "@shared/cars";
 import { EMPLOYMENT, MARITAL, ageFrom, rdBirthDate, type Check, type Partner } from "@/lib/loan";
 import { Field, Input, T, s } from "@/components/ui";
 import { Checkbox, Chips, Notice, Strong, YesNo } from "./controls";
-import { LATIN_RD, digits, hasLatin, moneyInput, type LoanForm, type SetField } from "./form";
+import { LATIN_RD, digits, hasLatin, moneyInput, type LoanForm, type SetField } from "@shared/loan-form";
 
 type StepProps = { form: LoanForm; set: SetField; partner: Partner };
 
