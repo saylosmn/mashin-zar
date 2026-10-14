@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/lib/theme";
 import { Button, T, s } from "@/components/ui";
 
-export type Pic = { uri: string; id: string };
+/** path: storage-д аль хэдийн байгаа зураг (засах үед) */
+export type Pic = { uri: string; id: string; path?: string };
 
 /** Дэлгэцийн доор наалттай хэсэг (илгээх товч). Алдааг товчны дээр харуулна. */
 export function BottomBar({ error, children }: { error: string | null; children: React.ReactNode }) {

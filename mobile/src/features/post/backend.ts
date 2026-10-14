@@ -11,15 +11,17 @@ async function compress(uri: string) {
   return fetch(out.uri).then((r) => r.arrayBuffer());
 }
 
+export async function uploadAdPhoto(uid: string, uri: string, index: number) {
+  const body = await compress(uri);
+  const path = `${uid}/${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const { error } = await supabase.storage.from("ad-photos").upload(path, body, { contentType: "image/jpeg" });
+  if (error) throw error;
+  return path;
+}
+
 export function adBackend(uid: string, photoUris: string[]): AdBackend {
   return {
-    async uploadPhoto(i) {
-      const body = await compress(photoUris[i]);
-      const path = `${uid}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-      const { error } = await supabase.storage.from("ad-photos").upload(path, body, { contentType: "image/jpeg" });
-      if (error) throw error;
-      return path;
-    },
+    uploadPhoto: (i) => uploadAdPhoto(uid, photoUris[i], i),
     async removePhotos(paths) {
       await supabase.storage.from("ad-photos").remove(paths);
     },
