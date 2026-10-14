@@ -1,7 +1,13 @@
 import { getSettings, requireAdmin } from "@/lib/data";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
-import { regenSmsKey, saveContractSettings, saveGrowthSettings, savePaymentSettings, saveSettings } from "@/actions/settings";
+import {
+  regenSmsKey,
+  saveContractSettings,
+  saveGrowthSettings,
+  savePaymentSettings,
+  saveSettings,
+} from "@/actions/settings";
 import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { siteUrl } from "@/lib/site";

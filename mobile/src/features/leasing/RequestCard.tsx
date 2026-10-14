@@ -9,7 +9,7 @@ import { errMsg, num, timeAgo } from "@/lib/format";
 import { confirm, staffRpc } from "@/lib/staff";
 import { EMPLOYMENT, LOAN_STATUS, MARITAL, docLabel, sortDocKeys, type LoanRequest, type LoanStatus } from "@/lib/loan";
 import { Button, Input, Skeleton, T, s } from "@/components/ui";
-import { Cell } from "./bits";
+import { Cell } from "@/components/stats";
 
 type LoanEvent = {
   id: number | string;

@@ -6,12 +6,14 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useLiveSync } from "@/lib/live";
 import { C, F } from "@/lib/theme";
-import { errMsg, money, timeAgo } from "@/lib/format";
+import { errMsg, money } from "@/lib/format";
 import { STAFF_AD_SELECT, isAdmin, isStaff, type StaffAd } from "@/lib/staff";
-import { staffAdCache } from "@/lib/cache";
 import { LeasingPanel } from "@/features/leasing/LeasingPanel";
-import { Button, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
+import { Button, Skeleton, StateView, T } from "@/components/ui";
+import { Kpi } from "@/components/stats";
 import type { AdStatus } from "@shared/types";
+import { AdRow } from "@/features/panel/AdRow";
+import { IconBtn } from "@/features/panel/IconBtn";
 
 type Stats = {
   pending: number;
@@ -22,6 +24,7 @@ type Stats = {
   offers: number;
   flags: number;
 };
+
 const EMPTY: Stats = { pending: 0, active: 0, soldMonth: 0, soldMonthSum: 0, users: 0, offers: 0, flags: 0 };
 
 const FILTERS: { key: AdStatus; label: string }[] = [
@@ -272,131 +275,5 @@ function Panel() {
       }
       renderItem={({ item: a }) => <AdRow a={a} />}
     />
-  );
-}
-
-function AdRow({ a }: { a: StaffAd }) {
-  return (
-    <Pressable
-      onPress={() => {
-        staffAdCache.set(a.id, a);
-        router.push(`/panel/ad/${a.id}`);
-      }}
-      style={({ pressed }) => [s.card, { padding: 12, flexDirection: "row", gap: 12, opacity: pressed ? 0.85 : 1 }]}
-    >
-      <Photo path={a.photos[0]} style={{ width: 76, height: 76, borderRadius: 10 }} />
-      <View style={{ flex: 1, gap: 3 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <T w="semibold" style={{ fontSize: 15, flexShrink: 1 }} numberOfLines={1}>
-            {a.brand} {a.model} · {a.year_made}
-          </T>
-        </View>
-        <T w="display" style={{ fontSize: 15 }}>
-          {money(a.price)}
-        </T>
-        <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
-          {a.owner?.full_name ?? "Нэргүй"} · {a.phone} ·{" "}
-          {timeAgo(a.status === "sold" && a.sold_at ? a.sold_at : a.created_at)}
-        </T>
-        <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
-          {a.status !== "pending" && <StatusBadge s={a.status} />}
-          {a.contacted_at && <Tag text="Холбогдсон" />}
-          {a.offer_amount != null && <Tag text={`Санал ${money(a.offer_amount)}`} strong />}
-        </View>
-      </View>
-      <Feather name="chevron-right" size={20} color={C.pale} style={{ alignSelf: "center" }} />
-    </Pressable>
-  );
-}
-
-function Tag({ text, strong }: { text: string; strong?: boolean }) {
-  return (
-    <View
-      style={{
-        backgroundColor: strong ? C.pendingBg : C.soft,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
-      }}
-    >
-      <T w="semibold" style={{ fontSize: 11, color: strong ? C.pendingFg : C.body }}>
-        {text}
-      </T>
-    </View>
-  );
-}
-
-function Kpi({
-  label,
-  value,
-  sub,
-  dark,
-  onPress,
-}: {
-  label: string;
-  value: number;
-  sub?: string;
-  dark?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress}
-      style={({ pressed }) => ({
-        flexGrow: 1,
-        flexBasis: "45%",
-        backgroundColor: dark ? C.ink : C.card,
-        borderWidth: dark ? 0 : 1,
-        borderColor: C.line,
-        borderRadius: 14,
-        padding: 14,
-        gap: 4,
-        opacity: pressed ? 0.85 : 1,
-      })}
-    >
-      <T style={{ fontSize: 12, color: dark ? C.pale : C.muted }} numberOfLines={1}>
-        {label}
-      </T>
-      <T w="display" style={{ fontSize: 24, color: dark ? C.yellow : C.ink }}>
-        {value}
-      </T>
-      {sub ? (
-        <T style={{ fontSize: 11, color: dark ? C.pale : C.muted }} numberOfLines={1}>
-          {sub}
-        </T>
-      ) : null}
-    </Pressable>
-  );
-}
-
-function IconBtn({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: keyof typeof Feather.glyphMap;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={({ pressed }) => ({
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: C.card,
-        borderWidth: 1,
-        borderColor: C.line2,
-        alignItems: "center",
-        justifyContent: "center",
-        opacity: pressed ? 0.75 : 1,
-      })}
-    >
-      <Feather name={icon} size={20} color={C.ink} />
-    </Pressable>
   );
 }

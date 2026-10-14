@@ -10,6 +10,7 @@ import { errMsg, num, timeAgo } from "@/lib/format";
 import { confirm, staffRpc } from "@/lib/staff";
 import { LOAN_STATUS, type LoanRequest } from "@/lib/loan";
 import { BackButton, Button, Skeleton, T, s } from "@/components/ui";
+import { Cell } from "@/components/stats";
 
 type Row = LoanRequest & { partner: { name: string; phone: string | null } | null };
 
@@ -179,25 +180,5 @@ export default function Loans() {
         );
       }}
     />
-  );
-}
-
-function Cell({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
-  return (
-    <View
-      style={{
-        flexGrow: 1,
-        flexBasis: "30%",
-        backgroundColor: strong ? C.ink : C.paper,
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        paddingVertical: 7,
-      }}
-    >
-      <T style={{ fontSize: 10.5, color: strong ? C.pale : C.muted }}>{k}</T>
-      <T w="bold" style={{ fontSize: 13, color: strong ? C.yellow : C.ink }}>
-        {v}
-      </T>
-    </View>
   );
 }

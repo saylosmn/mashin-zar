@@ -10,10 +10,11 @@ import { errMsg, num } from "@/lib/format";
 import { openWebPanel } from "@/lib/staff";
 import { type LoanRequest, type LoanStatus, type Partner } from "@/lib/loan";
 import { Button, Skeleton, StateView, T } from "@/components/ui";
+import { Kpi } from "@/components/stats";
 import { BackButton } from "@/components/ui";
 import { RequestCard } from "./RequestCard";
 import { Terms } from "./PartnerTerms";
-import { Chip, Kpi } from "./bits";
+import { Chip } from "./bits";
 
 type Tab = LoanStatus | "all" | "terms";
 
