@@ -195,7 +195,7 @@ export default function Post() {
             p_vin: vin.trim().toUpperCase(),
             p_price: priceNum,
             p_signature: signature,
-            p_ua: `Машин зар апп (${Platform.OS})`,
+            p_ua: `Autoshop.mn апп (${Platform.OS})`,
           });
           if (cErr) throw cErr;
           contractRef.current = cid as string;
@@ -256,7 +256,7 @@ export default function Post() {
           </View>
         </View>
         <View style={[s.section, { gap: 14 }]}>
-          {[[`Зураг байршуулах`, true], [dealer ? "Мэдээлэл шалгах" : plan === "paid" ? "Онцлох төлбөртэй сонголт" : "Гэрээнд гарын үсэг зурах", busy.step >= 2], [dealer ? "Нийтлэх" : plan === "paid" ? "Илгээх" : "Менежерт илгээх", busy.step === 3]].map(([t, on], i) => (
+          {[[`Зураг байршуулах`, true], [dealer ? "Мэдээлэл шалгах" : plan === "paid" ? "Онцлох төлбөртэй сонголт" : "Гэрээнд гарын үсэг зурах", busy.step >= 2], [dealer ? "Нийтлэх" : plan === "paid" ? "Илгээх" : "Шалгалтад илгээх", busy.step === 3]].map(([t, on], i) => (
             <View key={String(t)} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
               <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: on ? C.ink : "transparent", borderWidth: on ? 0 : 2, borderColor: C.pale, alignItems: "center", justifyContent: "center" }}>
                 {on && <Feather name="check" size={14} color={C.yellow} />}
@@ -472,7 +472,7 @@ export default function Post() {
           <Field label="Улсын дугаар"><Input value={plate} onChangeText={setPlate} autoCapitalize="characters" strong mono placeholder="1234 УБА" style={{ textAlign: "center", fontSize: 18, letterSpacing: 2 }} /></Field>
           <Field label="Арлын дугаар"><Input value={vin} onChangeText={setVin} autoCapitalize="characters" mono placeholder="ZVW55-8012345" /></Field>
           <Field label="Утасны дугаар"><Input value={phone} onChangeText={setPhone} keyboardType="phone-pad" mono /></Field>
-          <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн менежер бүтнээр нь харна.</T>
+          <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн манай ажилтан бүтнээр нь харна.</T>
         </View>
 
         <View style={{ gap: 12 }}>
@@ -504,7 +504,7 @@ export default function Post() {
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
         <FooterError err={err} />
         <Button title={dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"} variant="yellow" icon={dealer ? "check" : "arrow-right"} onPress={submit} />
-        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>{dealer ? "Авто худалдааны зар шууд нийтлэгдэнэ" : "Дараа нь: шимтгэлтэй (гэрээ, менежер шалгана) эсвэл онцлох төлбөртэй (төлбөр ормогц шууд нийтлэгдэнэ)"}</T>
+        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>{dealer ? "Авто худалдааны зар шууд нийтлэгдэнэ" : "Дараа нь: шимтгэлтэй (гэрээ, шалгалттай) эсвэл онцлох төлбөртэй (төлбөр ормогц шууд нийтлэгдэнэ)"}</T>
       </View>
     </KeyboardAvoidingView>
   );

@@ -20,11 +20,11 @@ export function ReportList({ rows, admin, back }: { rows: ReportRow[]; admin?: b
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="font-bold text-[15px]">
                 {r.ad ? (
-                  <Link href={admin ? `/admin/ads/${r.ad.id}` : `/manager/ads?id=${r.ad.id}`} className="no-underline">{r.ad.brand} {r.ad.model} · {r.ad.year_made}</Link>
+                  <Link href={`/admin/ads/${r.ad.id}`} className="no-underline">{r.ad.brand} {r.ad.model} · {r.ad.year_made}</Link>
                 ) : "Устгагдсан зар"}
               </span>
               <span className="text-[12px] text-muted">
-                {r.ad?.plate_number ?? ""} · {r.manager?.full_name ?? r.manager?.email ?? "Менежер"} · илгээсэн {dateShort(r.created_at)}
+                {r.ad?.plate_number ?? ""} · {r.manager?.full_name ?? r.manager?.email ?? "Админ"} · илгээсэн {dateShort(r.created_at)}
               </span>
             </div>
             <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-md ${ST[r.status].cls}`}>{ST[r.status].label}</span>

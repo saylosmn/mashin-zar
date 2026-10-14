@@ -34,7 +34,7 @@ export default function Users() {
     try {
       setError(null);
       let query = supabase.from("profiles").select("*, ads:ads!ads_user_id_fkey(count)", { count: "exact" });
-      if (filter === "staff") query = query.in("role", ["manager", "admin"]);
+      if (filter === "staff") query = query.eq("role", "admin");
       if (filter === "blocked") query = query.eq("is_blocked", true);
       if (filter === "dealer") query = query.eq("role", "dealer");
       const term = q.trim().replace(/[,()%]/g, " ").trim();
@@ -56,7 +56,7 @@ export default function Users() {
   }, [load]);
   useLiveSync(() => load(), ["profiles", "staff_invites"]);
 
-  if (!isStaff(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Энэ хэсэг зөвхөн менежер, админд нээлттэй."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
+  if (!isStaff(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Энэ хэсэг зөвхөн админд нээлттэй."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
 
   function manage(u: Row) {
     if (!admin || u.id === profile?.id) return;
@@ -82,9 +82,9 @@ export default function Users() {
     if (r.ok) load();
   }
 
-  async function setRole(u: Row, role: "manager" | "admin") {
+  async function setRole(u: Row, role: "admin") {
     if (!u.email) return Alert.alert("И-мэйлгүй хэрэглэгч", "Эрх олгохын тулд и-мэйл хэрэгтэй.");
-    if (!(await confirm(`${roleLabel(role)} болгох уу?`, `${u.full_name ?? u.email} панел руу нэвтрэх эрхтэй болно.`, "Тийм"))) return;
+    if (!(await confirm(`${roleLabel(role)} болгох уу?`, `${u.full_name ?? u.email} бүх эрхтэй (зар батлах, төлбөр, аккаунт, тохиргоо) админ болно.`, "Тийм"))) return;
     const r = await staffRpc("invite_staff", { p_email: u.email, p_role: role, p_name: u.full_name, p_phone: u.phone });
     if (r.ok) load();
   }
@@ -106,19 +106,19 @@ export default function Users() {
     const e = email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(e)) return Alert.alert("И-мэйл буруу байна");
     setBusy(true);
-    const r = await staffRpc("invite_staff", { p_email: e, p_role: "manager", p_name: null, p_phone: null });
+    const r = await staffRpc("invite_staff", { p_email: e, p_role: "admin", p_name: null, p_phone: null });
     setBusy(false);
     if (r.ok) {
       setEmail("");
       setInviteOpen(false);
-      Alert.alert("Амжилттай", `${e} менежерийн эрхтэй боллоо. Google-ээр нэвтэрмэгц Удирдлага хэсэг нээгдэнэ.`);
+      Alert.alert("Амжилттай", `${e} админ эрхтэй боллоо. Google-ээр нэвтэрмэгц Удирдлага хэсэг нээгдэнэ.`);
       load();
     }
   }
 
   const filters: { key: Filter; label: string }[] = [
     { key: "all", label: "Бүгд" },
-    { key: "staff", label: "Менежер, админ" },
+    { key: "staff", label: "Админ" },
     { key: "dealer", label: "Авто худалдаа" },
     { key: "blocked", label: "Хаагдсан" },
   ];
@@ -146,7 +146,7 @@ export default function Users() {
           <View style={{ gap: 10, paddingBottom: 6 }}>
             {inviteOpen && (
               <View style={s.section}>
-                <Field label="Шинэ менежерийн Google и-мэйл" hint="Тэр хүн энэ и-мэйлээр нэвтэрмэгц менежерийн эрх автоматаар идэвхжинэ.">
+                <Field label="Шинэ админы Google и-мэйл" hint="Бүх эрхтэй. Тэр хүн энэ и-мэйлээр нэвтэрмэгц эрх автоматаар идэвхжинэ.">
                   <Input value={email} onChangeText={setEmail} placeholder="name@gmail.com" autoCapitalize="none" keyboardType="email-address" />
                 </Field>
                 <Button title="Эрх олгох" icon="check" loading={busy} onPress={invite} />
@@ -221,11 +221,11 @@ export default function Users() {
                   </>
                 ) : (
                   <>
-                    {sel.role === "user" && <Button title="Менежер болгох" icon="briefcase" variant="ghost" onPress={() => { const u = sel; setSel(null); setRole(u, "manager"); }} />}
+                    {sel.role === "user" && <Button title="Админ болгох" icon="briefcase" variant="ghost" onPress={() => { const u = sel; setSel(null); setRole(u, "admin"); }} />}
                     {sel.role === "user" && <Button title="Авто худалдаа болгох" icon="shopping-bag" variant="ghost" onPress={() => setDealerMode(true)} />}
                     {sel.role === "dealer" && <Button title="Нэрийг өөрчлөх" icon="edit-2" variant="ghost" onPress={() => setDealerMode(true)} />}
                     {sel.role === "dealer" && <Button title="Авто худалдааны эрх хасах" icon="user-x" variant="ghost" onPress={() => { const u = sel; setSel(null); removeDealer(u); }} />}
-                    {(sel.role === "manager" || sel.role === "admin") && <Button title="Менежерийн эрх хасах" icon="user-x" variant="ghost" onPress={() => { const u = sel; setSel(null); removeStaff(u); }} />}
+                    {sel.role === "admin" && <Button title="Админ эрх хасах" icon="user-x" variant="ghost" onPress={() => { const u = sel; setSel(null); removeStaff(u); }} />}
                     <Button title={sel.is_blocked ? "Аккаунт нээх" : "Аккаунт хаах"} icon={sel.is_blocked ? "unlock" : "lock"} variant={sel.is_blocked ? "ghost" : "danger"} onPress={() => { const u = sel; setSel(null); toggleBlock(u); }} />
                     <Button title="Болих" variant="ghost" onPress={() => setSel(null)} />
                   </>

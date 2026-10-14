@@ -32,7 +32,7 @@ export default async function StartChatPage({ params }: { params: Promise<{ adId
       <h1 className="h-display m-0 text-[22px]">Худалдагчид бичих</h1>
       <StartChatForm adId={ad.id} />
       <p className="m-0 text-[12px] text-muted leading-relaxed">
-        Урьдчилгаа мөнгө машинаа үзэхээс өмнө бүү шилжүүл. Чатыг аюулгүй байдлын үүднээс менежер харах боломжтой.
+        Урьдчилгаа мөнгө машинаа үзэхээс өмнө бүү шилжүүл. Чатыг аюулгүй байдлын үүднээс манай ажилтан харах боломжтой.
       </p>
     </main>
   );

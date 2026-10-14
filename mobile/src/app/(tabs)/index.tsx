@@ -9,6 +9,7 @@ import { C, F } from "@/lib/theme";
 import { errMsg } from "@/lib/format";
 import { BRANDS } from "@/lib/cars";
 import { AdCard, Button, CardSkeleton, StateView, T } from "@/components/ui";
+import { BrandRow } from "@/components/Brand";
 import { useLiveSync } from "@/lib/live";
 import type { PublicAd } from "@/lib/types";
 
@@ -96,12 +97,7 @@ export default function Home() {
   const header = (
     <View style={{ gap: 14, paddingBottom: 6 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <View style={{ width: 38, height: 26, borderWidth: 2, borderColor: C.ink, borderRadius: 5, alignItems: "center", justifyContent: "center" }}>
-            <T w="monoBold" style={{ fontSize: 12 }}>МЗ</T>
-          </View>
-          <T w="display" style={{ fontSize: 15 }}>Машин зар</T>
-        </View>
+        <BrandRow size={15} mark={32} />
         <Pressable accessibilityLabel="Мэдэгдэл" onPress={() => router.push("/notifications")} style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line2, backgroundColor: C.card, alignItems: "center", justifyContent: "center" }}>
           <Feather name="bell" size={20} color={C.ink} />
           {unread > 0 && <View style={{ position: "absolute", top: 9, right: 10, width: 9, height: 9, borderRadius: 5, backgroundColor: C.dot, borderWidth: 2, borderColor: C.card }} />}

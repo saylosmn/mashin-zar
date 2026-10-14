@@ -6,7 +6,7 @@ import { LoginLink } from "./LoginLink";
 import type { Profile } from "@/lib/types";
 
 export function SiteHeader({ profile, unread, q, chats = 0 }: { profile: Profile | null; unread: number; q?: string; chats?: number }) {
-  const staff = profile && (profile.role === "manager" || profile.role === "admin");
+  const staff = profile?.role === "admin";
   const leasing = profile?.role === "leasing";
   return (
     <header className="bg-ink text-paper">
@@ -25,9 +25,7 @@ export function SiteHeader({ profile, unread, q, chats = 0 }: { profile: Profile
         </form>
         <nav className="flex items-center gap-2 ml-auto" aria-label="Хэрэглэгчийн цэс">
           {staff && (
-            <Link href={profile!.role === "admin" ? "/admin" : "/manager"} className="btn btn-dark-ghost px-3 sm:px-4">
-              {profile!.role === "admin" ? "Админ" : "Менежер"}
-            </Link>
+            <Link href="/admin" className="btn btn-dark-ghost px-3 sm:px-4">Админ</Link>
           )}
           {leasing && (
             <Link href="/leasing" className="btn btn-dark-ghost px-3 sm:px-4">Лизинг</Link>

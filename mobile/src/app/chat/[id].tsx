@@ -184,7 +184,7 @@ export default function ChatScreen() {
           </View>
         </View>
       ) : (
-        <T style={{ padding: 12, paddingBottom: Math.max(insets.bottom, 12), fontSize: 13, color: C.muted }}>Та энэ чатыг менежерийн эрхээр харж байна.</T>
+        <T style={{ padding: 12, paddingBottom: Math.max(insets.bottom, 12), fontSize: 13, color: C.muted }}>Та энэ чатыг админы эрхээр харж байна.</T>
       )}
     </KeyboardAvoidingView>
   );

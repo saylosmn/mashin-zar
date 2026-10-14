@@ -101,7 +101,7 @@ export function ChatThread({ convId, me, messages, canWrite, otherName }: { conv
           </div>
         </form>
       ) : (
-        <p className="m-0 text-[13px] text-muted px-4 py-3 border-t border-line">Та энэ чатыг менежерийн эрхээр харж байна (бичих боломжгүй).</p>
+        <p className="m-0 text-[13px] text-muted px-4 py-3 border-t border-line">Та энэ чатыг админы эрхээр харж байна (бичих боломжгүй).</p>
       )}
     </div>
   );

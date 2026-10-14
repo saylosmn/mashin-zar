@@ -83,7 +83,7 @@ export async function AdsTable({
             {rows.map((a) => (
               <tr key={a.id}>
                 <td>
-                  <Link href={`/manager/ads?id=${a.id}`} className="flex items-center gap-2.5 no-underline">
+                  <Link href={`/admin/review?id=${a.id}`} className="flex items-center gap-2.5 no-underline">
                     <CarPhoto path={a.photos[0]} alt="" className="w-[52px] h-10 rounded-md" label="IMG" />
                     <span className="font-semibold">{a.brand} {a.model} · {a.year_made}</span>
                   </Link>

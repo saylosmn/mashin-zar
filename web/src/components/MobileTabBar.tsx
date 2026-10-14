@@ -6,7 +6,7 @@ import { IconBell, IconHome, IconList, IconPlus, IconUser } from "./icons";
 
 /**
  * Утсан дээр доод талд байрлах апп шиг цэс (sm-ээс том дэлгэц дээр нуугдана).
- * Менежер/админ/лизингийн панел руу орох товч толгой хэсэгт (SiteHeader) байнга харагддаг тул
+ * Админ/лизингийн панел руу орох товч толгой хэсэгт (SiteHeader) байнга харагддаг тул
  * энд Профайл таб бүх хэрэглэгчид үлдэнэ.
  */
 export function MobileTabBar({ unread }: { unread: number }) {

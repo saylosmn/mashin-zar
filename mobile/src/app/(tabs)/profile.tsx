@@ -9,7 +9,7 @@ import { openWebPanel } from "@/lib/staff";
 
 function ProfileTabInner() {
   const { profile, signOut } = useAuth();
-  const staff = profile?.role === "manager" || profile?.role === "admin";
+  const staff = profile?.role === "admin";
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 12, gap: 16 }}>
       <T w="display" style={{ fontSize: 22 }}>Профайл</T>
@@ -49,10 +49,10 @@ function ProfileTabInner() {
         <>
           <Button title="Удирдлага (апп дотор)" icon="shield" onPress={() => router.push("/panel")} />
           <Button
-            title={profile?.role === "admin" ? "Вэб админ панел" : "Вэб менежерийн панел"}
+            title="Вэб админ панел"
             icon="external-link"
             variant="ghost"
-            onPress={() => openWebPanel(profile?.role === "admin" ? "/admin" : "/manager")}
+            onPress={() => openWebPanel("/admin")}
           />
         </>
       )}

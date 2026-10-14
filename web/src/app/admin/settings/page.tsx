@@ -140,7 +140,7 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
         <section className="card p-5.5 flex flex-col gap-3.5">
           <div className="flex flex-col gap-1">
             <h2 className="m-0 text-[17px] font-bold">Санал тооцох хувь</h2>
-            <span className="text-[14px] text-muted">Менежер хэрэглэгчид тавих саналыг машины үнээс энэ хувиар тооцно.</span>
+            <span className="text-[14px] text-muted">Хэрэглэгчид тавих саналыг машины үнээс энэ хувиар тооцно.</span>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <label className="flex items-center gap-2 text-[14px] font-semibold">
@@ -169,7 +169,7 @@ export default async function AdminSettings({ searchParams }: { searchParams: Pr
             <input type="checkbox" name="notify_all" defaultChecked={s.notify_all_on_approve} className="w-5 h-5 accent-ink shrink-0" />
           </label>
           <label className="flex justify-between items-center gap-4 py-3 text-[14px]">
-            <span className="font-semibold">Шинэ зар ирэхэд менежерүүдэд мэдэгдэх</span>
+            <span className="font-semibold">Шинэ зар ирэхэд админуудад мэдэгдэх</span>
             <input type="checkbox" name="notify_staff" defaultChecked={s.notify_staff_on_new} className="w-5 h-5 accent-ink shrink-0" />
           </label>
         </section>

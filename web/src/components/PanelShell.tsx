@@ -30,7 +30,7 @@ export async function PanelShell({
   children,
 }: {
   profile: Profile;
-  area: "manager" | "admin" | "leasing";
+  area: "admin" | "leasing";
   active: string;
   pending?: number;
   /** Админ лизингийн панелд аль компанийг харж байгаа (цэсний холбоосонд дамжуулна) */
@@ -49,14 +49,13 @@ export async function PanelShell({
           ...(!isAdmin || (partner && partner !== "all") ? [{ key: "leasing-terms", href: isAdmin ? `/leasing?tab=terms&partner=${partner}` : "/leasing?tab=terms", label: "Нөхцөл, шаардлага" }] : []),
           ...(isAdmin ? [{ key: "admin-leasing", href: "/admin/leasing", label: "← Админ: Лизинг" }] : []),
         ]
-      : area === "admin"
-      ? [
+      : [
           { key: "admin", href: "/admin", label: "Самбар" },
           { key: "admin-users", href: "/admin/users", label: "Аккаунтууд" },
+          { key: "admin-review", href: "/admin/review", label: "Шинэ зар ба санал", badge: pending },
           { key: "admin-ads", href: "/admin/ads", label: "Бүх зар" },
-          { key: "mgr-ads", href: "/manager/ads", label: "Шинэ зар ба санал", badge: pending },
-          { key: "mgr", href: "/manager", label: "Менежерийн самбар" },
-          { key: "mgr-flags", href: "/manager/flags", label: "Гомдол", badge: flags },
+          { key: "admin-sellers", href: "/admin/sellers", label: "Зар тавьсан хүмүүс" },
+          { key: "admin-flags", href: "/admin/flags", label: "Гомдол", badge: flags },
           { key: "admin-payments", href: "/admin/payments", label: "Төлбөрүүд", badge: payments },
           { key: "admin-reports", href: "/admin/reports", label: "Тайлангууд" },
           { key: "admin-leasing", href: "/admin/leasing", label: "Лизинг: компаниуд" },
@@ -64,25 +63,15 @@ export async function PanelShell({
           { key: "admin-notif", href: "/admin/notifications", label: "Мэдэгдэл" },
           { key: "admin-errors", href: "/admin/errors", label: "Алдааны бүртгэл" },
           { key: "admin-settings", href: "/admin/settings", label: "Тохиргоо" },
-        ]
-      : [
-          { key: "mgr", href: "/manager", label: "Самбар" },
-          { key: "mgr-ads", href: "/manager/ads", label: "Шинэ зар ба санал", badge: pending },
-          { key: "mgr-all", href: "/manager/all", label: "Бүх зар" },
-          { key: "mgr-sold", href: "/manager/all?status=sold", label: "Зарагдсан машинууд" },
-          { key: "mgr-users", href: "/manager/users", label: "Зар тавьсан хүмүүс" },
-          { key: "mgr-flags", href: "/manager/flags", label: "Гомдол", badge: flags },
-          { key: "mgr-reports", href: "/manager/reports", label: "Тайлан илгээх" },
-          ...(isAdmin ? [{ key: "admin", href: "/admin", label: "Админ панел" }] : []),
         ];
   return (
     <div className="min-h-dvh flex flex-col lg:flex-row">
       <nav
-        aria-label={area === "admin" ? "Админ цэс" : "Менежерийн цэс"}
+        aria-label={area === "admin" ? "Админ цэс" : "Лизингийн цэс"}
         className="sticky top-0 z-30 lg:h-dvh w-full lg:w-[260px] lg:flex-none bg-ink text-paper lg:px-4 lg:py-6 flex flex-col gap-1.5"
       >
         <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-1 lg:px-2 lg:pt-0 lg:pb-5">
-          <Logo sub={area === "admin" ? "Админ · бүх эрх" : area === "leasing" ? "Лизингийн түнш" : "Менежер"} href={area === "admin" ? "/admin" : area === "leasing" ? "/leasing" : "/manager"} />
+          <Logo sub={area === "admin" ? "Админ · бүх эрх" : "Лизингийн түнш"} href={area === "admin" ? "/admin" : "/leasing"} />
           <Link href="/" className="lg:hidden text-[13px] text-pale no-underline whitespace-nowrap">← Сайт</Link>
         </div>
         <div className="flex lg:flex-col gap-1.5 overflow-x-auto px-3 pb-3 lg:p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

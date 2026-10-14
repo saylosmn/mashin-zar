@@ -19,7 +19,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <footer className={`border-t border-line mt-8 sm:pb-0 ${profile ? "pb-[84px]" : ""}`}>
         <div className="max-w-[1280px] mx-auto px-6 py-6 flex flex-wrap justify-between gap-3 text-[13px] text-muted">
           <span className="flex flex-wrap gap-x-3 gap-y-1">
-            <span>© {new Date().getFullYear()} Машин зар</span>
+            <span>© {new Date().getFullYear()} Autoshop.mn</span>
             <a href="/app" className="underline">Android апп</a>
             <a href="/compare" className="underline">Харьцуулах</a>
             <a href="/terms" className="underline">Үйлчилгээний нөхцөл</a>

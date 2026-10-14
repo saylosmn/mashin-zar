@@ -7,7 +7,7 @@ export function siteUrl(): string {
   return (env || "https://web-mu-fawn-45.vercel.app").replace(/\/+$/, "");
 }
 
-export const SITE_NAME = "Машин зар";
+export const SITE_NAME = "Autoshop.mn";
 
 /** Агентын урилгын холбоос (нүүр хуудас ?ref=КОД → зар оруулахад код автоматаар бөглөгдөнө) */
 export const agentLink = (code: string) => `${siteUrl()}/?ref=${encodeURIComponent(code)}`;

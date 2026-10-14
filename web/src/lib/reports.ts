@@ -17,7 +17,7 @@ export type ReportRow = {
 export const REPORT_SELECT =
   "*, ad:ads(id,brand,model,year_made,plate_number,price,contract_id,status), manager:profiles!sale_reports_manager_id_fkey(full_name,email), agent:profiles!sale_reports_agent_id_fkey(full_name,email,agent_code)";
 
-/** Идэвхтэй агентууд (менежерийн тайлангийн маягтад) */
+/** Идэвхтэй агентууд (тайлангийн маягтад) */
 export async function agentOptions(): Promise<AgentOption[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("profiles").select("id,full_name,email,agent_code").eq("role", "agent").eq("is_blocked", false).order("full_name");

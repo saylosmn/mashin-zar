@@ -30,7 +30,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
           <h1 className="h-display m-0 text-[clamp(34px,4vw,56px)] leading-[1.08]">Машинаа зар. Дараагийнхаа машиныг ол.</h1>
           <p className="m-0 text-[18px] leading-relaxed text-pale">
-            Менежерээр шалгагдсан зарууд, 16 хүртэл зураг, шинэ зар орох бүрт мэдэгдэл.
+            Шалгагдсан зарууд, 16 хүртэл зураг, шинэ зар орох бүрт мэдэгдэл.
           </p>
         </div>
         <ol className="flex gap-8 flex-wrap list-none p-0 m-0">

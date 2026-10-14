@@ -100,7 +100,7 @@ function Panel() {
 
   if (!isStaff(profile))
     return (
-      <StateView icon="lock" title="Эрх хүрэхгүй" text="Энэ хэсэг зөвхөн менежер, админд нээлттэй.">
+      <StateView icon="lock" title="Эрх хүрэхгүй" text="Энэ хэсэг зөвхөн админд нээлттэй.">
         <Button title="Зарууд руу" onPress={() => router.replace("/")} />
       </StateView>
     );
@@ -110,7 +110,7 @@ function Panel() {
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <View style={{ gap: 2 }}>
           <T w="display" style={{ fontSize: 22 }}>Удирдлага</T>
-          <T style={{ fontSize: 13, color: C.muted }}>{admin ? "Админ" : "Менежер"} · {profile?.full_name?.split(" ")[0] ?? ""}</T>
+          <T style={{ fontSize: 13, color: C.muted }}>Админ · {profile?.full_name?.split(" ")[0] ?? ""}</T>
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <IconBtn icon="file-text" label="Тайлан" onPress={() => router.push("/panel/reports")} />

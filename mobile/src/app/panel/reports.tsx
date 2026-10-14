@@ -65,12 +65,12 @@ export default function Reports() {
   useEffect(() => { load(); }, [load]);
   useLiveSync(() => load(), ["sale_reports", "ads"]);
 
-  if (!isStaff(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Энэ хэсэг зөвхөн менежер, админд нээлттэй."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
+  if (!isStaff(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Энэ хэсэг зөвхөн админд нээлттэй."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
 
   async function review(r: Report, approve: boolean, note: string) {
     const ok = await confirm(
       approve ? "Тайлан батлах уу?" : "Тайлан буцаах уу?",
-      approve ? `${r.ad?.brand ?? ""} ${r.ad?.model ?? ""} “зарагдсан” болж, эзэнд нь мэдэгдэл очно.` : "Менежерт буцаагдсан тухай мэдэгдэл очно.",
+      approve ? `${r.ad?.brand ?? ""} ${r.ad?.model ?? ""} “зарагдсан” болж, эзэнд нь мэдэгдэл очно.` : "Илгээсэн хүнд буцаагдсан тухай мэдэгдэл очно.",
       approve ? "Батлах" : "Буцаах",
       !approve,
     );
@@ -109,11 +109,11 @@ export default function Reports() {
               </Pressable>
               <View style={{ flex: 1 }}>
                 <T w="display" style={{ fontSize: 20 }}>{admin ? "Тайлангууд" : "Тайлан"}</T>
-                <T style={{ fontSize: 12, color: C.muted }}>{admin ? "Менежерүүдийн борлуулалтын тайлан" : "Зарсан машинаа админд тайлагнах"}</T>
+                <T style={{ fontSize: 12, color: C.muted }}>Борлуулалтын тайлан</T>
               </View>
               {!formOpen && <Button small title="Шинэ" icon="plus" variant="yellow" onPress={() => setFormOpen(true)} />}
             </View>
-            {formOpen && <NewReport defaultAd={params.ad} fallback={fallback} onClose={() => setFormOpen(false)} onSent={() => { setFormOpen(false); setFilter(admin ? "pending" : "all"); load(); }} />}
+            {formOpen && <NewReport defaultAd={params.ad} fallback={fallback} onClose={() => setFormOpen(false)} onSent={() => { setFormOpen(false); setFilter("all"); load(); }} />}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
               {filters.map((f) => {
                 const on = f.key === filter;
@@ -152,7 +152,7 @@ function ReportCard({ r, admin, onReview, onPaid }: { r: Report; admin: boolean;
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
         <View style={{ flex: 1, gap: 2 }}>
           <T w="bold" style={{ fontSize: 15 }}>{r.ad ? `${r.ad.brand} ${r.ad.model} · ${r.ad.year_made}` : "Устгагдсан зар"}</T>
-          <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>{r.ad?.plate_number ?? ""} · {r.manager?.full_name ?? r.manager?.email ?? "Менежер"} · {timeAgo(r.created_at)}</T>
+          <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>{r.ad?.plate_number ?? ""} · {r.manager?.full_name ?? r.manager?.email ?? "Админ"} · {timeAgo(r.created_at)}</T>
         </View>
         <View style={{ backgroundColor: st.bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: "flex-start" }}>
           <T w="semibold" style={{ fontSize: 11, color: st.fg }}>{st.label}</T>
@@ -257,10 +257,12 @@ function NewReport({ defaultAd, fallback, onClose, onSent }: { defaultAd?: strin
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return Alert.alert("Огноо буруу", "Жишээ: 2026-10-09");
     setBusy(true);
     const soldAt = date === ubToday() ? new Date().toISOString() : new Date(`${date}T12:00:00+08:00`).toISOString();
-    const r = await staffRpc("submit_sale_report", { p_ad: ad.id, p_price: p, p_sold_at: soldAt, p_buyer_name: buyer || null, p_buyer_phone: buyerPhone || null, p_note: note || null, p_agent: agentId });
+    const r = await staffRpc<string>("submit_sale_report", { p_ad: ad.id, p_price: p, p_sold_at: soldAt, p_buyer_name: buyer || null, p_buyer_phone: buyerPhone || null, p_note: note || null, p_agent: agentId });
+    // Админ өөрөө бүртгэсэн тайланг шууд батална (зар зарагдсан болж, агентын хувь бодогдоно)
+    const ok = r.ok && r.data ? (await staffRpc("review_sale_report", { p_id: r.data, p_approve: true, p_note: null })).ok : false;
     setBusy(false);
     if (r.ok) {
-      Alert.alert("Илгээгдлээ", "Тайлан админд очлоо.");
+      Alert.alert(ok ? "Батлагдлаа" : "Хадгалагдлаа", ok ? "Зар зарагдсан болж, эзэнд нь мэдэгдэл очлоо." : "Тайлан хадгалагдсан, «Хүлээгдэж буй»-гаас батална уу.");
       onSent();
     }
   }
@@ -333,7 +335,7 @@ function NewReport({ defaultAd, fallback, onClose, onSent }: { defaultAd?: strin
           {calc && calc.agent > 0 && (
             <T style={{ fontSize: 12, color: C.muted }}>Үүнээс агентад {fmt(calc.agent)}₮ ({Number(settings.agent_share ?? 50)}%)</T>
           )}
-          <Button title="Админд илгээх" icon="send" variant="yellow" loading={busy} onPress={send} />
+          <Button title="Бүртгэж батлах" icon="check" variant="yellow" loading={busy} onPress={send} />
         </View>
       )}
     </View>

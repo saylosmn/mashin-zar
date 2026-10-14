@@ -71,7 +71,7 @@ export default function AgentScreen() {
         {link ? (
           <>
             <T w="mono" style={{ color: "#C9CDD3", fontSize: 12 }}>{link}</T>
-            <Button small variant="yellow" icon="share-2" title="Холбоос хуваалцах" onPress={() => Share.share({ message: `Машинаа «Машин зар»-аар зараарай: ${link}\nАгентын код: ${code}` })} />
+            <Button small variant="yellow" icon="share-2" title="Холбоос хуваалцах" onPress={() => Share.share({ message: `Машинаа «Autoshop.mn»-ээр зараарай: ${link}\nАгентын код: ${code}` })} />
             <T style={{ color: C.pale, fontSize: 12, lineHeight: 18 }}>Машинаа зарах хүнд холбоосоо илгээх эсвэл зар оруулахдаа «Агентын код» талбарт кодоо бичүүлнэ.</T>
           </>
         ) : null}

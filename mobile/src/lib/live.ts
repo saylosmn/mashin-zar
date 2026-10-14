@@ -34,7 +34,7 @@ let identityKey = "";
 /** Нэвтэрсэн хэрэглэгчийн эрхэд тохирох хувийн сувгуудад холбогдоно (гарахад салгана). */
 export async function setLiveIdentity(uid?: string | null, role?: string | null, partner?: string | null) {
   const topics = uid
-    ? [`u:${uid}`, ...(role === "manager" || role === "admin" ? ["mz-staff"] : []), ...(role === "leasing" && partner ? [`p:${partner}`] : [])]
+    ? [`u:${uid}`, ...(role === "admin" ? ["mz-staff"] : []), ...(role === "leasing" && partner ? [`p:${partner}`] : [])]
     : [];
   const key = topics.join(",");
   if (key === identityKey) return;

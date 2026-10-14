@@ -37,7 +37,7 @@ export function ReportAdButton({ adId, loginHref }: { adId: string; loginHref: s
             <h2 id="flag-title" className="m-0 text-[18px] font-bold">Зарыг мэдээлэх</h2>
             {msg?.ok ? (
               <>
-                <p className="m-0 text-[14px] text-body">✓ Баярлалаа. Менежер шалгаж, шаардлагатай бол арга хэмжээ авна.</p>
+                <p className="m-0 text-[14px] text-body">✓ Баярлалаа. Бид шалгаж, шаардлагатай бол арга хэмжээ авна.</p>
                 <button type="button" className="btn btn-lg btn-ink" onClick={() => setOpen(false)}>Хаах</button>
               </>
             ) : (

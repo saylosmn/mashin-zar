@@ -124,7 +124,7 @@ export default function PayScreen() {
                   {settings.pay_holder ? <PayRow label="Хүлээн авагч" value={settings.pay_holder} /> : null}
                 </>
               ) : (
-                <T style={{ color: C.pale, fontSize: 13 }}>Дансны мэдээлэл удахгүй нэмэгдэнэ. Менежер тантай холбогдож төлбөрийг тохирно.</T>
+                <T style={{ color: C.pale, fontSize: 13 }}>Дансны мэдээлэл удахгүй нэмэгдэнэ. Манай ажилтан тантай холбогдож төлбөрийг тохирно.</T>
               )}
               <T style={{ color: C.pale, fontSize: 12.5, lineHeight: 18 }}>
                 ⚠ Гүйлгээний утгад заавал <T w="monoBold" style={{ color: C.yellow }}>{open.ref}</T> гэж бичнэ үү. ⭐ {open.days} хоног онцлох, шимтгэлгүй.
@@ -135,7 +135,7 @@ export default function PayScreen() {
               <View style={[s.card, { padding: 16, gap: 4 }]}>
                 <T w="bold" style={{ fontSize: 16 }}>⏳ Шалгаж байна</T>
                 <T style={{ color: C.body, fontSize: 14, lineHeight: 20 }}>
-                  Орлого баталгаажмагц танд мэдэгдэл ирж, {ad.status === "active" ? "зар тань шууд онцлох болно" : ad.status === "pending" ? "зар тань шууд нийтлэгдэнэ" : "менежер зарыг нийтэлнэ"}.
+                  Орлого баталгаажмагц танд мэдэгдэл ирж, {ad.status === "active" ? "зар тань шууд онцлох болно" : ad.status === "pending" ? "зар тань шууд нийтлэгдэнэ" : "зарыг шалгаж нийтэлнэ"}.
                 </T>
               </View>
             ) : (
@@ -156,7 +156,7 @@ export default function PayScreen() {
             )}
           </>
         ) : confirmed && (ad.status === "pending" || ad.status === "rejected") ? (
-          <Done text={`Менежер зарыг шалгаж нийтэлмэгц ${confirmed.days} хоног онцлох болно.`} />
+          <Done text={`Зар шалгагдаж нийтлэгдмэгц ${confirmed.days} хоног онцлох болно.`} />
         ) : canStart ? (
           <View style={[s.card, { padding: 16, gap: 12 }]}>
             {confirmed && featured ? <Done text="Таны зар одоо онцлох байна." /> : null}
@@ -169,7 +169,7 @@ export default function PayScreen() {
           </View>
         ) : (
           <T style={{ textAlign: "center", color: C.muted, paddingVertical: 24 }}>
-            {ad.status === "pending" ? "Зар менежерийн шалгалтад байна. Нийтлэгдсэний дараа онцлох болгох боломжтой." : "Энэ зарыг одоогоор онцлох болгох боломжгүй."}
+            {ad.status === "pending" ? "Зар шалгалтад байна. Нийтлэгдсэний дараа онцлох болгох боломжтой." : "Энэ зарыг одоогоор онцлох болгох боломжгүй."}
           </T>
         )}
       </ScrollView>

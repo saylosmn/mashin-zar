@@ -12,7 +12,7 @@ type Row = {
   signature_svg: string; pdf_path: string | null; signed_at: string;
 };
 
-/** Гэрээний PDF-ийг (байхгүй бол үүсгэж хадгалаад) хэдэн минут хүчинтэй холбоосоор өгнө. Эзэмшигч болон менежер, админ л харна. */
+/** Гэрээний PDF-ийг (байхгүй бол үүсгэж хадгалаад) хэдэн минут хүчинтэй холбоосоор өгнө. Эзэмшигч болон админ л харна. */
 async function signedUrl(request: Request, id: string): Promise<{ url?: string; error?: string; status: number }> {
   const supabase = await supabaseForRequest(request);
   const { data, error } = await supabase.from("contracts").select("*").eq("id", id).maybeSingle();

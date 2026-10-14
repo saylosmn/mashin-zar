@@ -21,7 +21,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           {creating ? "Зар тавихын өмнө профайлаа үүсгэнэ үү" : "Миний профайл"}
         </h1>
         <p className="m-0 text-[15px] text-muted leading-relaxed">
-          Менежер тантай энэ мэдээллээр холбогдоно. Нэг удаа бөглөхөд хангалттай.
+          Манай ажилтан тантай энэ мэдээллээр холбогдоно. Нэг удаа бөглөхөд хангалттай.
         </p>
       </div>
 
@@ -68,7 +68,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         <label className="flex items-start gap-2.5 text-[13px] leading-snug text-[#2b2f35]">
           <input type="checkbox" name="consent" required defaultChecked={me.profile_completed} className="w-5 h-5 m-0 accent-ink shrink-0" />
           <span>
-            Менежер миний утсаар холбогдохыг зөвшөөрч, <a href="/terms" target="_blank" className="underline">үйлчилгээний нөхцөл</a>, <a href="/privacy" target="_blank" className="underline">нууцлалын бодлогыг</a> хүлээн зөвшөөрч байна
+            Манай ажилтан миний утсаар холбогдохыг зөвшөөрч, <a href="/terms" target="_blank" className="underline">үйлчилгээний нөхцөл</a>, <a href="/privacy" target="_blank" className="underline">нууцлалын бодлогыг</a> хүлээн зөвшөөрч байна
           </span>
         </label>
         <button className="btn btn-lg btn-ink mt-2">

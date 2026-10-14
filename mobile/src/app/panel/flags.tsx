@@ -50,7 +50,7 @@ export default function FlagsScreen() {
     if (r.ok) load();
   }
 
-  if (!isStaff(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Зөвхөн менежер, админд."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
+  if (!isStaff(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Зөвхөн админд."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
   if (error) return <StateView icon="warning" title="Алдаа гарлаа" text={error}><Button title="Дахин оролдох" onPress={load} /></StateView>;
 
   return (

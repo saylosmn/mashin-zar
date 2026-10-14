@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getSettings, requireStaff } from "@/lib/data";
+import { getSettings, requireAdmin } from "@/lib/data";
 import { categoryLabel, initial, money, timeAgo } from "@/lib/format";
 import { pendingCount } from "@/lib/panel";
 import { Flash, PanelShell } from "@/components/PanelShell";
@@ -14,13 +14,13 @@ import { agentOptions } from "@/lib/reports";
 import { RejectForm } from "./RejectForm";
 import type { Ad, Profile } from "@/lib/types";
 
-export const metadata = { title: "Менежер · Шинэ зар ба санал" };
+export const metadata = { title: "Админ · Шинэ зар ба санал" };
 
 type Row = Ad & { owner: Pick<Profile, "full_name" | "email" | "phone" | "city"> | null };
 
 export default async function ManagerAds({ searchParams }: { searchParams: Promise<{ tab?: string; id?: string; ok?: string; err?: string }> }) {
   const sp = await searchParams;
-  const me = await requireStaff();
+  const me = await requireAdmin();
   const settings = await getSettings();
   const supabase = await createClient();
   const tab = sp.tab === "contacted" || sp.tab === "rejected" ? sp.tab : "pending";
@@ -72,7 +72,7 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
   const pct = settings.offer_percent;
   const offer = ad && pct != null ? Math.round((ad.price * pct) / 100) : null;
   const cy = settings.cutoff_year;
-  const backUrl = `/manager/ads?tab=${tab}${ad ? `&id=${ad.id}` : ""}`;
+  const backUrl = `/admin/review?tab=${tab}${ad ? `&id=${ad.id}` : ""}`;
 
   const tabs = [
     { key: "pending", label: "Хүлээгдэж буй", n: cPending.count ?? 0 },
@@ -81,14 +81,14 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
   ];
 
   return (
-    <PanelShell profile={me} area={me.role === "admin" ? "admin" : "manager"} active="mgr-ads" pending={pending}>
+    <PanelShell profile={me} area="admin" active="admin-review" pending={pending}>
       <div className="flex justify-between items-center gap-3 flex-wrap">
         <h1 className="h-display m-0 text-[28px]">Шинэ зар ба санал</h1>
         <nav aria-label="Төлөв" className="flex gap-1.5 flex-wrap">
           {tabs.map((t) => (
             <Link
               key={t.key}
-              href={`/manager/ads?tab=${t.key}`}
+              href={`/admin/review?tab=${t.key}`}
               aria-current={t.key === tab ? "page" : undefined}
               className={`h-10 px-3.5 rounded-full flex items-center text-[14px] no-underline ${t.key === tab ? "bg-ink text-yellow font-semibold" : "border border-line-2 bg-card"}`}
             >
@@ -105,7 +105,7 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
           {list.map((a) => (
             <li key={a.id}>
               <Link
-                href={`/manager/ads?tab=${tab}&id=${a.id}`}
+                href={`/admin/review?tab=${tab}&id=${a.id}`}
                 aria-current={ad?.id === a.id ? "true" : undefined}
                 className={`flex gap-3 p-3 rounded-[14px] bg-card no-underline ${ad?.id === a.id ? "border-2 border-ink" : "border border-line"}`}
               >
@@ -259,22 +259,22 @@ export default async function ManagerAds({ searchParams }: { searchParams: Promi
               {ad.status === "pending" && !ad.contacted_at && (
                 <form action={markContacted} className="flex-[1_1_160px] flex">
                   <input type="hidden" name="id" value={ad.id} />
-                  <input type="hidden" name="back" value={`/manager/ads?tab=contacted&id=${ad.id}`} />
+                  <input type="hidden" name="back" value={`/admin/review?tab=contacted&id=${ad.id}`} />
                   <button className="btn btn-lg btn-ghost flex-1"><IconPhone size={18} /> Холбогдсон</button>
                 </form>
               )}
               {ad.status !== "rejected" && ad.status !== "sold" && (
-                <RejectForm key={ad.id} id={ad.id} back={`/manager/ads?tab=${tab}`} action={rejectAd} />
+                <RejectForm key={ad.id} id={ad.id} back={`/admin/review?tab=${tab}`} action={rejectAd} />
               )}
               {(ad.status === "pending" || ad.status === "rejected") && (
                 <form action={approveAd} className="flex-[2_1_220px] flex">
                   <input type="hidden" name="id" value={ad.id} />
-                  <input type="hidden" name="back" value={`/manager/ads?tab=${tab}`} />
+                  <input type="hidden" name="back" value={`/admin/review?tab=${tab}`} />
                   <button disabled={payBlocked} className="btn btn-lg btn-yellow flex-1 disabled:opacity-50">{payBlocked ? "Төлбөр баталгаажаагүй" : "Батлаж нийтлэх"}</button>
                 </form>
               )}
               {ad.status === "active" && (
-                <Link href={`/manager/reports?ad=${ad.id}`} className="btn btn-lg btn-ink flex-[2_1_220px]">Зарагдсан тайлан илгээх</Link>
+                <Link href={`/admin/reports?ad=${ad.id}`} className="btn btn-lg btn-ink flex-[2_1_220px]">Зарагдсан тайлан илгээх</Link>
               )}
             </div>
             <span className="text-[12px] text-muted">

@@ -76,7 +76,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
                 {bank.holder && <Row label="Хүлээн авагч" value={bank.holder} />}
               </>
             ) : (
-              <p className="m-0 text-[14px] text-pale">Дансны мэдээлэл удахгүй нэмэгдэнэ. Менежер тантай холбогдож төлбөрийг тохирно.</p>
+              <p className="m-0 text-[14px] text-pale">Дансны мэдээлэл удахгүй нэмэгдэнэ. Манай ажилтан тантай холбогдож төлбөрийг тохирно.</p>
             )}
             <p className="m-0 text-[13px] text-pale leading-relaxed">
               ⚠ Гүйлгээний утгад заавал <strong className="text-yellow mono">{open.ref}</strong> гэж бичнэ үү — ингэснээр таны төлбөрийг хурдан олно. ⭐ {open.days} хоног онцлох, шимтгэлгүй.
@@ -87,7 +87,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
             <div role="status" className="card p-5 flex flex-col gap-1.5">
               <span className="font-bold text-[16px]">⏳ Шалгаж байна</span>
               <span className="text-[14px] text-body">
-                {open.submitted_at ? `${dateShort(open.submitted_at)}-нд илгээсэн. ` : ""}Орлого баталгаажмагц танд мэдэгдэл ирж, {ad.status === "active" ? "зар тань шууд онцлох болно" : ad.status === "pending" ? "зар тань шууд нийтлэгдэнэ" : "менежер зарыг нийтэлнэ"}.
+                {open.submitted_at ? `${dateShort(open.submitted_at)}-нд илгээсэн. ` : ""}Орлого баталгаажмагц танд мэдэгдэл ирж, {ad.status === "active" ? "зар тань шууд онцлох болно" : ad.status === "pending" ? "зар тань шууд нийтлэгдэнэ" : "зарыг шалгаж нийтэлнэ"}.
               </span>
             </div>
           ) : (
@@ -109,7 +109,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
           )}
         </>
       ) : confirmed && (ad.status === "pending" || ad.status === "rejected") ? (
-        <Success text={`Менежер зарыг шалгаж нийтэлмэгц ${confirmed.days} хоног онцлох болно.`} />
+        <Success text={`Зар шалгагдаж нийтлэгдмэгц ${confirmed.days} хоног онцлох болно.`} />
       ) : canStart ? (
         <form action={startPayment} className="card p-5.5 flex flex-col gap-3.5">
           <input type="hidden" name="id" value={ad.id} />
@@ -126,7 +126,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
         </form>
       ) : (
         <p className="card m-0 px-5 py-6 text-center text-muted text-[14px]">
-          {ad.status === "pending" ? "Зар менежерийн шалгалтад байна. Нийтлэгдсэний дараа онцлох болгох боломжтой." : "Энэ зарыг одоогоор онцлох болгох боломжгүй."}
+          {ad.status === "pending" ? "Зар шалгалтад байна. Нийтлэгдсэний дараа онцлох болгох боломжтой." : "Энэ зарыг одоогоор онцлох болгох боломжгүй."}
         </p>
       )}
     </main>

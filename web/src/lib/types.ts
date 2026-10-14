@@ -1,4 +1,4 @@
-export type Role = "user" | "manager" | "admin" | "dealer" | "leasing" | "agent";
+export type Role = "user" | "admin" | "dealer" | "leasing" | "agent";
 export type AdStatus = "pending" | "active" | "sold" | "rejected" | "hidden";
 export type Category = "new" | "old";
 
