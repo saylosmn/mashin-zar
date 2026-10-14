@@ -9,7 +9,7 @@ import { C, F } from "@/lib/theme";
 import { errMsg, money, timeAgo } from "@/lib/format";
 import { STAFF_AD_SELECT, isAdmin, isStaff, type StaffAd } from "@/lib/staff";
 import { staffAdCache } from "@/lib/cache";
-import { LeasingPanel } from "@/components/LeasingPanel";
+import { LeasingPanel } from "@/features/leasing/LeasingPanel";
 import { Button, Photo, Skeleton, StateView, StatusBadge, T, s } from "@/components/ui";
 import type { AdStatus } from "@shared/types";
 
