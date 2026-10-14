@@ -35,7 +35,9 @@ describe("notifyHref", () => {
 });
 
 describe("safeNext (open redirect хамгаалалт)", () => {
-  it.each([["//evil.com"], ["/\\evil.com"], ["https://evil.com"], [""], [null], [42]])("%s → /", (v) => expect(safeNext(v)).toBe("/"));
+  it.each([["//evil.com"], ["/\\evil.com"], ["https://evil.com"], [""], [null], [42]])("%s → /", (v) =>
+    expect(safeNext(v)).toBe("/"),
+  );
   it("өөрийн зам", () => expect(safeNext("/ads/1?x=2")).toBe("/ads/1?x=2"));
 });
 
@@ -64,7 +66,10 @@ describe("siteUrl", () => {
 describe("гэрээ", () => {
   it("termsFrom — SQL ажиллаагүй үед анхны нөхцөл", () => {
     expect(termsFrom({})).toEqual({ company: "Autoshop ХХК", terms: DEFAULT_TERMS });
-    expect(termsFrom({ commission_after: "2.5", commission_tiers: [{ days: 3, percent: 4 }] }).terms).toEqual({ tiers: [{ days: 3, percent: 4 }], after: 2.5 });
+    expect(termsFrom({ commission_after: "2.5", commission_tiers: [{ days: 3, percent: 4 }] }).terms).toEqual({
+      tiers: [{ days: 3, percent: 4 }],
+      after: 2.5,
+    });
   });
   it("tierLines", () => {
     const l = tierLines(DEFAULT_TERMS);

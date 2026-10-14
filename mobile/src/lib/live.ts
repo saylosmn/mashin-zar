@@ -34,7 +34,11 @@ let identityKey = "";
 /** Нэвтэрсэн хэрэглэгчийн эрхэд тохирох хувийн сувгуудад холбогдоно (гарахад салгана). */
 export async function setLiveIdentity(uid?: string | null, role?: string | null, partner?: string | null) {
   const topics = uid
-    ? [`u:${uid}`, ...(role === "admin" ? ["mz-staff"] : []), ...(role === "leasing" && partner ? [`p:${partner}`] : [])]
+    ? [
+        `u:${uid}`,
+        ...(role === "admin" ? ["mz-staff"] : []),
+        ...(role === "leasing" && partner ? [`p:${partner}`] : []),
+      ]
     : [];
   const key = topics.join(",");
   if (key === identityKey) return;
@@ -48,7 +52,10 @@ export async function setLiveIdentity(uid?: string | null, role?: string | null,
   } catch {}
   if (identityKey !== key) return; // энэ хооронд хэрэглэгч солигдсон
   privateChannels = topics.map((t) =>
-    supabase.channel(t, { config: { private: true } }).on("broadcast", { event: "change" }, (msg) => emit(msg.payload)).subscribe(),
+    supabase
+      .channel(t, { config: { private: true } })
+      .on("broadcast", { event: "change" }, (msg) => emit(msg.payload))
+      .subscribe(),
   );
 }
 

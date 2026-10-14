@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "prettier": "^3.6.2",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -43,7 +44,9 @@
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit",
     "build:apk": "npx eas-cli@latest build -p android --profile preview",
-    "update": "npx eas-cli@latest update --auto"
+    "update": "npx eas-cli@latest update --auto",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"*.{js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"*.{js,json}\""
   },
   "private": true
 }

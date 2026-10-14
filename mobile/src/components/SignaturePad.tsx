@@ -11,7 +11,13 @@ type Pt = [number, number];
  * Гарын үсэг зурах талбай (хуруугаар). Шинэ native сан шаардахгүй — зураасыг жижиг View-уудаар зурна.
  * Үр дүн нь вэбтэй ижил: 600x200 талбайн SVG path (PDF-д зурагдана).
  */
-export function SignaturePad({ onChange, onDrawing }: { onChange: (svg: string | null) => void; onDrawing?: (active: boolean) => void }) {
+export function SignaturePad({
+  onChange,
+  onDrawing,
+}: {
+  onChange: (svg: string | null) => void;
+  onDrawing?: (active: boolean) => void;
+}) {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [strokes, setStrokes] = useState<Pt[][]>([]);
   const cur = useRef<Pt[] | null>(null);
@@ -26,7 +32,15 @@ export function SignaturePad({ onChange, onDrawing }: { onChange: (svg: string |
   const emit = (all: Pt[][]) => {
     const total = all.reduce((n, s) => n + s.length, 0);
     const path = all
-      .map((s) => (s.length === 1 ? `M ${s[0][0]} ${s[0][1]} L ${s[0][0] + 0.5} ${s[0][1] + 0.5}` : `M ${s[0][0]} ${s[0][1]} ` + s.slice(1).map((p) => `L ${p[0]} ${p[1]}`).join(" ")))
+      .map((s) =>
+        s.length === 1
+          ? `M ${s[0][0]} ${s[0][1]} L ${s[0][0] + 0.5} ${s[0][1] + 0.5}`
+          : `M ${s[0][0]} ${s[0][1]} ` +
+            s
+              .slice(1)
+              .map((p) => `L ${p[0]} ${p[1]}`)
+              .join(" "),
+      )
       .join(" ");
     onChange(total >= 8 ? path : null);
   };
@@ -72,11 +86,21 @@ export function SignaturePad({ onChange, onDrawing }: { onChange: (svg: string |
   const sy = size.h / H;
   const segments: { key: string; left: number; top: number; len: number; angle: number }[] = [];
   strokes.forEach((s, i) => {
-    if (s.length === 1) segments.push({ key: `${i}-0`, left: s[0][0] * sx - 1.5, top: s[0][1] * sy - 1.5, len: 3, angle: 0 });
+    if (s.length === 1)
+      segments.push({ key: `${i}-0`, left: s[0][0] * sx - 1.5, top: s[0][1] * sy - 1.5, len: 3, angle: 0 });
     for (let j = 1; j < s.length; j++) {
-      const x1 = s[j - 1][0] * sx, y1 = s[j - 1][1] * sy, x2 = s[j][0] * sx, y2 = s[j][1] * sy;
+      const x1 = s[j - 1][0] * sx,
+        y1 = s[j - 1][1] * sy,
+        x2 = s[j][0] * sx,
+        y2 = s[j][1] * sy;
       const len = Math.hypot(x2 - x1, y2 - y1) + 2;
-      segments.push({ key: `${i}-${j}`, left: (x1 + x2) / 2 - len / 2, top: (y1 + y2) / 2 - 1.5, len, angle: Math.atan2(y2 - y1, x2 - x1) });
+      segments.push({
+        key: `${i}-${j}`,
+        left: (x1 + x2) / 2 - len / 2,
+        top: (y1 + y2) / 2 - 1.5,
+        len,
+        angle: Math.atan2(y2 - y1, x2 - x1),
+      });
     }
   });
 
@@ -87,12 +111,34 @@ export function SignaturePad({ onChange, onDrawing }: { onChange: (svg: string |
           const w = e.nativeEvent.layout.width;
           setSize({ w, h: w / 3 });
         }}
-        style={{ width: "100%", aspectRatio: 3, borderRadius: 12, borderWidth: 2, borderStyle: "dashed", borderColor: C.line2, backgroundColor: "#FBFBF9", overflow: "hidden" }}
+        style={{
+          width: "100%",
+          aspectRatio: 3,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderStyle: "dashed",
+          borderColor: C.line2,
+          backgroundColor: "#FBFBF9",
+          overflow: "hidden",
+        }}
         {...pan.panHandlers}
       >
-        <View pointerEvents="none" style={{ position: "absolute", left: "6%", right: "6%", bottom: "22%", borderBottomWidth: 1, borderColor: C.line2 }} />
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: "6%",
+            right: "6%",
+            bottom: "22%",
+            borderBottomWidth: 1,
+            borderColor: C.line2,
+          }}
+        />
         {strokes.length === 0 && (
-          <View pointerEvents="none" style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center" }}>
+          <View
+            pointerEvents="none"
+            style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center" }}
+          >
             <T style={{ color: C.muted, fontSize: 13 }}>Энд хуруугаараа гарын үсгээ зурна уу</T>
           </View>
         )}
@@ -100,11 +146,27 @@ export function SignaturePad({ onChange, onDrawing }: { onChange: (svg: string |
           <View
             key={g.key}
             pointerEvents="none"
-            style={{ position: "absolute", left: g.left, top: g.top, width: g.len, height: 3, borderRadius: 1.5, backgroundColor: "#0D1F73", transform: [{ rotate: `${g.angle}rad` }] }}
+            style={{
+              position: "absolute",
+              left: g.left,
+              top: g.top,
+              width: g.len,
+              height: 3,
+              borderRadius: 1.5,
+              backgroundColor: "#0D1F73",
+              transform: [{ rotate: `${g.angle}rad` }],
+            }}
           />
         ))}
       </View>
-      <Pressable onPress={() => { setStrokes([]); onChange(null); }} hitSlop={8} style={{ alignSelf: "flex-end" }}>
+      <Pressable
+        onPress={() => {
+          setStrokes([]);
+          onChange(null);
+        }}
+        hitSlop={8}
+        style={{ alignSelf: "flex-end" }}
+      >
         <T style={{ fontSize: 13, color: C.muted, textDecorationLine: "underline" }}>Арилгаж дахин зурах</T>
       </Pressable>
     </View>

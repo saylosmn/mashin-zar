@@ -12,7 +12,11 @@ type GhAsset = { id: number; name: string; size: number; browser_download_url: s
 type GhRelease = { tag_name: string; name: string | null; published_at: string; assets: GhAsset[] };
 
 function ghHeaders(accept = "application/vnd.github+json"): HeadersInit {
-  const h: Record<string, string> = { Accept: accept, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "mashin-zar-web" };
+  const h: Record<string, string> = {
+    Accept: accept,
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "mashin-zar-web",
+  };
   const t = process.env.GH_RELEASE_TOKEN;
   if (t) h.Authorization = `Bearer ${t}`;
   return h;

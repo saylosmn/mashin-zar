@@ -12,28 +12,67 @@ function ProfileTabInner() {
   const staff = profile?.role === "admin";
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 12, gap: 16 }}>
-      <T w="display" style={{ fontSize: 22 }}>Профайл</T>
+      <T w="display" style={{ fontSize: 22 }}>
+        Профайл
+      </T>
       <View style={[s.card, { flexDirection: "row", alignItems: "center", gap: 14, padding: 16 }]}>
-        <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-          <T w="bold" style={{ color: C.yellow, fontSize: 22 }}>{initial(profile?.full_name ?? profile?.email)}</T>
+        <View
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: C.ink,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <T w="bold" style={{ color: C.yellow, fontSize: 22 }}>
+            {initial(profile?.full_name ?? profile?.email)}
+          </T>
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <T w="semibold" style={{ fontSize: 17 }}>{profile?.full_name ?? "Нэр оруулаагүй"}</T>
-          <T style={{ fontSize: 13, color: C.muted }} numberOfLines={1}>{profile?.email}</T>
+          <T w="semibold" style={{ fontSize: 17 }}>
+            {profile?.full_name ?? "Нэр оруулаагүй"}
+          </T>
+          <T style={{ fontSize: 13, color: C.muted }} numberOfLines={1}>
+            {profile?.email}
+          </T>
           {(staff || profile?.role === "dealer" || profile?.role === "leasing" || profile?.role === "agent") && (
-            <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>{roleLabel(profile?.role)}{profile?.role === "dealer" && profile?.shop_name ? ` · ${profile.shop_name}` : ""}</T>
+            <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>
+              {roleLabel(profile?.role)}
+              {profile?.role === "dealer" && profile?.shop_name ? ` · ${profile.shop_name}` : ""}
+            </T>
           )}
         </View>
       </View>
       <View style={[s.card]}>
-        {[["Утас", profile?.phone ?? "—"], ["Хот", profile?.city ?? "—"]].map(([k, v], i) => (
-          <View key={k} style={{ flexDirection: "row", justifyContent: "space-between", padding: 14, borderTopWidth: i ? 1 : 0, borderColor: "#ECEDE9" }}>
+        {[
+          ["Утас", profile?.phone ?? "—"],
+          ["Хот", profile?.city ?? "—"],
+        ].map(([k, v], i) => (
+          <View
+            key={k}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              padding: 14,
+              borderTopWidth: i ? 1 : 0,
+              borderColor: "#ECEDE9",
+            }}
+          >
             <T style={{ color: C.muted, fontSize: 14 }}>{k}</T>
-            <T w="semibold" style={{ fontSize: 14 }}>{v}</T>
+            <T w="semibold" style={{ fontSize: 14 }}>
+              {v}
+            </T>
           </View>
         ))}
       </View>
-      <Button title={profile?.profile_completed ? "Профайл засах" : "Профайл үүсгэх"} variant="ghost" icon="edit-2" onPress={() => router.push("/complete-profile")} />
+      <Button
+        title={profile?.profile_completed ? "Профайл засах" : "Профайл үүсгэх"}
+        variant="ghost"
+        icon="edit-2"
+        onPress={() => router.push("/complete-profile")}
+      />
       <Button title="Миний лизингийн хүсэлтүүд" variant="ghost" icon="percent" onPress={() => router.push("/loans")} />
       <Button title="Машин харьцуулах" variant="ghost" icon="shuffle" onPress={() => router.push("/compare")} />
       {profile?.role === "agent" && (
@@ -42,24 +81,34 @@ function ProfileTabInner() {
       {profile?.role === "leasing" && (
         <>
           <Button title="Лизингийн панел" icon="briefcase" onPress={() => router.push("/panel")} />
-          <Button title="Вэб лизингийн панел" icon="external-link" variant="ghost" onPress={() => openWebPanel("/leasing")} />
+          <Button
+            title="Вэб лизингийн панел"
+            icon="external-link"
+            variant="ghost"
+            onPress={() => openWebPanel("/leasing")}
+          />
         </>
       )}
       {staff && (
         <>
           <Button title="Удирдлага (апп дотор)" icon="shield" onPress={() => router.push("/panel")} />
-          <Button
-            title="Вэб админ панел"
-            icon="external-link"
-            variant="ghost"
-            onPress={() => openWebPanel("/admin")}
-          />
+          <Button title="Вэб админ панел" icon="external-link" variant="ghost" onPress={() => openWebPanel("/admin")} />
         </>
       )}
       <Button title="Гарах" variant="danger" icon="log-out" onPress={signOut} />
       <View style={{ flexDirection: "row", justifyContent: "center", gap: 18, paddingVertical: 4 }}>
-        <T style={{ fontSize: 13, color: C.muted, textDecorationLine: "underline" }} onPress={() => openWebPanel("/terms")}>Үйлчилгээний нөхцөл</T>
-        <T style={{ fontSize: 13, color: C.muted, textDecorationLine: "underline" }} onPress={() => openWebPanel("/privacy")}>Нууцлалын бодлого</T>
+        <T
+          style={{ fontSize: 13, color: C.muted, textDecorationLine: "underline" }}
+          onPress={() => openWebPanel("/terms")}
+        >
+          Үйлчилгээний нөхцөл
+        </T>
+        <T
+          style={{ fontSize: 13, color: C.muted, textDecorationLine: "underline" }}
+          onPress={() => openWebPanel("/privacy")}
+        >
+          Нууцлалын бодлого
+        </T>
       </View>
     </ScrollView>
   );
@@ -67,7 +116,12 @@ function ProfileTabInner() {
 
 export default function ProfileTab() {
   return (
-    <GuestGate icon="user" title="Профайл" text="Нэвтэрч профайлаа үүсгээд зар тавьж, лизингийн хүсэлт илгээнэ." next="/profile">
+    <GuestGate
+      icon="user"
+      title="Профайл"
+      text="Нэвтэрч профайлаа үүсгээд зар тавьж, лизингийн хүсэлт илгээнэ."
+      next="/profile"
+    >
       <ProfileTabInner />
     </GuestGate>
   );

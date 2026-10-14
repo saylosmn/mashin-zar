@@ -21,7 +21,9 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
           <button type="button" onClick={() => retry()} className="btn btn-lg btn-ink">
             <IconRetry /> Дахин оролдох
           </button>
-          <Link href="/" className="btn btn-lg btn-ghost">Нүүр хуудас</Link>
+          <Link href="/" className="btn btn-lg btn-ghost">
+            Нүүр хуудас
+          </Link>
         </>
       }
     >

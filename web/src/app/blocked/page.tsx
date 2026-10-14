@@ -12,7 +12,7 @@ export default async function BlockedPage() {
   return (
     <PageMessage
       icon={
-        <div className="w-[120px] h-[120px] rounded-[32px] bg-danger-bg text-[#9b1c1c] flex items-center justify-center">
+        <div className="flex h-[120px] w-[120px] items-center justify-center rounded-[32px] bg-danger-bg text-[#9b1c1c]">
           <IconLock size={56} />
         </div>
       }

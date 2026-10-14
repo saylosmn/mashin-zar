@@ -28,14 +28,23 @@ export function ReportAdSheet({ adId, visible, onClose }: { adId: string; visibl
   const close = () => {
     if (busy) return;
     onClose();
-    setTimeout(() => { setReason(""); setNote(""); setErr(null); setDone(false); }, 300);
+    setTimeout(() => {
+      setReason("");
+      setNote("");
+      setErr(null);
+      setDone(false);
+    }, 300);
   };
 
   async function send() {
     if (!reason) return setErr("Шалтгаанаа сонгоно уу");
     setBusy(true);
     setErr(null);
-    const { error } = await supabase.rpc("report_ad", { p_ad: adId, p_reason: reason, p_note: note.trim().slice(0, 500) || null });
+    const { error } = await supabase.rpc("report_ad", {
+      p_ad: adId,
+      p_reason: reason,
+      p_note: note.trim().slice(0, 500) || null,
+    });
     setBusy(false);
     if (error) setErr(errMsg(error));
     else setDone(true);
@@ -45,15 +54,29 @@ export function ReportAdSheet({ adId, visible, onClose }: { adId: string; visibl
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <Pressable onPress={close} style={{ flex: 1, backgroundColor: "rgba(17,19,23,.55)" }} />
-        <View style={{ backgroundColor: C.paper, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "85%", paddingBottom: Math.max(insets.bottom, 16) }}>
+        <View
+          style={{
+            backgroundColor: C.paper,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            maxHeight: "85%",
+            paddingBottom: Math.max(insets.bottom, 16),
+          }}
+        >
           <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }} keyboardShouldPersistTaps="handled">
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <T w="bold" style={{ fontSize: 18 }}>Зарыг мэдээлэх</T>
-              <Pressable accessibilityLabel="Хаах" onPress={close} hitSlop={12}><Feather name="x" size={22} color={C.ink} /></Pressable>
+              <T w="bold" style={{ fontSize: 18 }}>
+                Зарыг мэдээлэх
+              </T>
+              <Pressable accessibilityLabel="Хаах" onPress={close} hitSlop={12}>
+                <Feather name="x" size={22} color={C.ink} />
+              </Pressable>
             </View>
             {done ? (
               <>
-                <T style={{ fontSize: 15, lineHeight: 22 }}>✓ Баярлалаа. Бид шалгаж, шаардлагатай бол арга хэмжээ авна.</T>
+                <T style={{ fontSize: 15, lineHeight: 22 }}>
+                  ✓ Баярлалаа. Бид шалгаж, шаардлагатай бол арга хэмжээ авна.
+                </T>
                 <Button title="Хаах" onPress={close} />
               </>
             ) : (
@@ -66,14 +89,32 @@ export function ReportAdSheet({ adId, visible, onClose }: { adId: string; visibl
                       accessibilityRole="radio"
                       accessibilityState={{ checked: on }}
                       onPress={() => setReason(r.key)}
-                      style={{ height: 48, borderRadius: 12, borderWidth: on ? 2 : 1, borderColor: on ? C.ink : C.line2, backgroundColor: C.card, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}
+                      style={{
+                        height: 48,
+                        borderRadius: 12,
+                        borderWidth: on ? 2 : 1,
+                        borderColor: on ? C.ink : C.line2,
+                        backgroundColor: C.card,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                        paddingHorizontal: 14,
+                      }}
                     >
                       <Feather name={on ? "check-circle" : "circle"} size={18} color={on ? C.ink : C.muted} />
-                      <T w={on ? "semibold" : "body"} style={{ fontSize: 15 }}>{r.label}</T>
+                      <T w={on ? "semibold" : "body"} style={{ fontSize: 15 }}>
+                        {r.label}
+                      </T>
                     </Pressable>
                   );
                 })}
-                <Input multiline value={note} onChangeText={setNote} maxLength={500} placeholder={reason === "other" ? "Шалтгаанаа бичнэ үү" : "Нэмэлт тайлбар (заавал биш)"} />
+                <Input
+                  multiline
+                  value={note}
+                  onChangeText={setNote}
+                  maxLength={500}
+                  placeholder={reason === "other" ? "Шалтгаанаа бичнэ үү" : "Нэмэлт тайлбар (заавал биш)"}
+                />
                 {err ? <T style={{ color: C.danger, fontSize: 13 }}>{err}</T> : null}
                 <Button title="Илгээх" loading={busy} onPress={send} />
               </>

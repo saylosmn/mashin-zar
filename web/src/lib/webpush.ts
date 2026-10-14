@@ -7,11 +7,13 @@ import { VAPID_PUBLIC_KEY } from "./webpush-key";
 export type PushState = "unsupported" | "ios-install" | "denied" | "off" | "on";
 
 export const isIOS = () =>
-  typeof navigator !== "undefined" && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+  typeof navigator !== "undefined" &&
+  (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
 export const isStandalone = () =>
   typeof window !== "undefined" &&
-  (window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true);
+  (window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as unknown as { standalone?: boolean }).standalone === true);
 
 function keyBytes(b64: string) {
   const pad = "=".repeat((4 - (b64.length % 4)) % 4);
@@ -45,7 +47,8 @@ export async function enablePush(): Promise<PushState> {
   const reg = (await registerSW()) ?? (await navigator.serviceWorker.ready);
   await navigator.serviceWorker.ready;
   let sub = await reg.pushManager.getSubscription();
-  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID_PUBLIC_KEY) });
+  if (!sub)
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID_PUBLIC_KEY) });
   const j = sub.toJSON();
   const supabase = createClient();
   const { error } = await supabase.rpc("save_web_push", {

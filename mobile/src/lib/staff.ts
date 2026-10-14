@@ -17,7 +17,10 @@ export const isStaff = (p?: Profile | null) => p?.role === "admin";
 export const isAdmin = (p?: Profile | null) => p?.role === "admin";
 
 /** Админы RPC дуудаад алдаа гарвал ойлгомжтой цонх харуулна. */
-export async function staffRpc<T = unknown>(name: string, args: Record<string, unknown>): Promise<{ ok: boolean; data: T | null }> {
+export async function staffRpc<T = unknown>(
+  name: string,
+  args: Record<string, unknown>,
+): Promise<{ ok: boolean; data: T | null }> {
   const { data, error } = await supabase.rpc(name, args);
   if (error) {
     Alert.alert("Амжилтгүй", errMsg(error));
@@ -28,10 +31,15 @@ export async function staffRpc<T = unknown>(name: string, args: Record<string, u
 
 export function confirm(title: string, message: string, okText: string, destructive = false): Promise<boolean> {
   return new Promise((resolve) =>
-    Alert.alert(title, message, [
-      { text: "Болих", style: "cancel", onPress: () => resolve(false) },
-      { text: okText, style: destructive ? "destructive" : "default", onPress: () => resolve(true) },
-    ], { cancelable: true, onDismiss: () => resolve(false) }),
+    Alert.alert(
+      title,
+      message,
+      [
+        { text: "Болих", style: "cancel", onPress: () => resolve(false) },
+        { text: okText, style: destructive ? "destructive" : "default", onPress: () => resolve(true) },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) },
+    ),
   );
 }
 
@@ -56,7 +64,10 @@ export async function openContract(contractId: string) {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (!token) throw new Error("Дахин нэвтэрнэ үү");
-    const r = await fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    const r = await fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
     const j = (await r.json().catch(() => ({}))) as { url?: string; error?: string };
     if (!r.ok || !j.url) throw new Error(j.error ?? "Гэрээ нээж чадсангүй");
     await WebBrowser.openBrowserAsync(j.url, { toolbarColor: "#111317", controlsColor: "#F5B800" });

@@ -30,13 +30,24 @@ export function SignaturePad({ onChange }: { onChange: (svg: string | null) => v
 
   const point = (e: React.PointerEvent): [number, number] => {
     const r = canvas.current!.getBoundingClientRect();
-    return [Math.round(((e.clientX - r.left) / r.width) * W * 10) / 10, Math.round(((e.clientY - r.top) / r.height) * H * 10) / 10];
+    return [
+      Math.round(((e.clientX - r.left) / r.width) * W * 10) / 10,
+      Math.round(((e.clientY - r.top) / r.height) * H * 10) / 10,
+    ];
   };
 
   const emit = () => {
     const path = strokes.current
       .filter((s) => s.length > 0)
-      .map((s) => (s.length === 1 ? `M ${s[0][0]} ${s[0][1]} L ${s[0][0] + 0.5} ${s[0][1] + 0.5}` : `M ${s[0][0]} ${s[0][1]} ` + s.slice(1).map((p) => `L ${p[0]} ${p[1]}`).join(" ")))
+      .map((s) =>
+        s.length === 1
+          ? `M ${s[0][0]} ${s[0][1]} L ${s[0][0] + 0.5} ${s[0][1] + 0.5}`
+          : `M ${s[0][0]} ${s[0][1]} ` +
+            s
+              .slice(1)
+              .map((p) => `L ${p[0]} ${p[1]}`)
+              .join(" "),
+      )
       .join(" ");
     const total = strokes.current.reduce((n, s) => n + s.length, 0);
     onChange(total >= 8 ? path : null);
@@ -51,11 +62,11 @@ export function SignaturePad({ onChange }: { onChange: (svg: string | null) => v
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative rounded-xl border-2 border-dashed border-line-2 bg-[#fbfbf9] overflow-hidden">
+      <div className="relative overflow-hidden rounded-xl border-2 border-dashed border-line-2 bg-[#fbfbf9]">
         <canvas
           ref={canvas}
           aria-label="Гарын үсэг зурах талбай"
-          className="block w-full aspect-[3/1] touch-none cursor-crosshair"
+          className="block aspect-[3/1] w-full cursor-crosshair touch-none"
           onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId);
             drawing.current = true;
@@ -94,9 +105,13 @@ export function SignaturePad({ onChange }: { onChange: (svg: string | null) => v
             Энд хуруу эсвэл хулганаар гарын үсгээ зурна уу
           </span>
         )}
-        <span className="pointer-events-none absolute left-[6%] right-[6%] bottom-[22%] border-b border-line-2" />
+        <span className="pointer-events-none absolute right-[6%] bottom-[22%] left-[6%] border-b border-line-2" />
       </div>
-      <button type="button" onClick={clear} className="self-end bg-transparent border-0 p-0 text-[13px] underline text-muted cursor-pointer">
+      <button
+        type="button"
+        onClick={clear}
+        className="cursor-pointer self-end border-0 bg-transparent p-0 text-[13px] text-muted underline"
+      >
         Арилгаж дахин зурах
       </button>
     </div>

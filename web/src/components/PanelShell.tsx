@@ -15,7 +15,10 @@ async function openFlags() {
 /** Шалгах (хэрэглэгч «Төлсөн» дарсан) төлбөрийн тоо */
 async function submittedPayments() {
   const supabase = await createClient();
-  const { count } = await supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "submitted");
+  const { count } = await supabase
+    .from("payments")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "submitted");
   return count ?? 0;
 }
 
@@ -45,8 +48,20 @@ export async function PanelShell({
   const nav: NavItem[] =
     area === "leasing"
       ? [
-          { key: "leasing", href: isAdmin && partner ? `/leasing?partner=${partner}` : "/leasing", label: isAdmin ? "Лизингийн хүсэлтүүд" : "Хүсэлтүүд" },
-          ...(!isAdmin || (partner && partner !== "all") ? [{ key: "leasing-terms", href: isAdmin ? `/leasing?tab=terms&partner=${partner}` : "/leasing?tab=terms", label: "Нөхцөл, шаардлага" }] : []),
+          {
+            key: "leasing",
+            href: isAdmin && partner ? `/leasing?partner=${partner}` : "/leasing",
+            label: isAdmin ? "Лизингийн хүсэлтүүд" : "Хүсэлтүүд",
+          },
+          ...(!isAdmin || (partner && partner !== "all")
+            ? [
+                {
+                  key: "leasing-terms",
+                  href: isAdmin ? `/leasing?tab=terms&partner=${partner}` : "/leasing?tab=terms",
+                  label: "Нөхцөл, шаардлага",
+                },
+              ]
+            : []),
           ...(isAdmin ? [{ key: "admin-leasing", href: "/admin/leasing", label: "← Админ: Лизинг" }] : []),
         ]
       : [
@@ -65,16 +80,21 @@ export async function PanelShell({
           { key: "admin-settings", href: "/admin/settings", label: "Тохиргоо" },
         ];
   return (
-    <div className="min-h-dvh flex flex-col lg:flex-row">
+    <div className="flex min-h-dvh flex-col lg:flex-row">
       <nav
         aria-label={area === "admin" ? "Админ цэс" : "Лизингийн цэс"}
-        className="sticky top-0 z-30 lg:h-dvh w-full lg:w-[260px] lg:flex-none bg-ink text-paper lg:px-4 lg:py-6 flex flex-col gap-1.5"
+        className="sticky top-0 z-30 flex w-full flex-col gap-1.5 bg-ink text-paper lg:h-dvh lg:w-[260px] lg:flex-none lg:px-4 lg:py-6"
       >
         <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-1 lg:px-2 lg:pt-0 lg:pb-5">
-          <Logo sub={area === "admin" ? "Админ · бүх эрх" : "Лизингийн түнш"} href={area === "admin" ? "/admin" : "/leasing"} />
-          <Link href="/" className="lg:hidden text-[13px] text-pale no-underline whitespace-nowrap">← Сайт</Link>
+          <Logo
+            sub={area === "admin" ? "Админ · бүх эрх" : "Лизингийн түнш"}
+            href={area === "admin" ? "/admin" : "/leasing"}
+          />
+          <Link href="/" className="text-[13px] whitespace-nowrap text-pale no-underline lg:hidden">
+            ← Сайт
+          </Link>
         </div>
-        <div className="flex lg:flex-col gap-1.5 overflow-x-auto px-3 pb-3 lg:p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex [scrollbar-width:none] gap-1.5 overflow-x-auto px-3 pb-3 lg:flex-col lg:p-0 [&::-webkit-scrollbar]:hidden">
           {nav.map((n) => {
             const on = n.key === active;
             return (
@@ -82,25 +102,33 @@ export async function PanelShell({
                 key={n.key}
                 href={n.href}
                 aria-current={on ? "page" : undefined}
-                className={`shrink-0 whitespace-nowrap h-9 lg:h-11 px-3 rounded-full lg:rounded-[10px] flex items-center justify-between gap-2 text-[13px] lg:text-[14px] no-underline ${on ? "bg-yellow text-ink font-semibold" : "text-[#e2e4df] bg-ink-2 lg:bg-transparent hover:bg-ink-2"}`}
+                className={`flex h-9 shrink-0 items-center justify-between gap-2 rounded-full px-3 text-[13px] whitespace-nowrap no-underline lg:h-11 lg:rounded-[10px] lg:text-[14px] ${on ? "bg-yellow font-semibold text-ink" : "bg-ink-2 text-[#e2e4df] hover:bg-ink-2 lg:bg-transparent"}`}
               >
                 {n.label}
                 {n.badge ? (
-                  <span className={`mono text-[11px] font-bold px-2 py-0.5 rounded-full ${on ? "bg-ink text-yellow" : "bg-[#ff7a1a] text-ink"}`}>{n.badge}</span>
+                  <span
+                    className={`mono rounded-full px-2 py-0.5 text-[11px] font-bold ${on ? "bg-ink text-yellow" : "bg-[#ff7a1a] text-ink"}`}
+                  >
+                    {n.badge}
+                  </span>
                 ) : null}
               </Link>
             );
           })}
         </div>
-        <div className="hidden lg:flex mt-auto pt-6 flex-col gap-2 px-2">
-          <Link href="/" className="text-[13px] text-pale">← Сайт руу буцах</Link>
-          <span className="text-[12px] text-[#8a9099] truncate">{profile.email}</span>
+        <div className="mt-auto hidden flex-col gap-2 px-2 pt-6 lg:flex">
+          <Link href="/" className="text-[13px] text-pale">
+            ← Сайт руу буцах
+          </Link>
+          <span className="truncate text-[12px] text-[#8a9099]">{profile.email}</span>
           <form action="/auth/signout" method="post">
-            <button className="text-[13px] text-pale underline bg-transparent border-0 p-0 cursor-pointer">Гарах</button>
+            <button className="cursor-pointer border-0 bg-transparent p-0 text-[13px] text-pale underline">
+              Гарах
+            </button>
           </form>
         </div>
       </nav>
-      <main className="flex-1 min-w-0 px-4 sm:px-[clamp(16px,3vw,40px)] pt-5 lg:pt-7 pb-12 flex flex-col gap-5">
+      <main className="flex min-w-0 flex-1 flex-col gap-5 px-4 pt-5 pb-12 sm:px-[clamp(16px,3vw,40px)] lg:pt-7">
         <OfflineBanner />
         <LiveSync userId={profile.id} role={profile.role} partnerId={profile.partner_id} />
         {children}
@@ -109,7 +137,19 @@ export async function PanelShell({
   );
 }
 
-export function Kpi({ label, value, sub, dark = false, href }: { label: string; value: string | number; sub?: string; dark?: boolean; href?: string }) {
+export function Kpi({
+  label,
+  value,
+  sub,
+  dark = false,
+  href,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  dark?: boolean;
+  href?: string;
+}) {
   const cls = `rounded-2xl p-3.5 sm:p-4.5 flex flex-col gap-1 sm:gap-1.5 no-underline min-w-0 ${dark ? "bg-ink text-paper" : "card"}`;
   const inner = (
     <>
@@ -118,11 +158,27 @@ export function Kpi({ label, value, sub, dark = false, href }: { label: string; 
       {sub && <span className={`text-[12px] ${dark ? "text-[#c9cdd3]" : "text-body"}`}>{sub}</span>}
     </>
   );
-  return href ? <Link href={href} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
+  return href ? (
+    <Link href={href} className={cls}>
+      {inner}
+    </Link>
+  ) : (
+    <div className={cls}>{inner}</div>
+  );
 }
 
 export function Flash({ ok, err }: { ok?: string; err?: string }) {
-  if (err) return <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">{err}</p>;
-  if (ok) return <p role="status" className="m-0 card px-4 py-3 text-[14px]">✓ {ok}</p>;
+  if (err)
+    return (
+      <p role="alert" className="m-0 rounded-xl bg-danger-bg px-4 py-3 text-[14px] text-[#9b1c1c]">
+        {err}
+      </p>
+    );
+  if (ok)
+    return (
+      <p role="status" className="card m-0 px-4 py-3 text-[14px]">
+        ✓ {ok}
+      </p>
+    );
   return null;
 }

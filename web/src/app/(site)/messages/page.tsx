@@ -22,45 +22,69 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   ];
 
   return (
-    <main className="max-w-[860px] w-full mx-auto px-4 sm:px-6 pt-8 pb-16 flex flex-col gap-5">
-      <div className="flex flex-wrap justify-between items-center gap-3">
+    <main className="mx-auto flex w-full max-w-[860px] flex-col gap-5 px-4 pt-8 pb-16 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="h-display m-0 text-[clamp(24px,3vw,32px)]">Чат</h1>
         <nav aria-label="Шүүлтүүр" className="flex gap-1.5">
           {tabs.map((t) => (
-            <Link key={t.key} href={t.key === "all" ? "/messages" : `/messages?tab=${t.key}`} aria-current={tab === t.key ? "page" : undefined}
-              className={`h-9 px-3.5 rounded-full flex items-center text-[13px] no-underline ${tab === t.key ? "bg-ink text-yellow font-semibold" : "bg-card border border-line-2"}`}>
+            <Link
+              key={t.key}
+              href={t.key === "all" ? "/messages" : `/messages?tab=${t.key}`}
+              aria-current={tab === t.key ? "page" : undefined}
+              className={`flex h-9 items-center rounded-full px-3.5 text-[13px] no-underline ${tab === t.key ? "bg-ink font-semibold text-yellow" : "border border-line-2 bg-card"}`}
+            >
               {t.label} {t.n}
             </Link>
           ))}
         </nav>
       </div>
-      {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-4 py-3 text-[14px]">Уншиж чадсангүй: {error.message}</p>}
+      {error && (
+        <p role="alert" className="m-0 rounded-xl bg-danger-bg px-4 py-3 text-[14px] text-[#9b1c1c]">
+          Уншиж чадсангүй: {error.message}
+        </p>
+      )}
       {rows.length === 0 ? (
-        <div className="card px-6 py-12 flex flex-col items-center gap-3 text-center">
-          <span className="text-[40px]" aria-hidden>💬</span>
-          <p className="m-0 text-[15px] text-body max-w-[380px]">Чат алга. Зарын хуудсан дээрх «Худалдагчтай чатлах» товчоор асуултаа илгээнэ үү.</p>
-          <Link href="/" className="btn btn-lg btn-ink">Зарууд үзэх</Link>
+        <div className="card flex flex-col items-center gap-3 px-6 py-12 text-center">
+          <span className="text-[40px]" aria-hidden>
+            💬
+          </span>
+          <p className="m-0 max-w-[380px] text-[15px] text-body">
+            Чат алга. Зарын хуудсан дээрх «Худалдагчтай чатлах» товчоор асуултаа илгээнэ үү.
+          </p>
+          <Link href="/" className="btn btn-lg btn-ink">
+            Зарууд үзэх
+          </Link>
         </div>
       ) : (
-        <ul className="list-none p-0 m-0 flex flex-col gap-2">
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {rows.map((c) => (
             <li key={c.id}>
-              <Link href={`/messages/${c.id}`} className={`card p-3 flex items-center gap-3 no-underline hover:border-ink ${c.unread ? "border-ink" : ""}`}>
-                <CarPhoto path={c.photo} alt="" className="w-[72px] h-[56px] rounded-lg shrink-0" label="IMG" />
-                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+              <Link
+                href={`/messages/${c.id}`}
+                className={`card flex items-center gap-3 p-3 no-underline hover:border-ink ${c.unread ? "border-ink" : ""}`}
+              >
+                <CarPhoto path={c.photo} alt="" className="h-[56px] w-[72px] shrink-0 rounded-lg" label="IMG" />
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className={`truncate text-[15px] ${c.unread ? "font-bold" : "font-semibold"}`}>{c.other_name}</span>
-                    <span className="text-[12px] text-muted shrink-0">{timeAgo(c.last_message_at)}</span>
+                    <span className={`truncate text-[15px] ${c.unread ? "font-bold" : "font-semibold"}`}>
+                      {c.other_name}
+                    </span>
+                    <span className="shrink-0 text-[12px] text-muted">{timeAgo(c.last_message_at)}</span>
                   </div>
-                  <span className="text-[12px] text-muted truncate">
-                    {c.role === "buyer" ? "Авах" : "Зарах"} · {c.car}{c.price ? ` · ${money(c.price)}` : ""}{c.ad_status && c.ad_status !== "active" ? " · идэвхгүй" : ""}
+                  <span className="truncate text-[12px] text-muted">
+                    {c.role === "buyer" ? "Авах" : "Зарах"} · {c.car}
+                    {c.price ? ` · ${money(c.price)}` : ""}
+                    {c.ad_status && c.ad_status !== "active" ? " · идэвхгүй" : ""}
                   </span>
-                  <span className={`text-[13px] truncate ${c.unread ? "text-ink font-semibold" : "text-body"}`}>
-                    {c.last_from_me ? "Та: " : ""}{c.last_message ?? ""}
+                  <span className={`truncate text-[13px] ${c.unread ? "font-semibold text-ink" : "text-body"}`}>
+                    {c.last_from_me ? "Та: " : ""}
+                    {c.last_message ?? ""}
                   </span>
                 </div>
                 {c.unread > 0 && (
-                  <span className="mono min-w-6 h-6 px-1.5 rounded-full bg-[#ff7a1a] text-ink text-[12px] font-bold flex items-center justify-center shrink-0">{c.unread}</span>
+                  <span className="mono flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-[#ff7a1a] px-1.5 text-[12px] font-bold text-ink">
+                    {c.unread}
+                  </span>
                 )}
               </Link>
             </li>

@@ -82,7 +82,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const total = count ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE));
   const cy = settings.cutoff_year;
-  const hasFilters = Boolean(q || sp.brand || sp.model || sp.pmin || sp.pmax || sp.ymin || sp.ymax || sp.imin || sp.imax);
+  const hasFilters = Boolean(
+    q || sp.brand || sp.model || sp.pmin || sp.pmax || sp.ymin || sp.ymax || sp.imin || sp.imax,
+  );
 
   const tabs = [
     { key: undefined, label: "Бүгд", n: all.count ?? 0 },
@@ -91,13 +93,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   ];
 
   return (
-    <main className="max-w-[1280px] w-full mx-auto px-4 sm:px-6 pt-8 pb-16 flex flex-col gap-6">
+    <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 pt-8 pb-16 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <h1 className="h-display m-0 text-[clamp(26px,3vw,38px)]">Худалдаалагдаж буй машинууд</h1>
           <span className="text-[14px] text-muted">Шалгагдсан зарууд</span>
         </div>
-        <nav aria-label="Ангилал" className="flex flex-wrap gap-1 p-1 bg-soft rounded-xl">
+        <nav aria-label="Ангилал" className="flex flex-wrap gap-1 rounded-xl bg-soft p-1">
           {tabs.map((t) => {
             const on = (t.key ?? "") === (cat ?? "");
             return (
@@ -105,8 +107,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                 key={t.label}
                 href={href(sp, { cat: t.key, page: undefined })}
                 aria-current={on ? "page" : undefined}
-                className={`h-10 px-4 rounded-[9px] flex items-center text-[14px] no-underline ${
-                  on ? "bg-ink text-yellow font-semibold" : "text-body"
+                className={`flex h-10 items-center rounded-[9px] px-4 text-[14px] no-underline ${
+                  on ? "bg-ink font-semibold text-yellow" : "text-body"
                 }`}
               >
                 {t.label} · {t.n}
@@ -116,93 +118,146 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </nav>
       </div>
 
-      <div className="flex flex-wrap gap-6 items-start">
-        <MobileCollapse label="Шүүлтүүр" count={[sp.brand, sp.model, sp.pmin || sp.pmax, sp.ymin || sp.ymax, sp.imin || sp.imax].filter(Boolean).length} className="flex-[1_1_240px] max-w-full">
-        <aside aria-label="Шүүлтүүр" className="card p-5 flex flex-col gap-4">
-          <form action="/" className="flex flex-col gap-4">
-            {cat && <input type="hidden" name="cat" value={cat} />}
-            {q && <input type="hidden" name="q" value={q} />}
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-[15px]">Шүүлтүүр</span>
-              {hasFilters && (
-                <Link href={cat ? `/?cat=${cat}` : "/"} className="text-[13px] text-muted">
-                  Цэвэрлэх
-                </Link>
-              )}
-            </div>
-            <label className="label">
-              Марк
-              <select name="brand" defaultValue={sp.brand ?? ""} className="input h-11">
-                <option value="">Бүгд</option>
-                {Object.keys(BRANDS).map((b) => (
-                  <option key={b}>{b}</option>
-                ))}
-              </select>
-            </label>
-            <label className="label">
-              Загвар
-              <input name="model" defaultValue={sp.model ?? ""} placeholder="Жишээ: Prius" className="input h-11" />
-            </label>
-            <fieldset className="border-0 p-0 m-0 flex flex-col gap-1.5">
-              <legend className="text-[13px] font-semibold pb-1.5">Үнэ (сая ₮)</legend>
-              <div className="flex gap-2">
-                <input name="pmin" type="number" min="0" defaultValue={sp.pmin} placeholder="Доод" aria-label="Доод үнэ" className="input h-11" />
-                <input name="pmax" type="number" min="0" defaultValue={sp.pmax} placeholder="Дээд" aria-label="Дээд үнэ" className="input h-11" />
+      <div className="flex flex-wrap items-start gap-6">
+        <MobileCollapse
+          label="Шүүлтүүр"
+          count={
+            [sp.brand, sp.model, sp.pmin || sp.pmax, sp.ymin || sp.ymax, sp.imin || sp.imax].filter(Boolean).length
+          }
+          className="max-w-full flex-[1_1_240px]"
+        >
+          <aside aria-label="Шүүлтүүр" className="card flex flex-col gap-4 p-5">
+            <form action="/" className="flex flex-col gap-4">
+              {cat && <input type="hidden" name="cat" value={cat} />}
+              {q && <input type="hidden" name="q" value={q} />}
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-bold">Шүүлтүүр</span>
+                {hasFilters && (
+                  <Link href={cat ? `/?cat=${cat}` : "/"} className="text-[13px] text-muted">
+                    Цэвэрлэх
+                  </Link>
+                )}
               </div>
-            </fieldset>
-            <fieldset className="border-0 p-0 m-0 flex flex-col gap-1.5">
-              <legend className="text-[13px] font-semibold pb-1.5">Үйлдвэрлэсэн он</legend>
-              <div className="flex gap-2">
-                <input name="ymin" type="number" defaultValue={sp.ymin} placeholder="Эхлэх" aria-label="Эхлэх он" className="input h-11" />
-                <input name="ymax" type="number" defaultValue={sp.ymax} placeholder="Дуусах" aria-label="Дуусах он" className="input h-11" />
-              </div>
-            </fieldset>
-            <fieldset className="border-0 p-0 m-0 flex flex-col gap-1.5">
-              <legend className="text-[13px] font-semibold pb-1.5">Орж ирсэн он</legend>
-              <div className="flex gap-2">
-                <input name="imin" type="number" defaultValue={sp.imin} placeholder="Эхлэх" aria-label="Орж ирсэн, эхлэх" className="input h-11" />
-                <input name="imax" type="number" defaultValue={sp.imax} placeholder="Дуусах" aria-label="Орж ирсэн, дуусах" className="input h-11" />
-              </div>
-            </fieldset>
-            <label className="label">
-              Эрэмбэ
-              <select name="sort" defaultValue={sp.sort ?? ""} className="input h-11">
-                <option value="">Шинэ нь эхэндээ</option>
-                <option value="price_asc">Үнэ өсөхөөр</option>
-                <option value="price_desc">Үнэ буурахаар</option>
-              </select>
-            </label>
-            <button className="btn btn-ink h-[46px]">
-              <IconSearch size={18} /> Хайх
-            </button>
-          </form>
-          {profile ? (
-            <form action={saveFilterAlert} className="border-t border-[#ecede9] pt-4">
-              <input type="hidden" name="cat" value={cat ?? ""} />
-              <input type="hidden" name="brand" value={sp.brand ?? ""} />
-              <input type="hidden" name="pmax" value={sp.pmax ?? ""} />
-              <button className="btn btn-ghost w-full text-[13px] h-auto py-2.5 whitespace-normal text-left">
-                <IconBell size={18} /> Энэ шүүлтүүрт тохирох шинэ зар орвол мэдэгдэх
+              <label className="label">
+                Марк
+                <select name="brand" defaultValue={sp.brand ?? ""} className="input h-11">
+                  <option value="">Бүгд</option>
+                  {Object.keys(BRANDS).map((b) => (
+                    <option key={b}>{b}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="label">
+                Загвар
+                <input name="model" defaultValue={sp.model ?? ""} placeholder="Жишээ: Prius" className="input h-11" />
+              </label>
+              <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+                <legend className="pb-1.5 text-[13px] font-semibold">Үнэ (сая ₮)</legend>
+                <div className="flex gap-2">
+                  <input
+                    name="pmin"
+                    type="number"
+                    min="0"
+                    defaultValue={sp.pmin}
+                    placeholder="Доод"
+                    aria-label="Доод үнэ"
+                    className="input h-11"
+                  />
+                  <input
+                    name="pmax"
+                    type="number"
+                    min="0"
+                    defaultValue={sp.pmax}
+                    placeholder="Дээд"
+                    aria-label="Дээд үнэ"
+                    className="input h-11"
+                  />
+                </div>
+              </fieldset>
+              <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+                <legend className="pb-1.5 text-[13px] font-semibold">Үйлдвэрлэсэн он</legend>
+                <div className="flex gap-2">
+                  <input
+                    name="ymin"
+                    type="number"
+                    defaultValue={sp.ymin}
+                    placeholder="Эхлэх"
+                    aria-label="Эхлэх он"
+                    className="input h-11"
+                  />
+                  <input
+                    name="ymax"
+                    type="number"
+                    defaultValue={sp.ymax}
+                    placeholder="Дуусах"
+                    aria-label="Дуусах он"
+                    className="input h-11"
+                  />
+                </div>
+              </fieldset>
+              <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+                <legend className="pb-1.5 text-[13px] font-semibold">Орж ирсэн он</legend>
+                <div className="flex gap-2">
+                  <input
+                    name="imin"
+                    type="number"
+                    defaultValue={sp.imin}
+                    placeholder="Эхлэх"
+                    aria-label="Орж ирсэн, эхлэх"
+                    className="input h-11"
+                  />
+                  <input
+                    name="imax"
+                    type="number"
+                    defaultValue={sp.imax}
+                    placeholder="Дуусах"
+                    aria-label="Орж ирсэн, дуусах"
+                    className="input h-11"
+                  />
+                </div>
+              </fieldset>
+              <label className="label">
+                Эрэмбэ
+                <select name="sort" defaultValue={sp.sort ?? ""} className="input h-11">
+                  <option value="">Шинэ нь эхэндээ</option>
+                  <option value="price_asc">Үнэ өсөхөөр</option>
+                  <option value="price_desc">Үнэ буурахаар</option>
+                </select>
+              </label>
+              <button className="btn btn-ink h-[46px]">
+                <IconSearch size={18} /> Хайх
               </button>
             </form>
-          ) : (
-            <div className="border-t border-[#ecede9] pt-4">
-              <Link href={loginHref(here)} className="btn btn-ghost w-full text-[13px] h-auto py-2.5 whitespace-normal text-left">
-                <IconBell size={18} /> Нэвтэрч, энэ шүүлтүүрт тохирох шинэ зарын мэдэгдэл авах
-              </Link>
-            </div>
-          )}
-        </aside>
+            {profile ? (
+              <form action={saveFilterAlert} className="border-t border-[#ecede9] pt-4">
+                <input type="hidden" name="cat" value={cat ?? ""} />
+                <input type="hidden" name="brand" value={sp.brand ?? ""} />
+                <input type="hidden" name="pmax" value={sp.pmax ?? ""} />
+                <button className="btn btn-ghost h-auto w-full py-2.5 text-left text-[13px] whitespace-normal">
+                  <IconBell size={18} /> Энэ шүүлтүүрт тохирох шинэ зар орвол мэдэгдэх
+                </button>
+              </form>
+            ) : (
+              <div className="border-t border-[#ecede9] pt-4">
+                <Link
+                  href={loginHref(here)}
+                  className="btn btn-ghost h-auto w-full py-2.5 text-left text-[13px] whitespace-normal"
+                >
+                  <IconBell size={18} /> Нэвтэрч, энэ шүүлтүүрт тохирох шинэ зарын мэдэгдэл авах
+                </Link>
+              </div>
+            )}
+          </aside>
         </MobileCollapse>
 
-        <section className="flex-[999_1_560px] min-w-0 flex flex-col gap-3.5">
+        <section className="flex min-w-0 flex-[999_1_560px] flex-col gap-3.5">
           <span className="text-[14px] text-muted">{total} зар олдлоо</span>
           {ads.length === 0 ? (
-            <div className="card px-6 py-14 flex flex-col items-center gap-5 text-center">
-              <div className="w-[104px] h-[104px] rounded-[28px] bg-paper border border-line flex items-center justify-center">
+            <div className="card flex flex-col items-center gap-5 px-6 py-14 text-center">
+              <div className="flex h-[104px] w-[104px] items-center justify-center rounded-[28px] border border-line bg-paper">
                 <IconSearch size={48} />
               </div>
-              <div className="flex flex-col gap-2 max-w-[420px]">
+              <div className="flex max-w-[420px] flex-col gap-2">
                 <h2 className="h-display m-0 text-[22px]">Илэрц олдсонгүй</h2>
                 <p className="m-0 text-[15px] leading-relaxed text-body">
                   {hasFilters
@@ -210,21 +265,31 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     : "Одоогоор идэвхтэй зар алга. Анхны зараа тавиарай!"}
                 </p>
               </div>
-              <div className="flex gap-2.5 flex-wrap justify-center">
-                {hasFilters && <Link href="/" className="btn btn-lg btn-ghost">Шүүлтүүр цэвэрлэх</Link>}
-                <Link href={profile ? "/post" : loginHref("/post")} className="btn btn-lg btn-ink">Зар нэмэх</Link>
+              <div className="flex flex-wrap justify-center gap-2.5">
+                {hasFilters && (
+                  <Link href="/" className="btn btn-lg btn-ghost">
+                    Шүүлтүүр цэвэрлэх
+                  </Link>
+                )}
+                <Link href={profile ? "/post" : loginHref("/post")} className="btn btn-lg btn-ink">
+                  Зар нэмэх
+                </Link>
               </div>
             </div>
           ) : (
-            <div className="grid gap-[18px] grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-[18px]">
               {ads.map((a) => (
                 <AdCard key={a.id} ad={a} cutoff={cy} />
               ))}
             </div>
           )}
           {pages > 1 && (
-            <nav aria-label="Хуудаслалт" className="flex justify-center gap-1.5 pt-3 flex-wrap">
-              {page > 1 && <Link href={href(sp, { page: String(page - 1) })} className="btn btn-ghost">Өмнөх</Link>}
+            <nav aria-label="Хуудаслалт" className="flex flex-wrap justify-center gap-1.5 pt-3">
+              {page > 1 && (
+                <Link href={href(sp, { page: String(page - 1) })} className="btn btn-ghost">
+                  Өмнөх
+                </Link>
+              )}
               {Array.from({ length: pages }, (_, i) => i + 1)
                 .filter((n) => Math.abs(n - page) <= 2 || n === 1 || n === pages)
                 .map((n) => (
@@ -237,7 +302,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                     {n}
                   </Link>
                 ))}
-              {page < pages && <Link href={href(sp, { page: String(page + 1) })} className="btn btn-ghost">Дараах</Link>}
+              {page < pages && (
+                <Link href={href(sp, { page: String(page + 1) })} className="btn btn-ghost">
+                  Дараах
+                </Link>
+              )}
             </nav>
           )}
         </section>

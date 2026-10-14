@@ -24,7 +24,7 @@ export function RemoveFromCompare({ id }: { id: string }) {
   return (
     <button
       type="button"
-      className="text-[12px] text-muted underline bg-transparent border-0 p-0 cursor-pointer self-start"
+      className="cursor-pointer self-start border-0 bg-transparent p-0 text-[12px] text-muted underline"
       onClick={() => {
         const next = toggleId(ids.includes(id) ? ids : [...ids, id], id);
         set(next);

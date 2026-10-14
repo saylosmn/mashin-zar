@@ -51,7 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const meta = u.user?.user_metadata ?? {};
       const { data: created } = await supabase
         .from("profiles")
-        .insert({ id: uid, email: u.user?.email, full_name: meta.full_name ?? meta.name ?? null, avatar_url: meta.avatar_url ?? null })
+        .insert({
+          id: uid,
+          email: u.user?.email,
+          full_name: meta.full_name ?? meta.name ?? null,
+          avatar_url: meta.avatar_url ?? null,
+        })
         .select("*")
         .maybeSingle();
       setProfile((created as Profile) ?? null);
@@ -83,10 +88,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   // Профайл (эрх, хаагдсан эсэх) болон тохиргоо өөрчлөгдвөл шууд шинэчилнэ
-  useLiveSync((e) => {
-    const uid = session?.user.id;
-    if (uid && (e.table !== "profiles" || !e.id || e.id === uid)) loadProfile(uid);
-  }, ["profiles", "settings", "staff_invites"]);
+  useLiveSync(
+    (e) => {
+      const uid = session?.user.id;
+      if (uid && (e.table !== "profiles" || !e.id || e.id === uid)) loadProfile(uid);
+    },
+    ["profiles", "settings", "staff_invites"],
+  );
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo = makeRedirectUri({ scheme: "mashinzar", path: "auth/callback" });

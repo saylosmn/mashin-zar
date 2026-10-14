@@ -25,29 +25,41 @@ export function OptionPicker({ value, onChange }: { value: string[]; onChange: (
         type="button"
         aria-pressed={on}
         onClick={() => toggle(o)}
-        className={`h-9 px-3 rounded-full text-[13px] cursor-pointer border ${on ? "bg-ink text-paper border-ink" : "bg-card border-line-2 text-ink hover:border-ink"}`}
+        className={`h-9 cursor-pointer rounded-full border px-3 text-[13px] ${on ? "border-ink bg-ink text-paper" : "border-line-2 bg-card text-ink hover:border-ink"}`}
       >
-        {on ? "✓ " : ""}{o}
+        {on ? "✓ " : ""}
+        {o}
       </button>
     );
   };
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2 items-center">
-        <input value={q} onChange={(e) => setQ(e.target.value)} type="search" placeholder="Опшн хайх (жишээ: камер, люк)" className="input h-10 flex-[1_1_220px]" aria-label="Опшн хайх" />
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          type="search"
+          placeholder="Опшн хайх (жишээ: камер, люк)"
+          className="input h-10 flex-[1_1_220px]"
+          aria-label="Опшн хайх"
+        />
         <span className="text-[13px] text-muted">{value.length} сонгосон</span>
       </div>
 
       {term ? (
         <div className="flex flex-wrap gap-2">
-          {OPTION_GROUPS.flatMap((g) => g.items).filter((o) => o.toLowerCase().includes(term)).map((o) => <Chip key={o} o={o} />)}
+          {OPTION_GROUPS.flatMap((g) => g.items)
+            .filter((o) => o.toLowerCase().includes(term))
+            .map((o) => (
+              <Chip key={o} o={o} />
+            ))}
           {!OPTION_GROUPS.some((g) => g.items.some((o) => o.toLowerCase().includes(term))) && (
             <span className="text-[13px] text-muted">Олдсонгүй — доороос өөрөө нэмж болно.</span>
           )}
         </div>
       ) : (
-        <div className="flex flex-col divide-y divide-line border border-line rounded-xl overflow-hidden">
+        <div className="flex flex-col divide-y divide-line overflow-hidden rounded-xl border border-line">
           {OPTION_GROUPS.map((g) => {
             const n = g.items.filter((o) => value.includes(o)).length;
             const isOpen = open === g.title;
@@ -57,17 +69,25 @@ export function OptionPicker({ value, onChange }: { value: string[]; onChange: (
                   type="button"
                   aria-expanded={isOpen}
                   onClick={() => setOpen(isOpen ? null : g.title)}
-                  className="w-full h-11 px-4 flex items-center justify-between bg-card text-[14px] font-semibold cursor-pointer border-0"
+                  className="flex h-11 w-full cursor-pointer items-center justify-between border-0 bg-card px-4 text-[14px] font-semibold"
                 >
-                  <span>{g.title} <span className="text-muted font-normal">· {g.items.length}</span></span>
+                  <span>
+                    {g.title} <span className="font-normal text-muted">· {g.items.length}</span>
+                  </span>
                   <span className="flex items-center gap-2">
-                    {n > 0 && <span className="mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-ink text-yellow">{n}</span>}
+                    {n > 0 && (
+                      <span className="mono rounded-full bg-ink px-2 py-0.5 text-[11px] font-bold text-yellow">
+                        {n}
+                      </span>
+                    )}
                     <span className={`transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
                   </span>
                 </button>
                 {isOpen && (
-                  <div className="flex flex-wrap gap-2 px-4 pb-4 pt-1 bg-card">
-                    {g.items.map((o) => <Chip key={o} o={o} />)}
+                  <div className="flex flex-wrap gap-2 bg-card px-4 pt-1 pb-4">
+                    {g.items.map((o) => (
+                      <Chip key={o} o={o} />
+                    ))}
                   </div>
                 )}
               </div>
@@ -78,10 +98,12 @@ export function OptionPicker({ value, onChange }: { value: string[]; onChange: (
 
       {extra.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {extra.map((o) => <Chip key={o} o={o} />)}
+          {extra.map((o) => (
+            <Chip key={o} o={o} />
+          ))}
         </div>
       )}
-      <div className="flex gap-2 items-center">
+      <div className="flex items-center gap-2">
         <input
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
@@ -94,7 +116,9 @@ export function OptionPicker({ value, onChange }: { value: string[]; onChange: (
           placeholder="+ Жагсаалтад байхгүй опшн"
           className="input h-10 flex-[1_1_220px]"
         />
-        <button type="button" onClick={addCustom} className="btn btn-ghost h-10">Нэмэх</button>
+        <button type="button" onClick={addCustom} className="btn btn-ghost h-10">
+          Нэмэх
+        </button>
       </div>
     </div>
   );

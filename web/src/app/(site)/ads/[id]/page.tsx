@@ -48,7 +48,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     ad.year_imported ? `${ad.year_imported} онд орж ирсэн` : null,
     ad.seller_city,
     ad.description?.replace(/\s+/g, " ").slice(0, 120),
-  ].filter(Boolean).join(" · ");
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const img = photoUrl(ad.photos[0]);
   const url = `${siteUrl()}/ads/${ad.id}`;
   return {
@@ -56,7 +58,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     description,
     alternates: { canonical: url },
     robots: ad.status === "active" ? undefined : { index: false },
-    openGraph: { type: "website", url, title, description, siteName: SITE_NAME, locale: "mn_MN", images: img ? [{ url: img, alt: `${ad.brand} ${ad.model}` }] : undefined },
+    openGraph: {
+      type: "website",
+      url,
+      title,
+      description,
+      siteName: SITE_NAME,
+      locale: "mn_MN",
+      images: img ? [{ url: img, alt: `${ad.brand} ${ad.model}` }] : undefined,
+    },
     twitter: { card: img ? "summary_large_image" : "summary", title, description, images: img ? [img] : undefined },
   };
 }
@@ -79,42 +89,65 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
   const exp = expiryInfo(ad.expires_at);
   const loginHref = me ? null : `/login?next=${encodeURIComponent(`/ads/${ad.id}`)}`;
   // Хайлтын системд зориулсан бүтэцтэй өгөгдөл (schema.org/Car)
-  const jsonLd = ad.status === "active" ? {
-    "@context": "https://schema.org",
-    "@type": "Car",
-    name: `${ad.brand} ${ad.model}${ad.trim ? ` ${ad.trim}` : ""}`,
-    brand: { "@type": "Brand", name: ad.brand },
-    model: ad.model,
-    vehicleModelDate: String(ad.year_made),
-    productionDate: String(ad.year_made),
-    image: ad.photos.slice(0, 5).map((p) => photoUrl(p)).filter(Boolean),
-    description: ad.description ?? undefined,
-    url: `${siteUrl()}/ads/${ad.id}`,
-    offers: { "@type": "Offer", price: ad.price, priceCurrency: "MNT", availability: "https://schema.org/InStock", url: `${siteUrl()}/ads/${ad.id}` },
-  } : null;
+  const jsonLd =
+    ad.status === "active"
+      ? {
+          "@context": "https://schema.org",
+          "@type": "Car",
+          name: `${ad.brand} ${ad.model}${ad.trim ? ` ${ad.trim}` : ""}`,
+          brand: { "@type": "Brand", name: ad.brand },
+          model: ad.model,
+          vehicleModelDate: String(ad.year_made),
+          productionDate: String(ad.year_made),
+          image: ad.photos
+            .slice(0, 5)
+            .map((p) => photoUrl(p))
+            .filter(Boolean),
+          description: ad.description ?? undefined,
+          url: `${siteUrl()}/ads/${ad.id}`,
+          offers: {
+            "@type": "Offer",
+            price: ad.price,
+            priceCurrency: "MNT",
+            availability: "https://schema.org/InStock",
+            url: `${siteUrl()}/ads/${ad.id}`,
+          },
+        }
+      : null;
 
   return (
-    <main className="max-w-[1280px] w-full mx-auto px-4 sm:px-6 pt-6 pb-16 flex flex-col gap-6">
+    <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 pt-6 pb-16 sm:px-6">
       {jsonLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+        />
       )}
-      <nav aria-label="Зам" className="flex gap-2 text-[13px] text-muted flex-wrap">
-        <Link href="/" className="text-muted">Зарууд</Link>
+      <nav aria-label="Зам" className="flex flex-wrap gap-2 text-[13px] text-muted">
+        <Link href="/" className="text-muted">
+          Зарууд
+        </Link>
         <span>/</span>
-        <Link href={`/?cat=${ad.category}`} className="text-muted">{categoryLong(ad.category, cy)}</Link>
+        <Link href={`/?cat=${ad.category}`} className="text-muted">
+          {categoryLong(ad.category, cy)}
+        </Link>
         <span>/</span>
-        <span className="text-ink">{ad.brand} {ad.model}</span>
+        <span className="text-ink">
+          {ad.brand} {ad.model}
+        </span>
       </nav>
 
       {ad.status === "active" && mine && exp.expired && (
-        <div role="status" className="card px-5 py-4 flex items-center gap-3 flex-wrap">
+        <div role="status" className="card flex flex-wrap items-center gap-3 px-5 py-4">
           <span className="badge bg-danger-bg text-[#9b1c1c]">Хугацаа дууссан</span>
           <span className="text-[14px] text-body">Энэ зар нийтэд харагдахаа больсон.</span>
-          <Link href="/my" className="btn btn-sm btn-ink ml-auto">Сунгах</Link>
+          <Link href="/my" className="btn btn-sm btn-ink ml-auto">
+            Сунгах
+          </Link>
         </div>
       )}
       {ad.status !== "active" && (
-        <div role="status" className="card px-5 py-4 flex items-center gap-3 flex-wrap">
+        <div role="status" className="card flex flex-wrap items-center gap-3 px-5 py-4">
           <StatusBadge status={ad.status as AdStatus} />
           <span className="text-[14px] text-body">
             {ad.status === "pending"
@@ -128,54 +161,58 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
         </div>
       )}
 
-      <div className="flex flex-wrap gap-7 items-start">
-        <div className="flex-[999_1_560px] min-w-0">
+      <div className="flex flex-wrap items-start gap-7">
+        <div className="min-w-0 flex-[999_1_560px]">
           <Gallery photos={ad.photos} alt={`${ad.brand} ${ad.model}`} />
         </div>
 
-        <aside className="card flex-[1_1_360px] p-6 flex flex-col gap-4.5">
-          <div className="flex gap-2 items-center">
+        <aside className="card flex flex-[1_1_360px] flex-col gap-4.5 p-6">
+          <div className="flex items-center gap-2">
             <span className="cat-chip">{categoryLabel(ad.category, cy)}</span>
             <span className="text-[12px] text-muted">{timeAgo(ad.approved_at ?? ad.created_at)} нийтлэгдсэн</span>
           </div>
-          <h1 className="m-0 text-[28px] font-bold leading-tight">
+          <h1 className="m-0 text-[28px] leading-tight font-bold">
             {ad.brand} {ad.model}
             {ad.trim ? ` · ${ad.trim}` : ""}
           </h1>
           <div className="h-display text-[32px]">{money(ad.price)}</div>
-          <dl className="grid grid-cols-2 gap-2 m-0">
+          <dl className="m-0 grid grid-cols-2 gap-2">
             {[
               ["Үйлдвэрлэсэн он", String(ad.year_made), false],
               ["Орж ирсэн он", ad.year_imported ? String(ad.year_imported) : "—", false],
               ["Улсын дугаар", ad.plate_masked, true],
               ["Арлын дугаар", ad.vin_masked, true],
             ].map(([k, v, mono]) => (
-              <div key={String(k)} className="bg-paper rounded-xl p-3 flex flex-col gap-1">
+              <div key={String(k)} className="flex flex-col gap-1 rounded-xl bg-paper p-3">
                 <dt className="text-[12px] text-muted">{k}</dt>
                 <dd className={`m-0 font-semibold ${mono ? "mono text-[15px] font-bold" : ""}`}>{v}</dd>
               </div>
             ))}
           </dl>
-          {!mine && ad.status === "active" && (
-            <ContactBox adId={ad.id} favorite={Boolean(fav)} loginHref={loginHref} />
-          )}
+          {!mine && ad.status === "active" && <ContactBox adId={ad.id} favorite={Boolean(fav)} loginHref={loginHref} />}
           {ad.status === "active" && <CompareToggle adId={ad.id} />}
           {!mine && ad.status === "active" && <ViewCounter adId={ad.id} />}
           {!mine && ad.status === "active" && partners.length > 0 && (
             <LoanCalculator adId={ad.id} price={ad.price} partners={partners} />
           )}
           {mine && (
-            <Link href="/my" className="btn btn-lg btn-ghost">Миний зарууд руу</Link>
+            <Link href="/my" className="btn btn-lg btn-ghost">
+              Миний зарууд руу
+            </Link>
           )}
           {!mine && ad.status === "active" && <ReportAdButton adId={ad.id} loginHref={loginHref} />}
           {ad.seller_name && (
             <div className="flex items-center gap-3 border-t border-[#ecede9] pt-4">
-              <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold ${ad.seller_shop ? "bg-yellow text-ink" : "bg-ink text-yellow"}`}>
+              <div
+                className={`flex h-11 w-11 items-center justify-center rounded-full font-bold ${ad.seller_shop ? "bg-yellow text-ink" : "bg-ink text-yellow"}`}
+              >
                 {ad.seller_shop ? "🏪" : initial(ad.seller_name)}
               </div>
               <div className="flex flex-col gap-0.5">
-                {ad.seller_shop && <span className="text-[11px] font-bold uppercase tracking-wide text-pending-fg">Авто худалдаа</span>}
-                <span className="font-semibold text-[14px]">{ad.seller_shop ?? ad.seller_name}</span>
+                {ad.seller_shop && (
+                  <span className="text-[11px] font-bold tracking-wide text-pending-fg uppercase">Авто худалдаа</span>
+                )}
+                <span className="text-[14px] font-semibold">{ad.seller_shop ?? ad.seller_name}</span>
                 <span className="text-[12px] text-muted">
                   {ad.seller_city ?? "Монгол"} · {ad.seller_ad_count} зар
                 </span>
@@ -185,8 +222,8 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
         </aside>
       </div>
 
-      <div className="flex flex-wrap gap-5 items-start">
-        <section className="card flex-[1_1_360px] p-6 flex flex-col gap-3">
+      <div className="flex flex-wrap items-start gap-5">
+        <section className="card flex flex-[1_1_360px] flex-col gap-3 p-6">
           <h2 className="m-0 text-[18px] font-bold">Машин ба сер</h2>
           {[
             ["Марк", ad.brand],
@@ -194,18 +231,23 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
             ["Сер", ad.trim || "—"],
             ["Үзэлт", String(ad.views)],
           ].map(([k, v], i, arr) => (
-            <div key={k} className={`flex justify-between py-2.5 text-[14px] ${i < arr.length - 1 ? "border-b border-[#ecede9]" : ""}`}>
+            <div
+              key={k}
+              className={`flex justify-between py-2.5 text-[14px] ${i < arr.length - 1 ? "border-b border-[#ecede9]" : ""}`}
+            >
               <span className="text-muted">{k}</span>
               <span className="font-semibold">{v}</span>
             </div>
           ))}
         </section>
-        <section className="card flex-[1_1_360px] p-6 flex flex-col gap-3">
+        <section className="card flex flex-[1_1_360px] flex-col gap-3 p-6">
           <h2 className="m-0 text-[18px] font-bold">Нэмэлт опшн</h2>
           {ad.options.length ? (
-            <ul className="flex flex-wrap gap-2 list-none p-0 m-0">
+            <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
               {ad.options.map((o) => (
-                <li key={o} className="px-3 py-1.5 bg-paper rounded-2xl text-[13px]">{o}</li>
+                <li key={o} className="rounded-2xl bg-paper px-3 py-1.5 text-[13px]">
+                  {o}
+                </li>
               ))}
             </ul>
           ) : (
@@ -214,9 +256,9 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
           <h2 className="mt-2 mb-0 text-[18px] font-bold">Нэмж хийсэн зүйлс</h2>
           <p className="m-0 text-[14px] leading-relaxed whitespace-pre-line">{ad.modifications || "—"}</p>
         </section>
-        <section className="card flex-[1_1_360px] p-6 flex flex-col gap-3">
+        <section className="card flex flex-[1_1_360px] flex-col gap-3 p-6">
           <h2 className="m-0 text-[18px] font-bold">Тайлбар</h2>
-          <p className="m-0 text-[15px] leading-relaxed text-[#2b2f35] whitespace-pre-line">{ad.description || "—"}</p>
+          <p className="m-0 text-[15px] leading-relaxed whitespace-pre-line text-[#2b2f35]">{ad.description || "—"}</p>
         </section>
       </div>
     </main>

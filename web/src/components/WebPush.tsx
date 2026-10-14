@@ -15,7 +15,9 @@ export function PwaSetup() {
 function usePushState() {
   const [state, setState] = useState<PushState | null>(null);
   useEffect(() => {
-    pushState().then(setState).catch(() => setState("unsupported"));
+    pushState()
+      .then(setState)
+      .catch(() => setState("unsupported"));
   }, []);
   return [state, setState] as const;
 }
@@ -40,16 +42,20 @@ export function WebPushCard() {
   }
 
   return (
-    <section className="card p-4.5 flex flex-col gap-3">
+    <section className="card flex flex-col gap-3 p-4.5">
       <div className="flex items-start gap-3">
-        <span className="w-10 h-10 rounded-xl bg-ink text-yellow flex items-center justify-center shrink-0"><IconBell size={20} /></span>
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="font-bold text-[15px]">Утсанд мэдэгдэл авах</span>
-          <span className="text-[13px] text-muted leading-snug">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink text-yellow">
+          <IconBell size={20} />
+        </span>
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-[15px] font-bold">Утсанд мэдэгдэл авах</span>
+          <span className="text-[13px] leading-snug text-muted">
             {state === "on" && "Асаалттай ✓ Шинэ зар, санал, зарын төлөв өөрчлөгдөхөд утсанд тань мэдэгдэл ирнэ."}
             {state === "off" && "Шинэ зар, санал ирэхэд апп хаалттай байсан ч утсанд мэдэгдэл ирнэ."}
-            {state === "denied" && "Мэдэгдэл хаагдсан байна. Утасны Тохиргоо → Мэдэгдэл → Autoshop.mn хэсгээс зөвшөөрнө үү."}
-            {state === "ios-install" && "iPhone дээр эхлээд энэ сайтыг нүүр дэлгэцэндээ нэмнэ: Safari-ийн доод талын Share (⬆) → “Add to Home Screen”. Дараа нь нүүр дэлгэцээс нээгээд энд “Асаах” дарна."}
+            {state === "denied" &&
+              "Мэдэгдэл хаагдсан байна. Утасны Тохиргоо → Мэдэгдэл → Autoshop.mn хэсгээс зөвшөөрнө үү."}
+            {state === "ios-install" &&
+              "iPhone дээр эхлээд энэ сайтыг нүүр дэлгэцэндээ нэмнэ: Safari-ийн доод талын Share (⬆) → “Add to Home Screen”. Дараа нь нүүр дэлгэцээс нээгээд энд “Асаах” дарна."}
           </span>
         </div>
       </div>
@@ -59,11 +65,15 @@ export function WebPushCard() {
         </button>
       )}
       {state === "on" && (
-        <button onClick={() => toggle(false)} disabled={busy} className="btn btn-ghost h-10 text-[13px] self-start">
+        <button onClick={() => toggle(false)} disabled={busy} className="btn btn-ghost h-10 self-start text-[13px]">
           Унтраах
         </button>
       )}
-      {err && <p role="alert" className="m-0 text-[13px] text-danger">{err}</p>}
+      {err && (
+        <p role="alert" className="m-0 text-[13px] text-danger">
+          {err}
+        </p>
+      )}
     </section>
   );
 }
@@ -76,7 +86,7 @@ export function PushPrompt() {
   if (hide || state !== "off" || !isStandalone()) return null;
   return (
     <div className="bg-yellow text-ink">
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-3">
+      <div className="mx-auto flex max-w-[1280px] items-center gap-3 px-4 py-2.5 sm:px-6">
         <IconBell size={18} />
         <span className="flex-1 text-[13px] font-semibold">Шинэ зар, санал ирэхэд мэдэгдэл авах уу?</span>
         <button
@@ -95,7 +105,13 @@ export function PushPrompt() {
         >
           Асаах
         </button>
-        <button onClick={() => setHide(true)} aria-label="Хаах" className="bg-transparent border-0 p-1 cursor-pointer text-ink text-[18px] leading-none">×</button>
+        <button
+          onClick={() => setHide(true)}
+          aria-label="Хаах"
+          className="cursor-pointer border-0 bg-transparent p-1 text-[18px] leading-none text-ink"
+        >
+          ×
+        </button>
       </div>
     </div>
   );

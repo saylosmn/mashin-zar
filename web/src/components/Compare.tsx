@@ -48,7 +48,12 @@ function subscribe(cb: () => void) {
 const EMPTY: string[] = [];
 export function useCompare() {
   const ids = useSyncExternalStore(subscribe, read, () => EMPTY);
-  return { ids, toggle: (id: string) => write(toggleId(read(), id)), clear: () => write([]), set: (v: string[]) => write(parseIds(v)) };
+  return {
+    ids,
+    toggle: (id: string) => write(toggleId(read(), id)),
+    clear: () => write([]),
+    set: (v: string[]) => write(parseIds(v)),
+  };
 }
 
 /** Зарын хуудсан дээрх "Харьцуулах" товч */
@@ -56,7 +61,12 @@ export function CompareToggle({ adId }: { adId: string }) {
   const { ids, toggle } = useCompare();
   const on = ids.includes(adId.toLowerCase());
   return (
-    <button type="button" aria-pressed={on} onClick={() => toggle(adId)} className={`btn btn-lg ${on ? "btn-ink" : "btn-ghost"}`}>
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={() => toggle(adId)}
+      className={`btn btn-lg ${on ? "btn-ink" : "btn-ghost"}`}
+    >
       {on ? "✓ Харьцуулалтад нэмсэн" : "⇄ Харьцуулах"}
     </button>
   );
@@ -68,13 +78,26 @@ export function CompareBar() {
   const path = usePathname();
   if (!ids.length || path.startsWith("/compare") || path.startsWith("/messages")) return null;
   return (
-    <div className="fixed z-40 left-1/2 -translate-x-1/2 bottom-[calc(84px+env(safe-area-inset-bottom))] sm:bottom-6 bg-ink text-paper rounded-full shadow-lg pl-4 pr-1.5 py-1.5 flex items-center gap-3 max-w-[calc(100vw-24px)]">
-      <span className="text-[13px] whitespace-nowrap">Харьцуулах: <strong className="mono text-yellow">{ids.length}/{COMPARE_MAX}</strong></span>
-      <button type="button" onClick={clear} className="text-[12px] text-pale underline bg-transparent border-0 p-0 cursor-pointer">Цэвэрлэх</button>
+    <div className="fixed bottom-[calc(84px+env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-3 rounded-full bg-ink py-1.5 pr-1.5 pl-4 text-paper shadow-lg sm:bottom-6">
+      <span className="text-[13px] whitespace-nowrap">
+        Харьцуулах:{" "}
+        <strong className="mono text-yellow">
+          {ids.length}/{COMPARE_MAX}
+        </strong>
+      </span>
+      <button
+        type="button"
+        onClick={clear}
+        className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-pale underline"
+      >
+        Цэвэрлэх
+      </button>
       {ids.length < 2 ? (
-        <span className="text-[12px] text-pale pr-2.5 whitespace-nowrap">Дахиад 1 машин сонгоно уу</span>
+        <span className="pr-2.5 text-[12px] whitespace-nowrap text-pale">Дахиад 1 машин сонгоно уу</span>
       ) : (
-        <Link href={compareHref(ids)} className="btn btn-sm btn-yellow rounded-full">Харьцуулах →</Link>
+        <Link href={compareHref(ids)} className="btn btn-sm btn-yellow rounded-full">
+          Харьцуулах →
+        </Link>
       )}
     </div>
   );

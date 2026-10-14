@@ -26,7 +26,10 @@ function authorized(request: Request) {
 }
 
 /** Зөвхөн сайтын доторх зам ("/ads/..."); гадны холбоос руу чиглүүлэхгүй */
-const safeUrl = (u: unknown) => (typeof u === "string" && u.startsWith("/") && !u.startsWith("//") && !u.startsWith("/\\") ? u.slice(0, 300) : "/notifications");
+const safeUrl = (u: unknown) =>
+  typeof u === "string" && u.startsWith("/") && !u.startsWith("//") && !u.startsWith("/\\")
+    ? u.slice(0, 300)
+    : "/notifications";
 
 export async function POST(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -46,12 +49,23 @@ export async function POST(request: Request) {
   let sent = 0;
   await Promise.all(
     messages
-      .filter((m) => typeof m?.sub?.endpoint === "string" && m.sub.endpoint.startsWith("https://") && m.sub.keys?.p256dh && m.sub.keys?.auth)
+      .filter(
+        (m) =>
+          typeof m?.sub?.endpoint === "string" &&
+          m.sub.endpoint.startsWith("https://") &&
+          m.sub.keys?.p256dh &&
+          m.sub.keys?.auth,
+      )
       .map(async (m) => {
         try {
           await webpush.sendNotification(
             m.sub,
-            JSON.stringify({ title: String(m.title ?? "Autoshop.mn").slice(0, 120), body: String(m.body ?? "").slice(0, 300), url: safeUrl(m.url), tag: typeof m.tag === "string" ? m.tag.slice(0, 80) : undefined }),
+            JSON.stringify({
+              title: String(m.title ?? "Autoshop.mn").slice(0, 120),
+              body: String(m.body ?? "").slice(0, 300),
+              url: safeUrl(m.url),
+              tag: typeof m.tag === "string" ? m.tag.slice(0, 80) : undefined,
+            }),
             { TTL: 60 * 60 * 24, urgency: "high" },
           );
           sent++;

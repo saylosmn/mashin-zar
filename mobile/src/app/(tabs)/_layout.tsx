@@ -44,24 +44,62 @@ export default function TabsLayout() {
               <View>
                 <Feather name={it.icon} size={22} color={on ? C.ink : C.muted} />
                 {r.name === "messages" && chats > 0 ? (
-                  <View style={{ position: "absolute", top: -6, right: -10, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: "#FF7A1A", alignItems: "center", justifyContent: "center" }}>
-                    <T w="bold" style={{ fontSize: 10, color: C.ink }}>{chats > 99 ? "99+" : chats}</T>
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -6,
+                      right: -10,
+                      minWidth: 18,
+                      height: 18,
+                      paddingHorizontal: 4,
+                      borderRadius: 9,
+                      backgroundColor: "#FF7A1A",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <T w="bold" style={{ fontSize: 10, color: C.ink }}>
+                      {chats > 99 ? "99+" : chats}
+                    </T>
                   </View>
                 ) : null}
               </View>
-              <T w={on ? "semibold" : "body"} style={{ fontSize: 11, color: on ? C.ink : C.muted }}>{it.label}</T>
+              <T w={on ? "semibold" : "body"} style={{ fontSize: 11, color: on ? C.ink : C.muted }}>
+                {it.label}
+              </T>
             </Pressable>
           );
         });
         return (
-          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, paddingTop: 8, paddingBottom: Math.max(insets.bottom, 12), paddingHorizontal: 12 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: C.card,
+              borderTopWidth: 1,
+              borderColor: C.line,
+              paddingTop: 8,
+              paddingBottom: Math.max(insets.bottom, 12),
+              paddingHorizontal: 12,
+            }}
+          >
             {cells.slice(0, 2)}
             <View style={{ flex: 1, alignItems: "center" }}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Зар нэмэх"
                 onPress={() => (session ? router.push("/post") : requireLogin("/post"))}
-                style={{ width: 56, height: 56, marginTop: -28, borderRadius: 18, backgroundColor: C.yellow, borderWidth: 4, borderColor: C.paper, alignItems: "center", justifyContent: "center" }}
+                style={{
+                  width: 56,
+                  height: 56,
+                  marginTop: -28,
+                  borderRadius: 18,
+                  backgroundColor: C.yellow,
+                  borderWidth: 4,
+                  borderColor: C.paper,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
                 <Feather name="plus" size={26} color={C.ink} />
               </Pressable>

@@ -29,11 +29,12 @@ export function InAppNotice() {
   }
 
   return (
-    <div role="alert" className="rounded-xl bg-pending-bg text-pending-fg px-4 py-3.5 flex flex-col gap-3">
+    <div role="alert" className="flex flex-col gap-3 rounded-xl bg-pending-bg px-4 py-3.5 text-pending-fg">
       <p className="m-0 text-[14px] leading-relaxed font-semibold">
-        Facebook/Messenger доторх хөтөч Google нэвтрэлтийг хаадаг. Баруун дээд буланд байгаа ⋯ товчийг дараад «Chrome/Safari-д нээх»-ийг сонгоно уу.
+        Facebook/Messenger доторх хөтөч Google нэвтрэлтийг хаадаг. Баруун дээд буланд байгаа ⋯ товчийг дараад
+        «Chrome/Safari-д нээх»-ийг сонгоно уу.
       </p>
-      <button type="button" onClick={copy} className="btn btn-ghost bg-card self-start">
+      <button type="button" onClick={copy} className="btn btn-ghost self-start bg-card">
         {copied ? "✓ Холбоос хуулагдлаа" : "Холбоосыг хуулах"}
       </button>
       <span className="text-[12px] leading-snug">Эсвэл холбоосыг хуулж Chrome/Safari хөтөчид буулгаж нээнэ үү.</span>

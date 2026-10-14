@@ -13,7 +13,12 @@ function back(fd: FormData, fallback: string, extra: Record<string, string>) {
   return url.pathname + url.search;
 }
 
-async function run(fd: FormData, fallback: string, ok: string, fn: () => PromiseLike<{ error: { message: string } | null }>) {
+async function run(
+  fd: FormData,
+  fallback: string,
+  ok: string,
+  fn: () => PromiseLike<{ error: { message: string } | null }>,
+) {
   const { error } = await fn();
   revalidatePath("/", "layout");
   redirect(back(fd, fallback, error ? { err: error.message } : { ok }));
@@ -26,7 +31,13 @@ export async function approveAd(fd: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("approve_ad", { p_ad: id });
   revalidatePath("/", "layout");
-  redirect(back(fd, "/admin/review", error ? { err: error.message } : { ok: "Зар батлагдаж, хэрэглэгчдэд мэдэгдэл илгээгдлээ" }));
+  redirect(
+    back(
+      fd,
+      "/admin/review",
+      error ? { err: error.message } : { ok: "Зар батлагдаж, хэрэглэгчдэд мэдэгдэл илгээгдлээ" },
+    ),
+  );
 }
 
 export async function rejectAd(fd: FormData) {
@@ -102,13 +113,20 @@ export async function inviteStaff(fd: FormData) {
 export async function removeStaff(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/admin/users", "Админ эрх хасагдлаа", () => supabase.rpc("remove_staff", { p_user: String(fd.get("id")) }));
+  await run(fd, "/admin/users", "Админ эрх хасагдлаа", () =>
+    supabase.rpc("remove_staff", { p_user: String(fd.get("id")) }),
+  );
 }
 
 export async function deleteInvite(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/admin/users", "Урилга устгагдлаа", () => supabase.from("staff_invites").delete().eq("email", String(fd.get("email"))));
+  await run(fd, "/admin/users", "Урилга устгагдлаа", () =>
+    supabase
+      .from("staff_invites")
+      .delete()
+      .eq("email", String(fd.get("email"))),
+  );
 }
 
 export async function adminDeleteAd(fd: FormData) {
@@ -164,7 +182,8 @@ export async function saveAppLink(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
   const url = String(fd.get("apk_url") || "").trim();
-  if (url && !/^https:\/\//.test(url)) redirect("/admin/settings?err=" + encodeURIComponent("Холбоос https:// -ээр эхлэх ёстой"));
+  if (url && !/^https:\/\//.test(url))
+    redirect("/admin/settings?err=" + encodeURIComponent("Холбоос https:// -ээр эхлэх ёстой"));
   await run(fd, "/admin/settings", "Апп татах холбоос хадгалагдлаа", () =>
     supabase.rpc("set_app_link", { p_url: url, p_version: String(fd.get("apk_version") || "") || null }),
   );
@@ -177,7 +196,13 @@ export async function sendBroadcast(fd: FormData) {
   const body = String(fd.get("body") || "").trim() || null;
   const { data, error } = await supabase.rpc("broadcast", { p_title: title, p_body: body });
   revalidatePath("/", "layout");
-  redirect(back(fd, "/admin/notifications", error ? { err: error.message } : { ok: `${data ?? 0} хэрэглэгчид зарлал илгээгдлээ` }));
+  redirect(
+    back(
+      fd,
+      "/admin/notifications",
+      error ? { err: error.message } : { ok: `${data ?? 0} хэрэглэгчид зарлал илгээгдлээ` },
+    ),
+  );
 }
 
 export async function deleteBroadcast(fd: FormData) {
@@ -193,7 +218,13 @@ export async function resendBroadcast(fd: FormData) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("resend_broadcast", { p_id: String(fd.get("id")) });
   revalidatePath("/", "layout");
-  redirect(back(fd, "/admin/notifications", error ? { err: error.message } : { ok: `Дахин илгээгдлээ (${data ?? 0} хэрэглэгч)` }));
+  redirect(
+    back(
+      fd,
+      "/admin/notifications",
+      error ? { err: error.message } : { ok: `Дахин илгээгдлээ (${data ?? 0} хэрэглэгч)` },
+    ),
+  );
 }
 
 // ---------- Борлуулалтын тайлан ----------
@@ -221,7 +252,15 @@ export async function submitSaleReport(fd: FormData) {
   if (!error && rid) {
     const { error: revErr } = await supabase.rpc("review_sale_report", { p_id: rid, p_approve: true, p_note: null });
     revalidatePath("/", "layout");
-    redirect(back(fd, "/admin/reports", revErr ? { err: `Тайлан хадгалагдсан ч батлагдсангүй: ${revErr.message}` } : { ok: "Тайлан батлагдаж, зар зарагдсан боллоо" }));
+    redirect(
+      back(
+        fd,
+        "/admin/reports",
+        revErr
+          ? { err: `Тайлан хадгалагдсан ч батлагдсангүй: ${revErr.message}` }
+          : { ok: "Тайлан батлагдаж, зар зарагдсан боллоо" },
+      ),
+    );
   }
   revalidatePath("/", "layout");
   redirect(back(fd, "/admin/reports", { err: error?.message ?? "Тайлан хадгалагдсангүй" }));
@@ -232,7 +271,11 @@ export async function reviewSaleReport(fd: FormData) {
   const supabase = await createClient();
   const approve = fd.get("approve") === "1";
   await run(fd, "/admin/reports", approve ? "Тайлан батлагдаж, зар зарагдсан боллоо" : "Тайлан буцаагдлаа", () =>
-    supabase.rpc("review_sale_report", { p_id: String(fd.get("id")), p_approve: approve, p_note: String(fd.get("note") || "") || null }),
+    supabase.rpc("review_sale_report", {
+      p_id: String(fd.get("id")),
+      p_approve: approve,
+      p_note: String(fd.get("note") || "") || null,
+    }),
   );
 }
 
@@ -244,7 +287,11 @@ export async function saveContractSettings(fd: FormData) {
     .map((i) => ({ days: n(`days${i}`), percent: n(`pct${i}`) }))
     .filter((t) => t.days > 0 && t.percent >= 0);
   await run(fd, "/admin/settings", "Гэрээний нөхцөл хадгалагдлаа", () =>
-    supabase.rpc("update_contract_settings", { p_company: String(fd.get("company") || ""), p_tiers: tiers, p_after: n("after") }),
+    supabase.rpc("update_contract_settings", {
+      p_company: String(fd.get("company") || ""),
+      p_tiers: tiers,
+      p_after: n("after"),
+    }),
   );
 }
 
@@ -262,7 +309,9 @@ export async function inviteDealer(fd: FormData) {
 export async function removeDealer(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/admin/users?tab=dealers", "Авто худалдааны эрх хасагдлаа", () => supabase.rpc("remove_dealer", { p_user: String(fd.get("id")) }));
+  await run(fd, "/admin/users?tab=dealers", "Авто худалдааны эрх хасагдлаа", () =>
+    supabase.rpc("remove_dealer", { p_user: String(fd.get("id")) }),
+  );
 }
 
 /** Авто худалдаа: зараа нуух / дахин гаргах / зарагдсан болгох */
@@ -270,39 +319,63 @@ export async function dealerSetStatus(fd: FormData) {
   await requireUser();
   const supabase = await createClient();
   const status = String(fd.get("status"));
-  const msg = status === "hidden" ? "Зар нуугдлаа" : status === "active" ? "Зар дахин нийтлэгдлээ" : "Зарагдсан гэж тэмдэглэлээ";
+  const msg =
+    status === "hidden" ? "Зар нуугдлаа" : status === "active" ? "Зар дахин нийтлэгдлээ" : "Зарагдсан гэж тэмдэглэлээ";
   const price = Number(String(fd.get("price") || "").replace(/\D/g, "")) || null;
-  await run(fd, "/my", msg, () => supabase.rpc("dealer_set_status", { p_ad: String(fd.get("id")), p_status: status, p_price: price }));
+  await run(fd, "/my", msg, () =>
+    supabase.rpc("dealer_set_status", { p_ad: String(fd.get("id")), p_status: status, p_price: price }),
+  );
 }
 
 // ---------- Лизинг ----------
 export async function cancelLoanRequest(fd: FormData) {
   await requireUser();
   const supabase = await createClient();
-  await run(fd, "/loans", "Хүсэлт цуцлагдлаа", () => supabase.rpc("cancel_loan_request", { p_id: String(fd.get("id")) }));
+  await run(fd, "/loans", "Хүсэлт цуцлагдлаа", () =>
+    supabase.rpc("cancel_loan_request", { p_id: String(fd.get("id")) }),
+  );
 }
 
 export async function updateLoanRequest(fd: FormData) {
   await requireUser();
   const supabase = await createClient();
   const status = String(fd.get("status"));
-  const label: Record<string, string> = { contacted: "Холбогдсон", approved: "Зөвшөөрсөн", rejected: "Татгалзсан", new: "Шинэ" };
+  const label: Record<string, string> = {
+    contacted: "Холбогдсон",
+    approved: "Зөвшөөрсөн",
+    rejected: "Татгалзсан",
+    new: "Шинэ",
+  };
   await run(fd, "/leasing", `Төлөв: ${label[status] ?? status}`, () =>
-    supabase.rpc("update_loan_request", { p_id: String(fd.get("id")), p_status: status, p_note: String(fd.get("note") || "") || null }),
+    supabase.rpc("update_loan_request", {
+      p_id: String(fd.get("id")),
+      p_status: status,
+      p_note: String(fd.get("note") || "") || null,
+    }),
   );
 }
 
 export async function savePartnerTerms(fd: FormData) {
   await requireUser();
   const supabase = await createClient();
-  const v = (k: string) => String(fd.get(k) ?? "").replace(/\s/g, "").replace(",", ".");
+  const v = (k: string) =>
+    String(fd.get(k) ?? "")
+      .replace(/\s/g, "")
+      .replace(",", ".");
   await run(fd, "/leasing?tab=terms", "Нөхцөл, шаардлага хадгалагдлаа", () =>
     supabase.rpc("set_partner_terms", {
       p_partner: String(fd.get("partner_id") || ""),
       p: {
-        rate_annual: v("rate"), min_down_pct: v("min_down"), max_term_months: v("max_term"),
-        min_age: v("min_age"), max_age: v("max_age"), min_work_months: v("min_work"), min_business_months: v("min_business"),
-        max_dti: v("max_dti"), min_car_year: v("min_car_year"), cosigner_over: v("cosigner_over").replace(/\D/g, ""),
+        rate_annual: v("rate"),
+        min_down_pct: v("min_down"),
+        max_term_months: v("max_term"),
+        min_age: v("min_age"),
+        max_age: v("max_age"),
+        min_work_months: v("min_work"),
+        min_business_months: v("min_business"),
+        max_dti: v("max_dti"),
+        min_car_year: v("min_car_year"),
+        cosigner_over: v("cosigner_over").replace(/\D/g, ""),
         required_docs: fd.getAll("required_docs").map(String),
         requirements_note: String(fd.get("requirements_note") ?? ""),
       },
@@ -313,7 +386,10 @@ export async function savePartnerTerms(fd: FormData) {
 export async function upsertPartner(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  const n = (k: string) => { const v = String(fd.get(k) || "").replace(",", "."); return v ? Number(v) : null; };
+  const n = (k: string) => {
+    const v = String(fd.get(k) || "").replace(",", ".");
+    return v ? Number(v) : null;
+  };
   await run(fd, "/admin/leasing", "Лизингийн компани хадгалагдлаа", () =>
     supabase.rpc("upsert_partner", {
       p_id: String(fd.get("id") || "") || null,
@@ -340,7 +416,9 @@ export async function inviteLeasingStaff(fd: FormData) {
 export async function removeLeasingStaff(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/admin/leasing", "Лизингийн ажилтны эрх хасагдлаа", () => supabase.rpc("remove_leasing_staff", { p_user: String(fd.get("id")) }));
+  await run(fd, "/admin/leasing", "Лизингийн ажилтны эрх хасагдлаа", () =>
+    supabase.rpc("remove_leasing_staff", { p_user: String(fd.get("id")) }),
+  );
 }
 
 // ---------- Агент ----------
@@ -348,23 +426,36 @@ export async function inviteAgent(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
   const email = String(fd.get("email") || "").trim();
-  await run(fd, "/admin/users?tab=agents", `${email} агентын эрхтэй боллоо. Нэвтэрмэгц өөрийн код, холбоосоо харна.`, () =>
-    supabase.rpc("invite_agent", { p_email: email, p_name: String(fd.get("name") || "") || null, p_phone: String(fd.get("phone") || "") || null }),
+  await run(
+    fd,
+    "/admin/users?tab=agents",
+    `${email} агентын эрхтэй боллоо. Нэвтэрмэгц өөрийн код, холбоосоо харна.`,
+    () =>
+      supabase.rpc("invite_agent", {
+        p_email: email,
+        p_name: String(fd.get("name") || "") || null,
+        p_phone: String(fd.get("phone") || "") || null,
+      }),
   );
 }
 
 export async function removeAgent(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/admin/users?tab=agents", "Агентын эрх хасагдлаа", () => supabase.rpc("remove_agent", { p_user: String(fd.get("id")) }));
+  await run(fd, "/admin/users?tab=agents", "Агентын эрх хасагдлаа", () =>
+    supabase.rpc("remove_agent", { p_user: String(fd.get("id")) }),
+  );
 }
 
 export async function setAgentPaid(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
   const paid = fd.get("paid") === "1";
-  await run(fd, "/admin/reports?tab=approved", paid ? "Агентын шимтгэл төлсөн гэж тэмдэглэлээ" : "Төлөөгүй болголоо", () =>
-    supabase.rpc("set_agent_paid", { p_id: String(fd.get("id")), p_paid: paid }),
+  await run(
+    fd,
+    "/admin/reports?tab=approved",
+    paid ? "Агентын шимтгэл төлсөн гэж тэмдэглэлээ" : "Төлөөгүй болголоо",
+    () => supabase.rpc("set_agent_paid", { p_id: String(fd.get("id")), p_paid: paid }),
   );
 }
 
@@ -381,9 +472,18 @@ export async function resolveFlag(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
   const action = String(fd.get("action"));
-  const msg = action === "hide" ? "Зар нуугдаж, эзэнд мэдэгдэл очлоо" : action === "dismiss" ? "Гомдол хаагдлаа" : "Шийдвэрлэсэн гэж тэмдэглэлээ";
+  const msg =
+    action === "hide"
+      ? "Зар нуугдаж, эзэнд мэдэгдэл очлоо"
+      : action === "dismiss"
+        ? "Гомдол хаагдлаа"
+        : "Шийдвэрлэсэн гэж тэмдэглэлээ";
   await run(fd, "/admin/flags", msg, () =>
-    supabase.rpc("resolve_flag", { p_id: String(fd.get("id")), p_action: action, p_note: String(fd.get("note") || "") || null }),
+    supabase.rpc("resolve_flag", {
+      p_id: String(fd.get("id")),
+      p_action: action,
+      p_note: String(fd.get("note") || "") || null,
+    }),
   );
 }
 
@@ -400,7 +500,12 @@ export async function setFeatured(fd: FormData) {
 export async function saveGrowthSettings(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  const n = (k: string) => Number(String(fd.get(k) || "").replace(/[^\d.,]/g, "").replace(",", "."));
+  const n = (k: string) =>
+    Number(
+      String(fd.get(k) || "")
+        .replace(/[^\d.,]/g, "")
+        .replace(",", "."),
+    );
   await run(fd, "/admin/settings", "Хадгалагдлаа", () =>
     supabase.rpc("update_growth_settings", {
       p_agent_share: n("agent_share"),
@@ -453,6 +558,7 @@ export async function savePaymentSettings(fd: FormData) {
 export async function regenSmsKey(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();
-  await run(fd, "/admin/settings", "SMS апп-ын шинэ түлхүүр үүслээ — утсан дээрх апп-д шинээр оруулна уу", () => supabase.rpc("regen_sms_key"));
+  await run(fd, "/admin/settings", "SMS апп-ын шинэ түлхүүр үүслээ — утсан дээрх апп-д шинээр оруулна уу", () =>
+    supabase.rpc("regen_sms_key"),
+  );
 }
-

@@ -9,9 +9,21 @@ import { deleteBroadcast, resendBroadcast, sendBroadcast } from "../../panel-act
 
 export const metadata = { title: "Админ · Мэдэгдэл" };
 
-type Row = { id: string; title: string; body: string | null; created_at: string; recipients: number; read_count: number; author: string | null };
+type Row = {
+  id: string;
+  title: string;
+  body: string | null;
+  created_at: string;
+  recipients: number;
+  read_count: number;
+  author: string | null;
+};
 
-export default async function AdminNotifications({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string }> }) {
+export default async function AdminNotifications({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string; err?: string }>;
+}) {
   const sp = await searchParams;
   const me = await requireAdmin();
   const supabase = await createClient();
@@ -20,60 +32,75 @@ export default async function AdminNotifications({ searchParams }: { searchParam
   const back = "/admin/notifications";
 
   type PushRes = { created: string; status_code: number | null; body: string | null; error: string | null };
-  const [{ data: pushRows }, { data: tokenCount }] = await Promise.all([supabase.rpc("push_debug"), supabase.rpc("push_token_count")]);
+  const [{ data: pushRows }, { data: tokenCount }] = await Promise.all([
+    supabase.rpc("push_debug"),
+    supabase.rpc("push_token_count"),
+  ]);
   const pushes = (pushRows ?? []) as PushRes[];
   return (
     <PanelShell profile={me} area="admin" active="admin-notif" pending={pending}>
       <div className="flex flex-col gap-1">
         <h1 className="h-display m-0 text-[28px]">Мэдэгдэл</h1>
-        <span className="text-[14px] text-muted">Бүх хэрэглэгчид зарлал илгээх, өмнө илгээснээ устгах, дахин илгээх</span>
+        <span className="text-[14px] text-muted">
+          Бүх хэрэглэгчид зарлал илгээх, өмнө илгээснээ устгах, дахин илгээх
+        </span>
       </div>
-      <Flash ok={sp.ok} err={sp.err ?? (list.error ? `Зарлалын жагсаалт уншиж чадсангүй: ${list.error.message}` : undefined)} />
+      <Flash
+        ok={sp.ok}
+        err={sp.err ?? (list.error ? `Зарлалын жагсаалт уншиж чадсангүй: ${list.error.message}` : undefined)}
+      />
 
-      <form action={sendBroadcast} className="card p-5 flex flex-col gap-3.5 max-w-[920px]">
+      <form action={sendBroadcast} className="card flex max-w-[920px] flex-col gap-3.5 p-5">
         <input type="hidden" name="back" value={back} />
         <h2 className="m-0 text-[17px] font-bold">Шинэ зарлал</h2>
-        <label className="label text-[14px]">Гарчиг
+        <label className="label text-[14px]">
+          Гарчиг
           <input name="title" required maxLength={80} placeholder="Апп шинэчлэгдлээ" className="input" />
         </label>
-        <label className="label text-[14px]">Дэлгэрэнгүй (заавал биш)
+        <label className="label text-[14px]">
+          Дэлгэрэнгүй (заавал биш)
           <textarea name="body" maxLength={300} rows={2} placeholder="Шинэ боломжууд..." className="textarea" />
         </label>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-[13px] text-muted">Хүн бүрийн мэдэгдэлд орж, утсанд нь push мэдэгдлээр очно.</span>
-          <ConfirmButton message="Энэ зарлалыг бүх хэрэглэгчид илгээх үү?" className="btn btn-ink h-12">Илгээх</ConfirmButton>
+          <ConfirmButton message="Энэ зарлалыг бүх хэрэглэгчид илгээх үү?" className="btn btn-ink h-12">
+            Илгээх
+          </ConfirmButton>
         </div>
       </form>
 
-      <section className="flex flex-col gap-3 max-w-[920px]">
+      <section className="flex max-w-[920px] flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="m-0 text-[17px] font-bold">Илгээсэн зарлалууд</h2>
           <span className="text-[13px] text-muted">{rows.length} зарлал</span>
         </div>
         {rows.length === 0 ? (
-          <div className="card px-6 py-10 flex flex-col items-center gap-3 text-center">
+          <div className="card flex flex-col items-center gap-3 px-6 py-10 text-center">
             <IconBell size={36} />
-            <p className="m-0 text-body text-[14px]">Одоогоор зарлал илгээгээгүй байна.</p>
+            <p className="m-0 text-[14px] text-body">Одоогоор зарлал илгээгээгүй байна.</p>
           </div>
         ) : (
-          <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
+          <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
             {rows.map((b) => {
               const pct = b.recipients ? Math.round((b.read_count / b.recipients) * 100) : 0;
               return (
-                <li key={b.id} className="card p-4 flex flex-col gap-3">
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <span className="font-bold text-[15px] break-words">{b.title}</span>
-                    {b.body && <span className="text-[14px] text-body break-words">{b.body}</span>}
+                <li key={b.id} className="card flex flex-col gap-3 p-4">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="text-[15px] font-bold break-words">{b.title}</span>
+                    {b.body && <span className="text-[14px] break-words text-body">{b.body}</span>}
                     <span className="text-[12px] text-muted">
-                      {dateShort(b.created_at)} · {timeAgo(b.created_at)}{b.author ? ` · ${b.author}` : ""}
+                      {dateShort(b.created_at)} · {timeAgo(b.created_at)}
+                      {b.author ? ` · ${b.author}` : ""}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <div className="flex justify-between text-[12px] text-muted">
                       <span>{num(b.recipients)} хүнд очсон</span>
-                      <span>{num(b.read_count)} уншсан · {pct}%</span>
+                      <span>
+                        {num(b.read_count)} уншсан · {pct}%
+                      </span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-soft overflow-hidden" aria-hidden>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-soft" aria-hidden>
                       <div className="h-full bg-yellow" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
@@ -81,12 +108,22 @@ export default async function AdminNotifications({ searchParams }: { searchParam
                     <form action={resendBroadcast}>
                       <input type="hidden" name="id" value={b.id} />
                       <input type="hidden" name="back" value={back} />
-                      <ConfirmButton message={`"${b.title}" зарлалыг дахин бүх хэрэглэгчид илгээх үү?`} className="btn btn-ghost btn-sm">Дахин илгээх</ConfirmButton>
+                      <ConfirmButton
+                        message={`"${b.title}" зарлалыг дахин бүх хэрэглэгчид илгээх үү?`}
+                        className="btn btn-ghost btn-sm"
+                      >
+                        Дахин илгээх
+                      </ConfirmButton>
                     </form>
                     <form action={deleteBroadcast}>
                       <input type="hidden" name="id" value={b.id} />
                       <input type="hidden" name="back" value={back} />
-                      <ConfirmButton message={`"${b.title}" зарлалыг бүх хэрэглэгчийн мэдэгдлээс устгах уу? Утсанд аль хэдийн ирсэн push мэдэгдлийг буцааж татах боломжгүй.`} className="btn btn-danger btn-sm">Устгах</ConfirmButton>
+                      <ConfirmButton
+                        message={`"${b.title}" зарлалыг бүх хэрэглэгчийн мэдэгдлээс устгах уу? Утсанд аль хэдийн ирсэн push мэдэгдлийг буцааж татах боломжгүй.`}
+                        className="btn btn-danger btn-sm"
+                      >
+                        Устгах
+                      </ConfirmButton>
                     </form>
                   </div>
                 </li>
@@ -95,21 +132,26 @@ export default async function AdminNotifications({ searchParams }: { searchParam
           </ul>
         )}
       </section>
-      <section className="card p-5 flex flex-col gap-3 max-w-[920px]">
+      <section className="card flex max-w-[920px] flex-col gap-3 p-5">
         <h2 className="m-0 text-[17px] font-bold">Push-ийн байдал</h2>
         <span className="text-[13px] text-muted">
-          Бүртгэлтэй Android төхөөрөмж: <strong className="text-ink">{tokenCount != null ? String(tokenCount) : "?"}</strong> (апп-д нэвтэрч мэдэгдлийг зөвшөөрсөн).
-          Доорх нь сүүлийн илгээлтүүдийн хариу. <span className="mono">exp.host</span>-ийн хариунд <span className="mono">InvalidCredentials</span> гарвал Expo-д FCM түлхүүр оруулаагүй,
+          Бүртгэлтэй Android төхөөрөмж:{" "}
+          <strong className="text-ink">{tokenCount != null ? String(tokenCount) : "?"}</strong> (апп-д нэвтэрч
+          мэдэгдлийг зөвшөөрсөн). Доорх нь сүүлийн илгээлтүүдийн хариу. <span className="mono">exp.host</span>-ийн
+          хариунд <span className="mono">InvalidCredentials</span> гарвал Expo-д FCM түлхүүр оруулаагүй,
           <span className="mono"> DeviceNotRegistered</span> бол апп устгагдсан гэсэн үг.
         </span>
         {pushes.length === 0 ? (
           <p className="m-0 text-[13px] text-muted">Хариу алга (pg_net идэвхгүй эсвэл одоогоор илгээгээгүй).</p>
         ) : (
-          <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
             {pushes.map((r, i) => (
-              <li key={i} className="rounded-lg bg-paper px-3 py-2 text-[12px] flex flex-col gap-0.5">
-                <span className={`font-semibold ${r.status_code && r.status_code < 300 && !/"status":"error"/.test(r.body ?? "") ? "text-active-fg" : "text-[#9b1c1c]"}`}>
-                  {r.status_code ?? "—"} · {new Date(r.created).toLocaleString("en-GB", { timeZone: "Asia/Ulaanbaatar" })}
+              <li key={i} className="flex flex-col gap-0.5 rounded-lg bg-paper px-3 py-2 text-[12px]">
+                <span
+                  className={`font-semibold ${r.status_code && r.status_code < 300 && !/"status":"error"/.test(r.body ?? "") ? "text-active-fg" : "text-[#9b1c1c]"}`}
+                >
+                  {r.status_code ?? "—"} ·{" "}
+                  {new Date(r.created).toLocaleString("en-GB", { timeZone: "Asia/Ulaanbaatar" })}
                 </span>
                 <span className="mono break-all text-body">{r.error ?? r.body ?? ""}</span>
               </li>

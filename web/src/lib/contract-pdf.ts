@@ -14,7 +14,10 @@ let fonts: { regular: Uint8Array; bold: Uint8Array } | null = null;
 async function loadFonts() {
   if (!fonts) {
     const dir = path.join(process.cwd(), "src", "fonts");
-    const [regular, bold] = await Promise.all([readFile(path.join(dir, "Onest-Regular.ttf")), readFile(path.join(dir, "Onest-Bold.ttf"))]);
+    const [regular, bold] = await Promise.all([
+      readFile(path.join(dir, "Onest-Regular.ttf")),
+      readFile(path.join(dir, "Onest-Bold.ttf")),
+    ]);
     fonts = { regular, bold };
   }
   return fonts;
@@ -55,7 +58,12 @@ export async function renderContractPdf(c: ContractData, signatureSvg?: string |
       y = A4[1] - M;
     }
   };
-  const text = (s: string, font: PDFFont, size: number, opts: { color?: ReturnType<typeof rgb>; gap?: number; center?: boolean } = {}) => {
+  const text = (
+    s: string,
+    font: PDFFont,
+    size: number,
+    opts: { color?: ReturnType<typeof rgb>; gap?: number; center?: boolean } = {},
+  ) => {
     for (const ln of wrap(s, font, size, width)) {
       ensure(size + 4);
       const x = opts.center ? M + (width - font.widthOfTextAtSize(ln, size)) / 2 : M;
@@ -101,14 +109,25 @@ export async function renderContractPdf(c: ContractData, signatureSvg?: string |
     yy -= 6;
     if (svg) {
       const scale = colW / 600;
-      page.drawSvgPath(svg, { x, y: yy, scale: Math.min(scale, boxH / 200), borderColor: rgb(0.05, 0.12, 0.45), borderWidth: 4 });
+      page.drawSvgPath(svg, {
+        x,
+        y: yy,
+        scale: Math.min(scale, boxH / 200),
+        borderColor: rgb(0.05, 0.12, 0.45),
+        borderWidth: 4,
+      });
     }
     yy -= boxH;
     page.drawLine({ start: { x, y: yy }, end: { x: x + colW, y: yy }, thickness: 0.8, color: MUTED });
     page.drawText("Гарын үсэг", { x, y: yy - 12, size: 9, font: regular, color: MUTED });
     return yy - 16;
   };
-  const yA = sigBlock(M, "ЭЗЭМШИГЧ", [`Овог нэр: ${c.fullName || "______________________"}`, `Утас: ${c.phone || "______________"}`], signatureSvg);
+  const yA = sigBlock(
+    M,
+    "ЭЗЭМШИГЧ",
+    [`Овог нэр: ${c.fullName || "______________________"}`, `Утас: ${c.phone || "______________"}`],
+    signatureSvg,
+  );
   const yB = sigBlock(M + colW + 30, "ЗУУЧЛАГЧ", [`«${c.company}»`, "Төлөөлж: ______________________"], null);
   y = Math.min(yA, yB) - 10;
 

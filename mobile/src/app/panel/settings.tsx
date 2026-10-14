@@ -28,11 +28,17 @@ export default function PanelSettings() {
     setNotifyStaff(settings.notify_staff_on_new);
   }, [settings]);
 
-  if (!isAdmin(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Тохиргоог зөвхөн админ өөрчилнө."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
+  if (!isAdmin(profile))
+    return (
+      <StateView icon="lock" title="Эрх хүрэхгүй" text="Тохиргоог зөвхөн админ өөрчилнө.">
+        <Button title="Буцах" onPress={() => router.back()} />
+      </StateView>
+    );
 
   async function save() {
     const p = pct.replace(",", ".").trim();
-    if (p && (isNaN(Number(p)) || Number(p) <= 0 || Number(p) > 100)) return Alert.alert("Хувь буруу", "0-ээс 100-ийн хооронд тоо оруулна уу.");
+    if (p && (isNaN(Number(p)) || Number(p) <= 0 || Number(p) > 100))
+      return Alert.alert("Хувь буруу", "0-ээс 100-ийн хооронд тоо оруулна уу.");
     setSaving(true);
     const r = await staffRpc("update_settings", {
       p_offer_percent: p ? Number(p) : null,
@@ -51,49 +57,97 @@ export default function PanelSettings() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.paper }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: C.paper }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Pressable accessibilityLabel="Буцах" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>
+          <Pressable
+            accessibilityLabel="Буцах"
+            onPress={() => router.back()}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: C.card,
+              borderWidth: 1,
+              borderColor: C.line2,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Feather name="chevron-left" size={22} color={C.ink} />
           </Pressable>
-          <T w="display" style={{ fontSize: 20 }}>Тохиргоо</T>
+          <T w="display" style={{ fontSize: 20 }}>
+            Тохиргоо
+          </T>
         </View>
 
         <View style={s.section}>
-          <T w="bold" style={s.h2}>Санал</T>
+          <T w="bold" style={s.h2}>
+            Санал
+          </T>
           <Field label="Санал тооцох хувь (%)" hint="Санал = зарын үнэ × энэ хувь. Хоосон бол санал илгээх боломжгүй.">
-            <Input keyboardType="decimal-pad" value={pct} onChangeText={(t) => setPct(t.replace(/[^0-9.,]/g, ""))} placeholder="жишээ нь 85" />
+            <Input
+              keyboardType="decimal-pad"
+              value={pct}
+              onChangeText={(t) => setPct(t.replace(/[^0-9.,]/g, ""))}
+              placeholder="жишээ нь 85"
+            />
           </Field>
         </View>
 
         <View style={s.section}>
-          <T w="bold" style={s.h2}>Зар</T>
+          <T w="bold" style={s.h2}>
+            Зар
+          </T>
           <Field label="Ангилах он" hint={`${cutoff || 2016} ба хойш / ${cutoff || 2016}-аас өмнө`}>
             <Input keyboardType="number-pad" value={cutoff} onChangeText={(t) => setCutoff(digits(t).slice(0, 4))} />
           </Field>
           <View style={{ flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1 }}>
-              <Field label="Хамгийн бага зураг"><Input keyboardType="number-pad" value={minP} onChangeText={(t) => setMinP(digits(t))} /></Field>
+              <Field label="Хамгийн бага зураг">
+                <Input keyboardType="number-pad" value={minP} onChangeText={(t) => setMinP(digits(t))} />
+              </Field>
             </View>
             <View style={{ flex: 1 }}>
-              <Field label="Хамгийн их зураг"><Input keyboardType="number-pad" value={maxP} onChangeText={(t) => setMaxP(digits(t))} /></Field>
+              <Field label="Хамгийн их зураг">
+                <Input keyboardType="number-pad" value={maxP} onChangeText={(t) => setMaxP(digits(t))} />
+              </Field>
             </View>
           </View>
-          <Field label="Зарын хугацаа (өдөр)"><Input keyboardType="number-pad" value={days} onChangeText={(t) => setDays(digits(t))} /></Field>
+          <Field label="Зарын хугацаа (өдөр)">
+            <Input keyboardType="number-pad" value={days} onChangeText={(t) => setDays(digits(t))} />
+          </Field>
         </View>
 
         <View style={s.section}>
-          <T w="bold" style={s.h2}>Мэдэгдэл</T>
+          <T w="bold" style={s.h2}>
+            Мэдэгдэл
+          </T>
           <Toggle label="Зар батлагдахад бүх хэрэглэгчид мэдэгдэх" value={notifyAll} onChange={setNotifyAll} />
           <Toggle label="Шинэ зар ирэхэд админуудад мэдэгдэх" value={notifyStaff} onChange={setNotifyStaff} />
         </View>
 
         <Button title="Хадгалах" icon="save" variant="yellow" loading={saving} onPress={save} />
 
-        <Button title="Зарлал, мэдэгдэл удирдах" icon="bell" variant="ghost" onPress={() => router.push("/panel/broadcasts")} />
+        <Button
+          title="Зарлал, мэдэгдэл удирдах"
+          icon="bell"
+          variant="ghost"
+          onPress={() => router.push("/panel/broadcasts")}
+        />
 
-        <Button title="Вэб админ панел нээх" icon="external-link" variant="ghost" onPress={() => openWebPanel("/admin")} />
+        <Button
+          title="Вэб админ панел нээх"
+          icon="external-link"
+          variant="ghost"
+          onPress={() => openWebPanel("/admin")}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -103,7 +157,12 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
       <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{label}</T>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: C.yellow, false: C.line2 }} thumbColor={value ? C.ink : "#FFFFFF"} />
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ true: C.yellow, false: C.line2 }}
+        thumbColor={value ? C.ink : "#FFFFFF"}
+      />
     </View>
   );
 }

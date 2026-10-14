@@ -36,7 +36,12 @@ export async function deleteMyAd(fd: FormData) {
   const me = await requireUser();
   const id = String(fd.get("id"));
   const supabase = await createClient();
-  const { data: ad } = await supabase.from("ads").select("photos,status").eq("id", id).eq("user_id", me.id).maybeSingle();
+  const { data: ad } = await supabase
+    .from("ads")
+    .select("photos,status")
+    .eq("id", id)
+    .eq("user_id", me.id)
+    .maybeSingle();
   const flash = (k: "ok" | "err", m: string) => `/my?${k}=${encodeURIComponent(m)}`;
   if (!ad) redirect(flash("err", "Зар олдсонгүй."));
   if (ad.status === "sold") redirect(flash("err", "Зарагдсан зарыг устгах боломжгүй."));
@@ -119,7 +124,10 @@ export async function submitPayment(fd: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("submit_payment", {
     p_id: String(fd.get("id")),
-    p_note: String(fd.get("note") || "").trim().slice(0, 300) || null,
+    p_note:
+      String(fd.get("note") || "")
+        .trim()
+        .slice(0, 300) || null,
   });
   revalidatePath("/", "layout");
   redirect(`/pay/${ad}?${error ? `err=${encodeURIComponent(error.message)}` : "sent=1"}`);
@@ -130,7 +138,11 @@ export async function reportAd(adId: string, reason: string, note: string): Prom
   const me = await getProfile();
   if (!me) return { ok: false, error: "Нэвтэрнэ үү" };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("report_ad", { p_ad: adId, p_reason: reason, p_note: note.trim().slice(0, 500) || null });
+  const { error } = await supabase.rpc("report_ad", {
+    p_ad: adId,
+    p_reason: reason,
+    p_note: note.trim().slice(0, 500) || null,
+  });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 

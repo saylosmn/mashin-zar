@@ -49,7 +49,8 @@ export default function Home() {
           if (term) req = req.or(`brand.ilike.%${term}%,model.ilike.%${term}%,trim.ilike.%${term}%`);
           if (brand) req = req.eq("brand", brand);
           // Онцлох (VIP) зар эхэндээ
-          if (withFeatured && sort !== "price_asc" && sort !== "price_desc") req = req.order("featured", { ascending: false });
+          if (withFeatured && sort !== "price_asc" && sort !== "price_desc")
+            req = req.order("featured", { ascending: false });
           if (sort === "price_asc") req = req.order("price", { ascending: true });
           else if (sort === "price_desc") req = req.order("price", { ascending: false });
           else req = req.order("approved_at", { ascending: false, nullsFirst: false });
@@ -76,16 +77,21 @@ export default function Home() {
     load(0);
   }, [load]);
 
-
   // Шинэ зар батлагдах, зарагдах, устгагдахад жагсаалт шууд шинэчлэгдэнэ.
   // Одоо ачаалсан хэмжээгээрээ чимээгүй дахин татна — 1-р хуудас руу үсрэхгүй, гүйлгэсэн байрлал хадгалагдана.
   useLiveSync(() => load(0, Math.max(PAGE, loadedRef.current)), ["ads"]);
   // Уншаагүй мэдэгдлийн тоо (зөвхөн нэвтэрсэн үед)
   const loadUnread = useCallback(() => {
     if (!signedIn) return setUnread(0);
-    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("read", false).then(({ count: c }) => setUnread(c ?? 0));
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("read", false)
+      .then(({ count: c }) => setUnread(c ?? 0));
   }, [signedIn]);
-  useEffect(() => { loadUnread(); }, [loadUnread]);
+  useEffect(() => {
+    loadUnread();
+  }, [loadUnread]);
   useLiveSync(loadUnread, ["ads", "*"]);
 
   const tabs: { key: Cat; label: string }[] = [
@@ -98,12 +104,51 @@ export default function Home() {
     <View style={{ gap: 14, paddingBottom: 6 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <BrandRow size={15} mark={32} />
-        <Pressable accessibilityLabel="Мэдэгдэл" onPress={() => router.push("/notifications")} style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line2, backgroundColor: C.card, alignItems: "center", justifyContent: "center" }}>
+        <Pressable
+          accessibilityLabel="Мэдэгдэл"
+          onPress={() => router.push("/notifications")}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: C.line2,
+            backgroundColor: C.card,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Feather name="bell" size={20} color={C.ink} />
-          {unread > 0 && <View style={{ position: "absolute", top: 9, right: 10, width: 9, height: 9, borderRadius: 5, backgroundColor: C.dot, borderWidth: 2, borderColor: C.card }} />}
+          {unread > 0 && (
+            <View
+              style={{
+                position: "absolute",
+                top: 9,
+                right: 10,
+                width: 9,
+                height: 9,
+                borderRadius: 5,
+                backgroundColor: C.dot,
+                borderWidth: 2,
+                borderColor: C.card,
+              }}
+            />
+          )}
         </Pressable>
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, height: 48, paddingHorizontal: 14, backgroundColor: C.card, borderWidth: query ? 2 : 1, borderColor: query ? C.ink : C.line2, borderRadius: 12 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          height: 48,
+          paddingHorizontal: 14,
+          backgroundColor: C.card,
+          borderWidth: query ? 2 : 1,
+          borderColor: query ? C.ink : C.line2,
+          borderRadius: 12,
+        }}
+      >
         <Feather name="search" size={19} color={C.muted} />
         <TextInput
           value={q}
@@ -116,23 +161,53 @@ export default function Home() {
           style={{ flex: 1, fontFamily: F.body, fontSize: 15, color: C.ink }}
         />
         {q.length > 0 && (
-          <Pressable accessibilityLabel="Цэвэрлэх" onPress={() => { setQ(""); setQuery(""); }} hitSlop={10}>
+          <Pressable
+            accessibilityLabel="Цэвэрлэх"
+            onPress={() => {
+              setQ("");
+              setQuery("");
+            }}
+            hitSlop={10}
+          >
             <Feather name="x" size={18} color={C.muted} />
           </Pressable>
         )}
       </View>
-      <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 4, padding: 4, backgroundColor: C.soft, borderRadius: 12 }}>
+      <View
+        accessibilityRole="tablist"
+        style={{ flexDirection: "row", gap: 4, padding: 4, backgroundColor: C.soft, borderRadius: 12 }}
+      >
         {tabs.map((t) => {
           const on = t.key === cat;
           return (
-            <Pressable key={t.key} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setCat(t.key)} style={{ flex: 1, height: 40, borderRadius: 9, backgroundColor: on ? C.ink : "transparent", alignItems: "center", justifyContent: "center" }}>
-              <T w={on ? "semibold" : "medium"} style={{ fontSize: 13, color: on ? C.yellow : C.body }}>{t.label}</T>
+            <Pressable
+              key={t.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              onPress={() => setCat(t.key)}
+              style={{
+                flex: 1,
+                height: 40,
+                borderRadius: 9,
+                backgroundColor: on ? C.ink : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <T w={on ? "semibold" : "medium"} style={{ fontSize: 13, color: on ? C.yellow : C.body }}>
+                {t.label}
+              </T>
             </Pressable>
           );
         })}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-        <Chip icon="filter" label={brand ?? "Марк"} on={!!brand || showFilters} onPress={() => setShowFilters((v) => !v)} />
+        <Chip
+          icon="filter"
+          label={brand ?? "Марк"}
+          on={!!brand || showFilters}
+          onPress={() => setShowFilters((v) => !v)}
+        />
         <Chip label="Шинэ нь эхэндээ" on={sort === "new"} onPress={() => setSort("new")} />
         <Chip label="Үнэ ↑" on={sort === "price_asc"} onPress={() => setSort("price_asc")} />
         <Chip label="Үнэ ↓" on={sort === "price_desc"} onPress={() => setSort("price_desc")} />
@@ -141,7 +216,15 @@ export default function Home() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           <Chip label="Бүх марк" on={!brand} onPress={() => setBrand(null)} />
           {Object.keys(BRANDS).map((b) => (
-            <Chip key={b} label={b} on={brand === b} onPress={() => { setBrand(b); setShowFilters(false); }} />
+            <Chip
+              key={b}
+              label={b}
+              on={brand === b}
+              onPress={() => {
+                setBrand(b);
+                setShowFilters(false);
+              }}
+            />
           ))}
         </View>
       )}
@@ -151,8 +234,19 @@ export default function Home() {
 
   if (error && ads.length === 0)
     return (
-      <StateView icon="warning" title="Алдаа гарлаа" text={`Зар ачаалж чадсангүй. Интернэтээ шалгаад дахин оролдоно уу.\n(${error})`}>
-        <Button title="Дахин оролдох" icon="refresh-cw" onPress={() => { setLoading(true); load(0); }} />
+      <StateView
+        icon="warning"
+        title="Алдаа гарлаа"
+        text={`Зар ачаалж чадсангүй. Интернэтээ шалгаад дахин оролдоно уу.\n(${error})`}
+      >
+        <Button
+          title="Дахин оролдох"
+          icon="refresh-cw"
+          onPress={() => {
+            setLoading(true);
+            load(0);
+          }}
+        />
       </StateView>
     );
 
@@ -162,24 +256,71 @@ export default function Home() {
       keyExtractor={(a) => a.id}
       contentContainerStyle={{ padding: 20, paddingTop: 12, gap: 14 }}
       ListHeaderComponent={header}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(0); }} tintColor={C.ink} />}
-      renderItem={({ item }) => <AdCard ad={item} cy={cy} onPress={() => { adCache.set(item.id, item); router.push(`/ads/${item.id}`); }} />}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => {
+            setRefreshing(true);
+            load(0);
+          }}
+          tintColor={C.ink}
+        />
+      }
+      renderItem={({ item }) => (
+        <AdCard
+          ad={item}
+          cy={cy}
+          onPress={() => {
+            adCache.set(item.id, item);
+            router.push(`/ads/${item.id}`);
+          }}
+        />
+      )}
       onEndReachedThreshold={0.4}
-      onEndReached={() => { if (!loading && ads.length < count) load(ads.length); }}
+      onEndReached={() => {
+        if (!loading && ads.length < count) load(ads.length);
+      }}
       ListEmptyComponent={
         loading ? (
-          <View style={{ gap: 14 }}><CardSkeleton /><CardSkeleton /></View>
+          <View style={{ gap: 14 }}>
+            <CardSkeleton />
+            <CardSkeleton />
+          </View>
         ) : (
           <View style={{ alignItems: "center", gap: 14, paddingVertical: 40 }}>
-            <View style={{ width: 96, height: 96, borderRadius: 26, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <View
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 26,
+                backgroundColor: C.card,
+                borderWidth: 1,
+                borderColor: C.line,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <Feather name="search" size={42} color={C.ink} />
             </View>
-            <T w="display" style={{ fontSize: 20 }}>Илэрц олдсонгүй</T>
-            <T style={{ textAlign: "center", color: C.body, lineHeight: 22 }}>
-              {query || brand ? "Шүүлтүүрээ сулруулах эсвэл ийм зар орохоор мэдэгдэл авах боломжтой." : "Одоогоор идэвхтэй зар алга. Анхны зараа тавиарай!"}
+            <T w="display" style={{ fontSize: 20 }}>
+              Илэрц олдсонгүй
             </T>
-            {(query || brand) ? (
-              <Button title="Шүүлтүүр цэвэрлэх" variant="ghost" onPress={() => { setQ(""); setQuery(""); setBrand(null); }} style={{ alignSelf: "stretch" }} />
+            <T style={{ textAlign: "center", color: C.body, lineHeight: 22 }}>
+              {query || brand
+                ? "Шүүлтүүрээ сулруулах эсвэл ийм зар орохоор мэдэгдэл авах боломжтой."
+                : "Одоогоор идэвхтэй зар алга. Анхны зараа тавиарай!"}
+            </T>
+            {query || brand ? (
+              <Button
+                title="Шүүлтүүр цэвэрлэх"
+                variant="ghost"
+                onPress={() => {
+                  setQ("");
+                  setQuery("");
+                  setBrand(null);
+                }}
+                style={{ alignSelf: "stretch" }}
+              />
             ) : (
               <Button title="Зар нэмэх" onPress={() => router.push("/post")} style={{ alignSelf: "stretch" }} />
             )}
@@ -190,9 +331,34 @@ export default function Home() {
   );
 }
 
-function Chip({ label, on, onPress, icon }: { label: string; on?: boolean; onPress: () => void; icon?: keyof typeof Feather.glyphMap }) {
+function Chip({
+  label,
+  on,
+  onPress,
+  icon,
+}: {
+  label: string;
+  on?: boolean;
+  onPress: () => void;
+  icon?: keyof typeof Feather.glyphMap;
+}) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ height: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: on ? C.ink : C.line2, backgroundColor: on ? C.ink : C.card, flexDirection: "row", alignItems: "center", gap: 6 }}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      style={{
+        height: 36,
+        paddingHorizontal: 12,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: on ? C.ink : C.line2,
+        backgroundColor: on ? C.ink : C.card,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+      }}
+    >
       {icon && <Feather name={icon} size={15} color={on ? C.paper : C.ink} />}
       <T style={{ fontSize: 13, color: on ? C.paper : C.ink }}>{label}</T>
     </Pressable>

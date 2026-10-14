@@ -3,12 +3,42 @@ import { RateLimiter, clientIp, isBadAgent, isScannerPath, rateRule, tooLarge } 
 
 describe("халдлагаас хамгаалах (shield)", () => {
   it("сканнерын хаягийг танина", () => {
-    for (const p of ["/.env", "/.git/config", "/wp-admin/setup.php", "/wp-login.php", "/index.php", "/phpmyadmin/", "/vendor/phpunit/x", "/cgi-bin/luci", "/xmlrpc.php", "/backup.sql", "/actuator/health", "/manager/html"]) {
+    for (const p of [
+      "/.env",
+      "/.git/config",
+      "/wp-admin/setup.php",
+      "/wp-login.php",
+      "/index.php",
+      "/phpmyadmin/",
+      "/vendor/phpunit/x",
+      "/cgi-bin/luci",
+      "/xmlrpc.php",
+      "/backup.sql",
+      "/actuator/health",
+      "/manager/html",
+    ]) {
       expect(isScannerPath(p), p).toBe(true);
     }
   });
   it("жинхэнэ хуудсыг хаахгүй", () => {
-    for (const p of ["/", "/ads/123e4567-e89b-12d3-a456-426614174000", "/admin", "/admin/review", "/manager", "/manager/ads", "/post", "/my", "/api/sms", "/api/contracts/1/pdf", "/app/download", "/environment-cars", "/compare", "/leasing", "/login", "/auth/callback"]) {
+    for (const p of [
+      "/",
+      "/ads/123e4567-e89b-12d3-a456-426614174000",
+      "/admin",
+      "/admin/review",
+      "/manager",
+      "/manager/ads",
+      "/post",
+      "/my",
+      "/api/sms",
+      "/api/contracts/1/pdf",
+      "/app/download",
+      "/environment-cars",
+      "/compare",
+      "/leasing",
+      "/login",
+      "/auth/callback",
+    ]) {
       expect(isScannerPath(p), p).toBe(false);
     }
   });

@@ -31,53 +31,129 @@
 }
 
 @layer base {
-  html, body { background: var(--color-paper); color: var(--color-ink); }
-  body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
-  a { color: inherit; }
+  html,
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  a {
+    color: inherit;
+  }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 h-11 px-4 rounded-[12px] text-[14px] font-semibold no-underline cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap;
+    @apply inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[12px] px-4 text-[14px] font-semibold whitespace-nowrap no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-60;
   }
-  .btn-lg { @apply h-[52px] px-6 text-[16px] rounded-[14px]; }
-  .btn-sm { @apply h-9 px-3 text-[13px] rounded-[10px]; }
-  .btn-yellow { @apply bg-yellow text-ink hover:bg-yellow-2 font-bold; }
-  .btn-ink { @apply bg-ink text-yellow hover:bg-ink-2 font-bold; }
-  .btn-ghost { @apply bg-card text-ink border border-line-2 hover:bg-paper; }
-  .btn-dark-ghost { @apply bg-transparent text-paper border border-ink-line hover:bg-ink-2; }
-  .btn-danger { @apply bg-card text-danger border border-danger-line hover:bg-danger-bg; }
+  .btn-lg {
+    @apply h-[52px] rounded-[14px] px-6 text-[16px];
+  }
+  .btn-sm {
+    @apply h-9 rounded-[10px] px-3 text-[13px];
+  }
+  .btn-yellow {
+    @apply bg-yellow font-bold text-ink hover:bg-yellow-2;
+  }
+  .btn-ink {
+    @apply bg-ink font-bold text-yellow hover:bg-ink-2;
+  }
+  .btn-ghost {
+    @apply border border-line-2 bg-card text-ink hover:bg-paper;
+  }
+  .btn-dark-ghost {
+    @apply border border-ink-line bg-transparent text-paper hover:bg-ink-2;
+  }
+  .btn-danger {
+    @apply border border-danger-line bg-card text-danger hover:bg-danger-bg;
+  }
 
-  .card { @apply bg-card border border-line rounded-2xl; }
+  .card {
+    @apply rounded-2xl border border-line bg-card;
+  }
   .input {
-    @apply h-12 w-full min-w-0 box-border px-3 rounded-[12px] border border-line-2 bg-card text-[15px] text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10;
+    @apply box-border h-12 w-full min-w-0 rounded-[12px] border border-line-2 bg-card px-3 text-[15px] text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10;
   }
   .textarea {
-    @apply w-full min-w-0 box-border px-3 rounded-[12px] border border-line-2 bg-card text-[15px] text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 min-h-[110px] py-3 leading-relaxed resize-y;
+    @apply box-border min-h-[110px] w-full min-w-0 resize-y rounded-[12px] border border-line-2 bg-card px-3 py-3 text-[15px] leading-relaxed text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10;
   }
-  .label { @apply flex flex-col gap-1.5 text-[13px] font-semibold min-w-0; }
-  .h-display { font-family: var(--font-display); @apply font-bold tracking-tight; }
-  .mono { font-family: var(--font-mono); }
+  .label {
+    @apply flex min-w-0 flex-col gap-1.5 text-[13px] font-semibold;
+  }
+  .h-display {
+    font-family: var(--font-display);
+    @apply font-bold tracking-tight;
+  }
+  .mono {
+    font-family: var(--font-mono);
+  }
   .plate {
     font-family: var(--font-mono);
-    @apply inline-flex items-center text-[12px] font-bold border-[1.5px] border-ink rounded px-1.5 py-0.5 whitespace-nowrap bg-card;
+    @apply inline-flex items-center rounded border-[1.5px] border-ink bg-card px-1.5 py-0.5 text-[12px] font-bold whitespace-nowrap;
   }
   .cat-chip {
     font-family: var(--font-mono);
-    @apply inline-flex items-center bg-ink text-yellow text-[11px] font-bold px-2 py-1 rounded-[5px] whitespace-nowrap;
+    @apply inline-flex items-center rounded-[5px] bg-ink px-2 py-1 text-[11px] font-bold whitespace-nowrap text-yellow;
   }
-  .badge { @apply inline-flex items-center text-[12px] font-semibold px-2 py-1 rounded-md whitespace-nowrap; }
-  .ph-stripes { background: repeating-linear-gradient(135deg, #e3e5e0 0 10px, #ecede9 10px 20px); }
-  .table-wrap { @apply bg-card border border-line rounded-2xl overflow-x-auto; }
-  .table { @apply w-full border-collapse text-[14px]; }
-  .table th { @apply text-left text-[12px] font-semibold text-muted px-4 py-3 border-b border-line whitespace-nowrap; }
-  .table td { @apply px-4 py-3 border-b border-[#ecede9] whitespace-nowrap align-middle; }
+  .badge {
+    @apply inline-flex items-center rounded-md px-2 py-1 text-[12px] font-semibold whitespace-nowrap;
+  }
+  .ph-stripes {
+    background: repeating-linear-gradient(135deg, #e3e5e0 0 10px, #ecede9 10px 20px);
+  }
+  .table-wrap {
+    @apply overflow-x-auto rounded-2xl border border-line bg-card;
+  }
+  .table {
+    @apply w-full border-collapse text-[14px];
+  }
+  .table th {
+    @apply border-b border-line px-4 py-3 text-left text-[12px] font-semibold whitespace-nowrap text-muted;
+  }
+  .table td {
+    @apply border-b border-[#ecede9] px-4 py-3 align-middle whitespace-nowrap;
+  }
 }
 
-@keyframes shimmer { 0% { background-position: 100% 0 } 100% { background-position: -100% 0 } }
-.sk { background: linear-gradient(90deg, #e3e5e0 0%, #eeefeb 45%, #e3e5e0 90%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
-@keyframes road { from { transform: translateX(-100%) } to { transform: translateX(350%) } }
-.road-bar { animation: road 1.6s cubic-bezier(.45,0,.55,1) infinite; }
-@keyframes spin { to { transform: rotate(360deg) } }
-.spin { animation: spin .9s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .sk, .road-bar, .spin { animation: none; } }
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+.sk {
+  background: linear-gradient(90deg, #e3e5e0 0%, #eeefeb 45%, #e3e5e0 90%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes road {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(350%);
+  }
+}
+.road-bar {
+  animation: road 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk,
+  .road-bar,
+  .spin {
+    animation: none;
+  }
+}

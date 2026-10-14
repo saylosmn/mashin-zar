@@ -83,7 +83,10 @@ export async function unregisterPush() {
   if (!lastToken) return;
   const t = lastToken;
   lastToken = null;
-  await supabase.rpc("remove_push_token", { p_token: t }).then(() => {}, () => {});
+  await supabase.rpc("remove_push_token", { p_token: t }).then(
+    () => {},
+    () => {},
+  );
 }
 
 export const PUSH_REASON: Record<Exclude<PushStatus, { ok: true }>["reason"], string> = {
@@ -111,8 +114,10 @@ export function usePushRouting(enabled: boolean) {
     let handled: string | null = null;
     const clear = () => {
       try {
-        if (typeof Notifications.clearLastNotificationResponse === "function") Notifications.clearLastNotificationResponse();
-        else if (typeof Notifications.clearLastNotificationResponseAsync === "function") Notifications.clearLastNotificationResponseAsync().catch(() => {});
+        if (typeof Notifications.clearLastNotificationResponse === "function")
+          Notifications.clearLastNotificationResponse();
+        else if (typeof Notifications.clearLastNotificationResponseAsync === "function")
+          Notifications.clearLastNotificationResponseAsync().catch(() => {});
       } catch {
         // ignore
       }
@@ -125,8 +130,12 @@ export function usePushRouting(enabled: boolean) {
       setTimeout(() => openFromPush(r.notification.request.content.data as PushData), 300);
     };
     try {
-      if (typeof Notifications.getLastNotificationResponse === "function") go(Notifications.getLastNotificationResponse());
-      else Notifications.getLastNotificationResponseAsync().then(go).catch(() => {});
+      if (typeof Notifications.getLastNotificationResponse === "function")
+        go(Notifications.getLastNotificationResponse());
+      else
+        Notifications.getLastNotificationResponseAsync()
+          .then(go)
+          .catch(() => {});
     } catch {
       // ignore
     }

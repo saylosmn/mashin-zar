@@ -12,9 +12,13 @@ export default async function PostPage() {
   if (!me.profile_completed) redirect("/profile?next=/post");
   const [settings, jar] = await Promise.all([getSettings(), cookies()]);
   return (
-    <main className="max-w-[1280px] w-full mx-auto px-4 sm:px-6 pt-8 pb-16 flex flex-col gap-6">
+    <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 pt-8 pb-16 sm:px-6">
       <div className="flex flex-col gap-1.5">
-        <span className="text-[13px] text-muted">{me.role === "dealer" ? `Авто худалдаа · ${me.shop_name ?? ""} · шууд нийтлэгдэнэ` : "Алхам 1 / 3 · Зарын мэдээлэл → сонголт → гэрээ эсвэл төлбөр"}</span>
+        <span className="text-[13px] text-muted">
+          {me.role === "dealer"
+            ? `Авто худалдаа · ${me.shop_name ?? ""} · шууд нийтлэгдэнэ`
+            : "Алхам 1 / 3 · Зарын мэдээлэл → сонголт → гэрээ эсвэл төлбөр"}
+        </span>
         <h1 className="h-display m-0 text-[clamp(26px,3vw,36px)]">Зар нэмэх</h1>
       </div>
       <PostForm

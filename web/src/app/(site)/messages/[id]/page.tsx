@@ -23,25 +23,36 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
   const messages = ((msgRows ?? []) as Message[]).reverse();
 
   return (
-    <main className="max-w-[760px] w-full mx-auto px-0 sm:px-6 pt-0 sm:pt-6 pb-0 sm:pb-10 flex flex-col flex-1">
-      <div className="flex items-center gap-3 px-4 sm:px-0 py-3 border-b border-line sm:border-0">
-        <Link href="/messages" aria-label="Буцах" className="btn btn-ghost w-10 h-10 px-0 shrink-0">←</Link>
+    <main className="mx-auto flex w-full max-w-[760px] flex-1 flex-col px-0 pt-0 pb-0 sm:px-6 sm:pt-6 sm:pb-10">
+      <div className="flex items-center gap-3 border-b border-line px-4 py-3 sm:border-0 sm:px-0">
+        <Link href="/messages" aria-label="Буцах" className="btn btn-ghost h-10 w-10 shrink-0 px-0">
+          ←
+        </Link>
         {info.ad_id ? (
-          <Link href={`/ads/${info.ad_id}`} className="flex items-center gap-3 no-underline min-w-0 flex-1">
-            <CarPhoto path={info.photo} alt="" className="w-[52px] h-[40px] rounded-md shrink-0" label="IMG" />
-            <div className="flex flex-col min-w-0">
-              <span className="font-bold text-[15px] truncate">{info.other_name}</span>
-              <span className="text-[12px] text-muted truncate">{info.car}{info.price ? ` · ${money(info.price)}` : ""}</span>
+          <Link href={`/ads/${info.ad_id}`} className="flex min-w-0 flex-1 items-center gap-3 no-underline">
+            <CarPhoto path={info.photo} alt="" className="h-[40px] w-[52px] shrink-0 rounded-md" label="IMG" />
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-[15px] font-bold">{info.other_name}</span>
+              <span className="truncate text-[12px] text-muted">
+                {info.car}
+                {info.price ? ` · ${money(info.price)}` : ""}
+              </span>
             </div>
           </Link>
         ) : (
-          <div className="flex flex-col min-w-0 flex-1">
-            <span className="font-bold text-[15px] truncate">{info.other_name}</span>
-            <span className="text-[12px] text-muted truncate">{info.car} · зар устгагдсан</span>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-[15px] font-bold">{info.other_name}</span>
+            <span className="truncate text-[12px] text-muted">{info.car} · зар устгагдсан</span>
           </div>
         )}
       </div>
-      <ChatThread convId={info.id} me={me.id} messages={messages} canWrite={info.role !== "staff"} otherName={info.other_name} />
+      <ChatThread
+        convId={info.id}
+        me={me.id}
+        messages={messages}
+        canWrite={info.role !== "staff"}
+        otherName={info.other_name}
+      />
     </main>
   );
 }

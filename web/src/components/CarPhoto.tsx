@@ -14,10 +14,10 @@ export function CarPhoto({
   const url = photoUrl(path);
   if (!url)
     return (
-      <div className={`ph-stripes flex items-center justify-center text-muted mono text-[12px] ${className}`}>
+      <div className={`ph-stripes mono flex items-center justify-center text-[12px] text-muted ${className}`}>
         {label ?? "Зураггүй"}
       </div>
     );
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt={alt} loading="lazy" className={`object-cover bg-soft ${className}`} />;
+  return <img src={url} alt={alt} loading="lazy" className={`bg-soft object-cover ${className}`} />;
 }

@@ -13,7 +13,16 @@ import { Button, Photo, Skeleton, StateView, T } from "@/components/ui";
 import type { ChatInfo, Message } from "@shared/types";
 
 const QUICK = ["Сайн байна уу, машин зарагдаагүй байна уу?", "Хэзээ, хаана үзэж болох вэ?", "Үнэ тохирох уу?"];
-type AdHead = { id: string; brand: string; model: string; year_made: number; price: number; photos: string[]; seller_name: string; seller_shop?: string | null };
+type AdHead = {
+  id: string;
+  brand: string;
+  model: string;
+  year_made: number;
+  price: number;
+  photos: string[];
+  seller_name: string;
+  seller_shop?: string | null;
+};
 
 /**
  * Чат. id="new" бол ?ad=<зар>-аар шинэ чат эхэлнэ (байгаа бол түүн рүү шилжинэ).
@@ -36,12 +45,21 @@ export default function ChatScreen() {
   useEffect(() => {
     if (convId || !params.ad || !uid) return;
     (async () => {
-      const { data: ex } = await supabase.from("conversations").select("id").eq("ad_id", params.ad!).eq("buyer_id", uid).maybeSingle();
+      const { data: ex } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("ad_id", params.ad!)
+        .eq("buyer_id", uid)
+        .maybeSingle();
       if (ex) {
         setText("");
         return setConvId(ex.id);
       }
-      const { data } = await supabase.from("public_ads").select("id,brand,model,year_made,price,photos,seller_name,seller_shop").eq("id", params.ad!).maybeSingle();
+      const { data } = await supabase
+        .from("public_ads")
+        .select("id,brand,model,year_made,price,photos,seller_name,seller_shop")
+        .eq("id", params.ad!)
+        .maybeSingle();
       if (!data) setError("Зар олдсонгүй эсвэл идэвхгүй болсон");
       else setAdHead(data as AdHead);
       setMsgs([]);
@@ -59,10 +77,21 @@ export default function ChatScreen() {
     if (!row) return setError("Чат олдсонгүй");
     setInfo(row);
     setMsgs(((m ?? []) as Message[]).reverse());
-    if (row.role !== "staff") supabase.rpc("mark_chat_read", { p_conv: convId }).then(() => {}, () => {});
+    if (row.role !== "staff")
+      supabase.rpc("mark_chat_read", { p_conv: convId }).then(
+        () => {},
+        () => {},
+      );
   }, [convId]);
-  useEffect(() => { load(); }, [load]);
-  useLiveSync((e) => { if (!e.id || e.id === convId) load(); }, ["messages"]);
+  useEffect(() => {
+    load();
+  }, [load]);
+  useLiveSync(
+    (e) => {
+      if (!e.id || e.id === convId) load();
+    },
+    ["messages"],
+  );
 
   useEffect(() => {
     if (msgs?.length) setTimeout(() => list.current?.scrollToEnd({ animated: false }), 50);
@@ -81,7 +110,13 @@ export default function ChatScreen() {
       router.setParams({ id: String(data) });
       return setConvId(String(data));
     }
-    const temp: Message = { id: -Date.now(), conversation_id: convId, sender_id: uid ?? null, body, created_at: new Date().toISOString() };
+    const temp: Message = {
+      id: -Date.now(),
+      conversation_id: convId,
+      sender_id: uid ?? null,
+      body,
+      created_at: new Date().toISOString(),
+    };
     setMsgs((x) => [...(x ?? []), temp]);
     setText("");
     const { error: e } = await supabase.rpc("send_message", { p_conv: convId, p_body: body });
@@ -93,31 +128,70 @@ export default function ChatScreen() {
     } else load();
   }
 
-  const title = info?.other_name ?? (adHead ? adHead.seller_shop ?? adHead.seller_name : "Чат");
-  const sub = info ? `${info.car}${info.price ? ` · ${money(info.price)}` : ""}` : adHead ? `${adHead.brand} ${adHead.model} · ${adHead.year_made} · ${money(adHead.price)}` : "";
+  const title = info?.other_name ?? (adHead ? (adHead.seller_shop ?? adHead.seller_name) : "Чат");
+  const sub = info
+    ? `${info.car}${info.price ? ` · ${money(info.price)}` : ""}`
+    : adHead
+      ? `${adHead.brand} ${adHead.model} · ${adHead.year_made} · ${money(adHead.price)}`
+      : "";
   const photo = info?.photo ?? adHead?.photos?.[0];
   const adId = info?.ad_id ?? adHead?.id;
   const canWrite = !info || info.role !== "staff";
 
-  if (error && !msgs) return <StateView icon="warning" title="Алдаа гарлаа" text={error}><Button title="Буцах" onPress={() => router.back()} /></StateView>;
+  if (error && !msgs)
+    return (
+      <StateView icon="warning" title="Алдаа гарлаа" text={error}>
+        <Button title="Буцах" onPress={() => router.back()} />
+      </StateView>
+    );
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, backgroundColor: C.paper }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderColor: C.line, backgroundColor: C.card }}>
-        <Pressable accessibilityLabel="Буцах" onPress={() => router.back()} hitSlop={8} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1, backgroundColor: C.paper }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderBottomWidth: 1,
+          borderColor: C.line,
+          backgroundColor: C.card,
+        }}
+      >
+        <Pressable
+          accessibilityLabel="Буцах"
+          onPress={() => router.back()}
+          hitSlop={8}
+          style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
+        >
           <Feather name="chevron-left" size={24} color={C.ink} />
         </Pressable>
-        <Pressable disabled={!adId} onPress={() => adId && router.push(`/ads/${adId}`)} style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+        <Pressable
+          disabled={!adId}
+          onPress={() => adId && router.push(`/ads/${adId}`)}
+          style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}
+        >
           <Photo path={photo} style={{ width: 44, height: 36, borderRadius: 6 }} />
           <View style={{ flex: 1 }}>
-            <T w="bold" style={{ fontSize: 15 }} numberOfLines={1}>{title}</T>
-            <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>{sub}</T>
+            <T w="bold" style={{ fontSize: 15 }} numberOfLines={1}>
+              {title}
+            </T>
+            <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
+              {sub}
+            </T>
           </View>
         </Pressable>
       </View>
 
       {!msgs ? (
-        <View style={{ padding: 16, gap: 10 }}><Skeleton style={{ height: 40, width: "60%" }} /><Skeleton style={{ height: 40, width: "50%", alignSelf: "flex-end" }} /></View>
+        <View style={{ padding: 16, gap: 10 }}>
+          <Skeleton style={{ height: 40, width: "60%" }} />
+          <Skeleton style={{ height: 40, width: "50%", alignSelf: "flex-end" }} />
+        </View>
       ) : (
         <FlatList
           ref={list}
@@ -127,7 +201,9 @@ export default function ChatScreen() {
           ListEmptyComponent={
             <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 8, padding: 24 }}>
               <T style={{ color: C.muted, textAlign: "center" }}>Худалдагчид анхны мессежээ бичээрэй.</T>
-              <T style={{ color: C.muted, fontSize: 12, textAlign: "center" }}>Урьдчилгаа мөнгө машинаа үзэхээс өмнө бүү шилжүүл.</T>
+              <T style={{ color: C.muted, fontSize: 12, textAlign: "center" }}>
+                Урьдчилгаа мөнгө машинаа үзэхээс өмнө бүү шилжүүл.
+              </T>
             </View>
           }
           renderItem={({ item: m, index }) => {
@@ -137,13 +213,38 @@ export default function ChatScreen() {
             return (
               <View>
                 {showDay ? (
-                  <View style={{ alignSelf: "center", backgroundColor: C.soft, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 2, marginVertical: 6 }}>
+                  <View
+                    style={{
+                      alignSelf: "center",
+                      backgroundColor: C.soft,
+                      borderRadius: 10,
+                      paddingHorizontal: 10,
+                      paddingVertical: 2,
+                      marginVertical: 6,
+                    }}
+                  >
                     <T style={{ fontSize: 11, color: C.muted }}>{day}</T>
                   </View>
                 ) : null}
-                <View style={{ maxWidth: "80%", alignSelf: mine ? "flex-end" : "flex-start", backgroundColor: mine ? C.ink : C.card, borderWidth: mine ? 0 : 1, borderColor: C.line, borderRadius: 16, borderBottomRightRadius: mine ? 4 : 16, borderBottomLeftRadius: mine ? 16 : 4, paddingHorizontal: 12, paddingVertical: 8, opacity: m.id < 0 ? 0.6 : 1 }}>
+                <View
+                  style={{
+                    maxWidth: "80%",
+                    alignSelf: mine ? "flex-end" : "flex-start",
+                    backgroundColor: mine ? C.ink : C.card,
+                    borderWidth: mine ? 0 : 1,
+                    borderColor: C.line,
+                    borderRadius: 16,
+                    borderBottomRightRadius: mine ? 4 : 16,
+                    borderBottomLeftRadius: mine ? 16 : 4,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    opacity: m.id < 0 ? 0.6 : 1,
+                  }}
+                >
                   <T style={{ fontSize: 15, lineHeight: 21, color: mine ? C.paper : C.ink }}>{m.body}</T>
-                  <T style={{ fontSize: 10, color: mine ? C.pale : C.muted, alignSelf: "flex-end", marginTop: 2 }}>{timeHM(m.created_at)}</T>
+                  <T style={{ fontSize: 10, color: mine ? C.pale : C.muted, alignSelf: "flex-end", marginTop: 2 }}>
+                    {timeHM(m.created_at)}
+                  </T>
                 </View>
               </View>
             );
@@ -152,11 +253,31 @@ export default function ChatScreen() {
       )}
 
       {canWrite ? (
-        <View style={{ borderTopWidth: 1, borderColor: C.line, backgroundColor: C.card, paddingHorizontal: 12, paddingTop: 8, paddingBottom: Math.max(insets.bottom, 10), gap: 8 }}>
+        <View
+          style={{
+            borderTopWidth: 1,
+            borderColor: C.line,
+            backgroundColor: C.card,
+            paddingHorizontal: 12,
+            paddingTop: 8,
+            paddingBottom: Math.max(insets.bottom, 10),
+            gap: 8,
+          }}
+        >
           {!convId && msgs?.length === 0 ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {QUICK.map((q) => (
-                <Pressable key={q} onPress={() => setText(q)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, borderWidth: 1, borderColor: text === q ? C.ink : C.line2 }}>
+                <Pressable
+                  key={q}
+                  onPress={() => setText(q)}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: text === q ? C.ink : C.line2,
+                  }}
+                >
                   <T style={{ fontSize: 12 }}>{q}</T>
                 </Pressable>
               ))}
@@ -171,20 +292,44 @@ export default function ChatScreen() {
               placeholderTextColor="#9AA0A9"
               multiline
               maxLength={1000}
-              style={{ flex: 1, minHeight: 44, maxHeight: 120, borderWidth: 1, borderColor: C.line2, borderRadius: 14, paddingHorizontal: 12, paddingTop: 11, paddingBottom: 11, fontFamily: F.body, fontSize: 15, color: C.ink, backgroundColor: C.paper }}
+              style={{
+                flex: 1,
+                minHeight: 44,
+                maxHeight: 120,
+                borderWidth: 1,
+                borderColor: C.line2,
+                borderRadius: 14,
+                paddingHorizontal: 12,
+                paddingTop: 11,
+                paddingBottom: 11,
+                fontFamily: F.body,
+                fontSize: 15,
+                color: C.ink,
+                backgroundColor: C.paper,
+              }}
             />
             <Pressable
               accessibilityLabel="Илгээх"
               disabled={!text.trim() || sending}
               onPress={send}
-              style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.yellow, alignItems: "center", justifyContent: "center", opacity: !text.trim() || sending ? 0.5 : 1 }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                backgroundColor: C.yellow,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: !text.trim() || sending ? 0.5 : 1,
+              }}
             >
               <Feather name="send" size={20} color={C.ink} />
             </Pressable>
           </View>
         </View>
       ) : (
-        <T style={{ padding: 12, paddingBottom: Math.max(insets.bottom, 12), fontSize: 13, color: C.muted }}>Та энэ чатыг админы эрхээр харж байна.</T>
+        <T style={{ padding: 12, paddingBottom: Math.max(insets.bottom, 12), fontSize: 13, color: C.muted }}>
+          Та энэ чатыг админы эрхээр харж байна.
+        </T>
       )}
     </KeyboardAvoidingView>
   );

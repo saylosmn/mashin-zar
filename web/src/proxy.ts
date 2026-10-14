@@ -13,8 +13,20 @@ function blocked(status: number, msg: string, extra: Record<string, string> = {}
 }
 
 const PUBLIC_PATHS = [
-  "/login", "/auth", "/setup-error", "/app", "/api/app-version", "/api/push", "/api/contracts", "/api/sms",
-  "/terms", "/privacy", "/compare", "/sitemap.xml", "/robots.txt", "/opengraph-image",
+  "/login",
+  "/auth",
+  "/setup-error",
+  "/app",
+  "/api/app-version",
+  "/api/push",
+  "/api/contracts",
+  "/api/sms",
+  "/terms",
+  "/privacy",
+  "/compare",
+  "/sitemap.xml",
+  "/robots.txt",
+  "/opengraph-image",
 ];
 
 export async function proxy(request: NextRequest) {
@@ -26,7 +38,9 @@ export async function proxy(request: NextRequest) {
   const rule = rateRule(request.method, p, request.headers.has("next-action"));
   const verdict = rule ? limiter.check(clientIp(request.headers), rule) : true;
   if (verdict !== true) {
-    return blocked(429, "Хэт олон хүсэлт илгээлээ. Түр хүлээгээд дахин оролдоно уу.", { "Retry-After": String(verdict) });
+    return blocked(429, "Хэт олон хүсэлт илгээлээ. Түр хүлээгээд дахин оролдоно уу.", {
+      "Retry-After": String(verdict),
+    });
   }
 
   // Supabase нь redirect URL-ийг зөвшөөрөөгүй үед Site URL руу ?code=... -тэй буцаадаг.
@@ -43,7 +57,8 @@ export async function proxy(request: NextRequest) {
   // Агентын урилгын холбоос (?ref=КОД): 30 хоног санаж, зар оруулахад код бөглөгдөнө
   const ref = request.nextUrl.searchParams.get("ref")?.trim().toUpperCase();
   const setRef = (res: NextResponse) => {
-    if (ref && /^[A-Z0-9]{4,12}$/.test(ref)) res.cookies.set("mz_ref", ref, { maxAge: 60 * 60 * 24 * 30, path: "/", sameSite: "lax" });
+    if (ref && /^[A-Z0-9]{4,12}$/.test(ref))
+      res.cookies.set("mz_ref", ref, { maxAge: 60 * 60 * 24 * 30, path: "/", sameSite: "lax" });
     return res;
   };
 
@@ -69,7 +84,8 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Нүүр хуудас болон зарын дэлгэрэнгүйг нэвтрээгүй хүн ч үзэж болно.
-  const isPublic = path === "/" || path.startsWith("/ads/") || PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
+  const isPublic =
+    path === "/" || path.startsWith("/ads/") || PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -81,5 +97,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|apk|json)$).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|apk|json)$).*)",
+  ],
 };

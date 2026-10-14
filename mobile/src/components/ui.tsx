@@ -89,16 +89,37 @@ export function Button({
 
 export function Plate({ text, big }: { text: string; big?: boolean }) {
   return (
-    <View style={{ borderWidth: big ? 2 : 1.5, borderColor: C.ink, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 1, backgroundColor: C.card }}>
-      <T w="monoBold" style={{ fontSize: big ? 15 : 12 }}>{text}</T>
+    <View
+      style={{
+        borderWidth: big ? 2 : 1.5,
+        borderColor: C.ink,
+        borderRadius: 4,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        backgroundColor: C.card,
+      }}
+    >
+      <T w="monoBold" style={{ fontSize: big ? 15 : 12 }}>
+        {text}
+      </T>
     </View>
   );
 }
 
 export function CatChip({ c, cy }: { c: Category; cy: number }) {
   return (
-    <View style={{ backgroundColor: C.ink, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 5, alignSelf: "flex-start" }}>
-      <T w="monoBold" style={{ color: C.yellow, fontSize: 11 }}>{categoryLabel(c, cy)}</T>
+    <View
+      style={{
+        backgroundColor: C.ink,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 5,
+        alignSelf: "flex-start",
+      }}
+    >
+      <T w="monoBold" style={{ color: C.yellow, fontSize: 11 }}>
+        {categoryLabel(c, cy)}
+      </T>
     </View>
   );
 }
@@ -106,8 +127,18 @@ export function CatChip({ c, cy }: { c: Category; cy: number }) {
 export function StatusBadge({ s }: { s: AdStatus }) {
   const st = STATUS[s];
   return (
-    <View style={{ backgroundColor: st.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: "flex-start" }}>
-      <T w="semibold" style={{ color: st.fg, fontSize: 12 }}>{st.label}</T>
+    <View
+      style={{
+        backgroundColor: st.bg,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        alignSelf: "flex-start",
+      }}
+    >
+      <T w="semibold" style={{ color: st.fg, fontSize: 12 }}>
+        {st.label}
+      </T>
     </View>
   );
 }
@@ -117,7 +148,9 @@ export function Photo({ path, style, label }: { path?: string | null; style?: St
   if (!url)
     return (
       <View style={[{ backgroundColor: "#E7E8E4", alignItems: "center", justifyContent: "center" }, style]}>
-        <T w="mono" style={{ color: C.muted, fontSize: 11 }}>{label ?? "Зураггүй"}</T>
+        <T w="mono" style={{ color: C.muted, fontSize: 11 }}>
+          {label ?? "Зураггүй"}
+        </T>
       </View>
     );
   return <Image source={{ uri: url }} style={style as never} contentFit="cover" transition={150} />;
@@ -128,42 +161,109 @@ export function AdCard({
   cy,
   onPress,
 }: {
-  ad: { brand: string; model: string; trim: string | null; plate_masked: string; year_made: number; year_imported: number | null; price: number; photos: string[]; category: Category; seller_shop?: string | null; featured?: boolean };
+  ad: {
+    brand: string;
+    model: string;
+    trim: string | null;
+    plate_masked: string;
+    year_made: number;
+    year_imported: number | null;
+    price: number;
+    photos: string[];
+    category: Category;
+    seller_shop?: string | null;
+    featured?: boolean;
+  };
   cy: number;
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="link" style={[s.card, ad.featured ? { borderWidth: 2, borderColor: C.yellow } : null]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="link"
+      style={[s.card, ad.featured ? { borderWidth: 2, borderColor: C.yellow } : null]}
+    >
       <View>
         <Photo path={ad.photos[0]} style={{ height: 190, width: "100%" }} />
-        <View style={{ position: "absolute", left: 12, top: 12 }}><CatChip c={ad.category} cy={cy} /></View>
+        <View style={{ position: "absolute", left: 12, top: 12 }}>
+          <CatChip c={ad.category} cy={cy} />
+        </View>
         {ad.featured ? (
-          <View style={{ position: "absolute", right: 12, top: 12, backgroundColor: C.yellow, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2, flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <View
+            style={{
+              position: "absolute",
+              right: 12,
+              top: 12,
+              backgroundColor: C.yellow,
+              borderRadius: 4,
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
             <Feather name="star" size={11} color={C.ink} />
-            <T w="bold" style={{ fontSize: 11 }}>Онцлох</T>
+            <T w="bold" style={{ fontSize: 11 }}>
+              Онцлох
+            </T>
           </View>
         ) : null}
         {ad.seller_shop ? (
-          <View style={{ position: "absolute", left: 12, bottom: 12, maxWidth: "60%", backgroundColor: C.yellow, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2, flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <View
+            style={{
+              position: "absolute",
+              left: 12,
+              bottom: 12,
+              maxWidth: "60%",
+              backgroundColor: C.yellow,
+              borderRadius: 4,
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
             <Feather name="shopping-bag" size={11} color={C.ink} />
-            <T w="bold" style={{ fontSize: 11 }} numberOfLines={1}>{ad.seller_shop}</T>
+            <T w="bold" style={{ fontSize: 11 }} numberOfLines={1}>
+              {ad.seller_shop}
+            </T>
           </View>
         ) : null}
         {ad.photos.length > 0 && (
-          <View style={{ position: "absolute", right: 12, bottom: 12, backgroundColor: "rgba(17,19,23,.85)", borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 }}>
-            <T w="mono" style={{ color: C.paper, fontSize: 11 }}>{ad.photos.length} зураг</T>
+          <View
+            style={{
+              position: "absolute",
+              right: 12,
+              bottom: 12,
+              backgroundColor: "rgba(17,19,23,.85)",
+              borderRadius: 4,
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+            }}
+          >
+            <T w="mono" style={{ color: C.paper, fontSize: 11 }}>
+              {ad.photos.length} зураг
+            </T>
           </View>
         )}
       </View>
       <View style={{ padding: 16, paddingTop: 14, gap: 6 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-          <T w="semibold" style={{ fontSize: 17, flexShrink: 1 }} numberOfLines={1}>{ad.brand} {ad.model}</T>
+          <T w="semibold" style={{ fontSize: 17, flexShrink: 1 }} numberOfLines={1}>
+            {ad.brand} {ad.model}
+          </T>
           <Plate text={ad.plate_masked} />
         </View>
         <T style={{ fontSize: 13, color: C.muted }} numberOfLines={1}>
-          Үйлд. {ad.year_made}{ad.year_imported ? ` · Орж ирсэн ${ad.year_imported}` : ""}{ad.trim ? ` · ${ad.trim}` : ""}
+          Үйлд. {ad.year_made}
+          {ad.year_imported ? ` · Орж ирсэн ${ad.year_imported}` : ""}
+          {ad.trim ? ` · ${ad.trim}` : ""}
         </T>
-        <T w="display" style={{ fontSize: 19 }}>{money(ad.price)}</T>
+        <T w="display" style={{ fontSize: 19 }}>
+          {money(ad.price)}
+        </T>
       </View>
     </Pressable>
   );
@@ -200,12 +300,28 @@ export function CardSkeleton() {
   );
 }
 
-export function Field({ label, children, hint, error }: { label: string; children: ReactNode; hint?: string; error?: string | null }) {
+export function Field({
+  label,
+  children,
+  hint,
+  error,
+}: {
+  label: string;
+  children: ReactNode;
+  hint?: string;
+  error?: string | null;
+}) {
   return (
     <View style={{ gap: 6 }}>
-      <T w="semibold" style={{ fontSize: 13 }}>{label}</T>
+      <T w="semibold" style={{ fontSize: 13 }}>
+        {label}
+      </T>
       {children}
-      {error ? <T style={{ fontSize: 12, color: C.danger }}>{error}</T> : hint ? <T style={{ fontSize: 12, color: C.muted }}>{hint}</T> : null}
+      {error ? (
+        <T style={{ fontSize: 12, color: C.danger }}>{error}</T>
+      ) : hint ? (
+        <T style={{ fontSize: 12, color: C.muted }}>{hint}</T>
+      ) : null}
     </View>
   );
 }
@@ -259,17 +375,49 @@ export function StateView({
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 22 }}>
         {icon === "warning" ? (
           <View style={{ width: 112, height: 100, alignItems: "center", justifyContent: "flex-end" }}>
-            <View style={{ width: 0, height: 0, borderLeftWidth: 56, borderRightWidth: 56, borderBottomWidth: 96, borderLeftColor: "transparent", borderRightColor: "transparent", borderBottomColor: C.yellow, position: "absolute", bottom: 0 }} />
-            <T w="display" style={{ fontSize: 46, color: C.ink, marginBottom: 6 }}>!</T>
+            <View
+              style={{
+                width: 0,
+                height: 0,
+                borderLeftWidth: 56,
+                borderRightWidth: 56,
+                borderBottomWidth: 96,
+                borderLeftColor: "transparent",
+                borderRightColor: "transparent",
+                borderBottomColor: C.yellow,
+                position: "absolute",
+                bottom: 0,
+              }}
+            />
+            <T w="display" style={{ fontSize: 46, color: C.ink, marginBottom: 6 }}>
+              !
+            </T>
           </View>
         ) : (
-          <View style={{ width: 104, height: 104, borderRadius: 28, backgroundColor: iconBg ?? (dark ? C.ink2 : C.card), borderWidth: iconBg ? 0 : 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <View
+            style={{
+              width: 104,
+              height: 104,
+              borderRadius: 28,
+              backgroundColor: iconBg ?? (dark ? C.ink2 : C.card),
+              borderWidth: iconBg ? 0 : 1,
+              borderColor: C.line,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Feather name={icon} size={46} color={iconColor ?? fg} />
           </View>
         )}
         <View style={{ gap: 10, alignItems: "center" }}>
-          <T w="display" style={{ fontSize: 24, color: fg, textAlign: "center", lineHeight: 30 }}>{title}</T>
-          {text && <T style={{ fontSize: 15, lineHeight: 23, color: dark ? "#C9CDD3" : C.body, textAlign: "center" }}>{text}</T>}
+          <T w="display" style={{ fontSize: 24, color: fg, textAlign: "center", lineHeight: 30 }}>
+            {title}
+          </T>
+          {text && (
+            <T style={{ fontSize: 15, lineHeight: 23, color: dark ? "#C9CDD3" : C.body, textAlign: "center" }}>
+              {text}
+            </T>
+          )}
         </View>
       </View>
       {children && <View style={{ gap: 10 }}>{children}</View>}

@@ -21,15 +21,26 @@ function MessagesInner() {
       setRows((data ?? []) as ChatRow[]);
     }
   }, []);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
   useLiveSync(() => load(), ["messages"]);
 
-  if (error && !rows) return <StateView icon="warning" title="Алдаа гарлаа" text={error}><Button title="Дахин оролдох" onPress={load} /></StateView>;
+  if (error && !rows)
+    return (
+      <StateView icon="warning" title="Алдаа гарлаа" text={error}>
+        <Button title="Дахин оролдох" onPress={load} />
+      </StateView>
+    );
 
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
-        <T w="display" style={{ fontSize: 22 }}>Чат</T>
+        <T w="display" style={{ fontSize: 22 }}>
+          Чат
+        </T>
       </View>
       <FlatList
         data={rows ?? []}
@@ -40,24 +51,64 @@ function MessagesInner() {
           rows ? (
             <View style={{ alignItems: "center", gap: 12, paddingVertical: 48 }}>
               <T style={{ fontSize: 40 }}>💬</T>
-              <T style={{ color: C.body, textAlign: "center", lineHeight: 21 }}>Чат алга. Зарын дэлгэц дээрх «Чат» товчоор худалдагчид бичнэ үү.</T>
+              <T style={{ color: C.body, textAlign: "center", lineHeight: 21 }}>
+                Чат алга. Зарын дэлгэц дээрх «Чат» товчоор худалдагчид бичнэ үү.
+              </T>
             </View>
-          ) : <CardSkeleton />
+          ) : (
+            <CardSkeleton />
+          )
         }
         renderItem={({ item: c }) => (
-          <Pressable onPress={() => router.push({ pathname: "/chat/[id]", params: { id: c.id } })} style={[s.card, { padding: 12, flexDirection: "row", gap: 12, alignItems: "center", borderColor: c.unread ? C.ink : C.line }]}>
+          <Pressable
+            onPress={() => router.push({ pathname: "/chat/[id]", params: { id: c.id } })}
+            style={[
+              s.card,
+              {
+                padding: 12,
+                flexDirection: "row",
+                gap: 12,
+                alignItems: "center",
+                borderColor: c.unread ? C.ink : C.line,
+              },
+            ]}
+          >
             <Photo path={c.photo} style={{ width: 64, height: 52, borderRadius: 8 }} />
             <View style={{ flex: 1, gap: 2 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
-                <T w={c.unread ? "bold" : "semibold"} style={{ fontSize: 15, flexShrink: 1 }} numberOfLines={1}>{c.other_name}</T>
+                <T w={c.unread ? "bold" : "semibold"} style={{ fontSize: 15, flexShrink: 1 }} numberOfLines={1}>
+                  {c.other_name}
+                </T>
                 <T style={{ fontSize: 12, color: C.muted }}>{timeAgo(c.last_message_at)}</T>
               </View>
-              <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>{c.role === "buyer" ? "Авах" : "Зарах"} · {c.car}{c.price ? ` · ${money(c.price)}` : ""}</T>
-              <T w={c.unread ? "semibold" : "body"} style={{ fontSize: 13, color: c.unread ? C.ink : C.body }} numberOfLines={1}>{c.last_from_me ? "Та: " : ""}{c.last_message ?? ""}</T>
+              <T style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
+                {c.role === "buyer" ? "Авах" : "Зарах"} · {c.car}
+                {c.price ? ` · ${money(c.price)}` : ""}
+              </T>
+              <T
+                w={c.unread ? "semibold" : "body"}
+                style={{ fontSize: 13, color: c.unread ? C.ink : C.body }}
+                numberOfLines={1}
+              >
+                {c.last_from_me ? "Та: " : ""}
+                {c.last_message ?? ""}
+              </T>
             </View>
             {c.unread > 0 ? (
-              <View style={{ minWidth: 24, height: 24, borderRadius: 12, paddingHorizontal: 6, backgroundColor: "#FF7A1A", alignItems: "center", justifyContent: "center" }}>
-                <T w="bold" style={{ fontSize: 12 }}>{c.unread}</T>
+              <View
+                style={{
+                  minWidth: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  paddingHorizontal: 6,
+                  backgroundColor: "#FF7A1A",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <T w="bold" style={{ fontSize: 12 }}>
+                  {c.unread}
+                </T>
               </View>
             ) : null}
           </Pressable>
@@ -69,7 +120,12 @@ function MessagesInner() {
 
 export default function MessagesTab() {
   return (
-    <GuestGate icon="message-circle" title="Чат" text="Нэвтэрч худалдагч, худалдан авагчтай шууд чатлана." next="/messages">
+    <GuestGate
+      icon="message-circle"
+      title="Чат"
+      text="Нэвтэрч худалдагч, худалдан авагчтай шууд чатлана."
+      next="/messages"
+    >
       <MessagesInner />
     </GuestGate>
   );

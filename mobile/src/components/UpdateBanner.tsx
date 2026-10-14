@@ -32,12 +32,23 @@ export function UpdateBanner() {
     <Pressable
       accessibilityRole="button"
       onPress={() => Updates.reloadAsync().catch(() => {})}
-      style={{ backgroundColor: C.yellow, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 10 }}
+      style={{
+        backgroundColor: C.yellow,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+      }}
     >
       <Feather name="download" size={18} color={C.ink} />
-      <T w="semibold" style={{ flex: 1, fontSize: 13 }}>Шинэ хувилбар бэлэн боллоо</T>
+      <T w="semibold" style={{ flex: 1, fontSize: 13 }}>
+        Шинэ хувилбар бэлэн боллоо
+      </T>
       <View style={{ backgroundColor: C.ink, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-        <T w="bold" style={{ color: C.yellow, fontSize: 12 }}>Шинэчлэх</T>
+        <T w="bold" style={{ color: C.yellow, fontSize: 12 }}>
+          Шинэчлэх
+        </T>
       </View>
     </Pressable>
   );

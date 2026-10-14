@@ -55,7 +55,10 @@ export default function Post() {
   const [agentCode, setAgentCode] = useState("");
   const [agent, setAgentState] = useState<{ code: string; id: string; name: string } | null>(null);
   const agentIdRef = useRef<string | null>(null);
-  const setAgent = (a: { code: string; id: string; name: string } | null) => { agentIdRef.current = a?.id ?? null; setAgentState(a); };
+  const setAgent = (a: { code: string; id: string; name: string } | null) => {
+    agentIdRef.current = a?.id ?? null;
+    setAgentState(a);
+  };
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | { done: number; step: 1 | 2 | 3 }>(null);
   /** form → plan (2 сонголт) → contract (шимтгэлтэй) эсвэл paid (онцлох төлбөртэй) */
@@ -93,7 +96,8 @@ export default function Post() {
   );
 
   useEffect(() => {
-    if (profile && !profile.profile_completed) router.replace({ pathname: "/complete-profile", params: { next: "post" } });
+    if (profile && !profile.profile_completed)
+      router.replace({ pathname: "/complete-profile", params: { next: "post" } });
   }, [profile]);
 
   const y = Number(yearMade);
@@ -102,13 +106,24 @@ export default function Post() {
   async function pick(camera = false) {
     const room = maxP - pics.length;
     if (room <= 0) return;
-    const perm = camera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const perm = camera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return Alert.alert("Зөвшөөрөл хэрэгтэй", "Тохиргооноос зураг/камерын зөвшөөрөл олгоно уу.");
     const res = camera
       ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.9 })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsMultipleSelection: true, selectionLimit: room, orderedSelection: true, quality: 0.9 });
+      : await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"],
+          allowsMultipleSelection: true,
+          selectionLimit: room,
+          orderedSelection: true,
+          quality: 0.9,
+        });
     if (res.canceled) return;
-    setPics((p) => [...p, ...res.assets.slice(0, room).map((a) => ({ uri: a.uri, id: `${a.assetId ?? a.uri}-${Math.random()}` }))]);
+    setPics((p) => [
+      ...p,
+      ...res.assets.slice(0, room).map((a) => ({ uri: a.uri, id: `${a.assetId ?? a.uri}-${Math.random()}` })),
+    ]);
   }
 
   function makeCover(i: number) {
@@ -203,36 +218,56 @@ export default function Post() {
         contractId = contractRef.current;
       }
       setBusy({ done: pics.length, step: 3 });
-      const { data: row, error } = await supabase.from("ads").insert({
-        user_id: uid,
-        brand: brand.trim(),
-        model: model.trim(),
-        trim: trim.trim() || null,
-        plate_number: plate.trim().toUpperCase(),
-        vin: vin.trim().toUpperCase(),
-        phone: phone.replace(/[^\d+]/g, ""),
-        year_made: y,
-        year_imported: Number(yearImp) || null,
-        options,
-        modifications: mods.trim() || null,
-        description: desc.trim() || null,
-        price: priceNum,
-        photos: paths,
-        contract_id: contractId,
-        agent_id: agentIdRef.current,
-        ...(dealer ? {} : { plan: chosen }),
-      }).select("id").single();
+      const { data: row, error } = await supabase
+        .from("ads")
+        .insert({
+          user_id: uid,
+          brand: brand.trim(),
+          model: model.trim(),
+          trim: trim.trim() || null,
+          plate_number: plate.trim().toUpperCase(),
+          vin: vin.trim().toUpperCase(),
+          phone: phone.replace(/[^\d+]/g, ""),
+          year_made: y,
+          year_imported: Number(yearImp) || null,
+          options,
+          modifications: mods.trim() || null,
+          description: desc.trim() || null,
+          price: priceNum,
+          photos: paths,
+          contract_id: contractId,
+          agent_id: agentIdRef.current,
+          ...(dealer ? {} : { plan: chosen }),
+        })
+        .select("id")
+        .single();
       if (error) throw error;
       // Гарын үсэгтэй гэрээний PDF-ийг ард нь бэлдэнэ
       if (contractId && session?.access_token) {
-        fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => {});
+        fetch(`${WEB_URL}/api/contracts/${contractId}/pdf`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }).catch(() => {});
       }
       contractRef.current = null;
       // Төлбөртэй сонголт: шууд дансны мэдээлэл, «Төлсөн» товчтой дэлгэц рүү
-      if (chosen === "paid" && row?.id) return router.replace({ pathname: "/pay/[id]", params: { id: row.id as string, created: "1" } });
-      router.replace({ pathname: "/success", params: { title: `${brand} ${model} · ${y}`, price: String(priceNum), cover: paths[0], dealer: dealer ? "1" : "0" } });
+      if (chosen === "paid" && row?.id)
+        return router.replace({ pathname: "/pay/[id]", params: { id: row.id as string, created: "1" } });
+      router.replace({
+        pathname: "/success",
+        params: {
+          title: `${brand} ${model} · ${y}`,
+          price: String(priceNum),
+          cover: paths[0],
+          dealer: dealer ? "1" : "0",
+        },
+      });
     } catch (e) {
-      if (uploaded.length) await supabase.storage.from("ad-photos").remove(uploaded).catch(() => {});
+      if (uploaded.length)
+        await supabase.storage
+          .from("ad-photos")
+          .remove(uploaded)
+          .catch(() => {});
       setBusy(null);
       setErr(`Илгээж чадсангүй: ${errMsg(e)}`);
     }
@@ -240,28 +275,71 @@ export default function Post() {
 
   if (busy)
     return (
-      <View style={{ flex: 1, backgroundColor: C.paper, padding: 24, paddingTop: 56, justifyContent: "center", gap: 24 }} accessibilityLiveRegion="polite">
+      <View
+        style={{ flex: 1, backgroundColor: C.paper, padding: 24, paddingTop: 56, justifyContent: "center", gap: 24 }}
+        accessibilityLiveRegion="polite"
+      >
         <View style={{ alignItems: "center", gap: 12 }}>
           <Feather name="upload-cloud" size={56} color={C.ink} />
-          <T w="display" style={{ fontSize: 22 }}>Зар илгээж байна</T>
+          <T w="display" style={{ fontSize: 22 }}>
+            Зар илгээж байна
+          </T>
           <T style={{ color: C.body, textAlign: "center" }}>Уншиж байна, түр хүлээнэ үү. Аппаас гаралгүй байгаарай.</T>
         </View>
         <View style={{ gap: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <T w="semibold" style={{ fontSize: 14 }}>{busy.step === 1 ? "Зураг байршуулж байна" : busy.step === 2 ? "Гэрээ баталгаажуулж байна" : "Зар илгээж байна"}</T>
-            <T w="monoBold" style={{ fontSize: 14 }}>{busy.done} / {pics.length}</T>
+            <T w="semibold" style={{ fontSize: 14 }}>
+              {busy.step === 1
+                ? "Зураг байршуулж байна"
+                : busy.step === 2
+                  ? "Гэрээ баталгаажуулж байна"
+                  : "Зар илгээж байна"}
+            </T>
+            <T w="monoBold" style={{ fontSize: 14 }}>
+              {busy.done} / {pics.length}
+            </T>
           </View>
-          <View accessibilityRole="progressbar" style={{ height: 12, borderRadius: 6, backgroundColor: C.line, overflow: "hidden" }}>
-            <View style={{ width: `${(busy.done / Math.max(pics.length, 1)) * 100}%`, height: 12, borderRadius: 6, backgroundColor: C.yellow }} />
+          <View
+            accessibilityRole="progressbar"
+            style={{ height: 12, borderRadius: 6, backgroundColor: C.line, overflow: "hidden" }}
+          >
+            <View
+              style={{
+                width: `${(busy.done / Math.max(pics.length, 1)) * 100}%`,
+                height: 12,
+                borderRadius: 6,
+                backgroundColor: C.yellow,
+              }}
+            />
           </View>
         </View>
         <View style={[s.section, { gap: 14 }]}>
-          {[[`Зураг байршуулах`, true], [dealer ? "Мэдээлэл шалгах" : plan === "paid" ? "Онцлох төлбөртэй сонголт" : "Гэрээнд гарын үсэг зурах", busy.step >= 2], [dealer ? "Нийтлэх" : plan === "paid" ? "Илгээх" : "Шалгалтад илгээх", busy.step === 3]].map(([t, on], i) => (
+          {[
+            [`Зураг байршуулах`, true],
+            [
+              dealer ? "Мэдээлэл шалгах" : plan === "paid" ? "Онцлох төлбөртэй сонголт" : "Гэрээнд гарын үсэг зурах",
+              busy.step >= 2,
+            ],
+            [dealer ? "Нийтлэх" : plan === "paid" ? "Илгээх" : "Шалгалтад илгээх", busy.step === 3],
+          ].map(([t, on], i) => (
             <View key={String(t)} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: on ? C.ink : "transparent", borderWidth: on ? 0 : 2, borderColor: C.pale, alignItems: "center", justifyContent: "center" }}>
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: on ? C.ink : "transparent",
+                  borderWidth: on ? 0 : 2,
+                  borderColor: C.pale,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 {on && <Feather name="check" size={14} color={C.yellow} />}
               </View>
-              <T w={i === busy.step - 1 ? "semibold" : "body"} style={{ color: on ? C.ink : C.muted, fontSize: 14 }}>{t}</T>
+              <T w={i === busy.step - 1 ? "semibold" : "body"} style={{ color: on ? C.ink : C.muted, fontSize: 14 }}>
+                {t}
+              </T>
             </View>
           ))}
         </View>
@@ -275,13 +353,40 @@ export default function Post() {
     const cDays = settings.commission_featured_days ?? 7;
     return (
       <View style={{ flex: 1, backgroundColor: C.paper }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 }}>
-          <Pressable accessibilityLabel="Буцах" onPress={() => { setStage(stage === "paid" ? "plan" : "form"); setErr(null); }} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: 8,
+          }}
+        >
+          <Pressable
+            accessibilityLabel="Буцах"
+            onPress={() => {
+              setStage(stage === "paid" ? "plan" : "form");
+              setErr(null);
+            }}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: C.card,
+              borderWidth: 1,
+              borderColor: C.line2,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Feather name="chevron-left" size={22} color={C.ink} />
           </Pressable>
           <View style={{ flex: 1 }}>
             <T style={{ fontSize: 12, color: C.muted }}>{stage === "plan" ? "Сонголт" : "Сүүлийн алхам"}</T>
-            <T w="display" style={{ fontSize: 19 }}>{stage === "plan" ? "Зараа хэрхэн байршуулах вэ?" : "Онцлох зар · шимтгэлгүй"}</T>
+            <T w="display" style={{ fontSize: 19 }}>
+              {stage === "plan" ? "Зараа хэрхэн байршуулах вэ?" : "Онцлох зар · шимтгэлгүй"}
+            </T>
           </View>
         </View>
         {stage === "plan" ? (
@@ -296,7 +401,13 @@ export default function Post() {
               ]}
               cta="Сонгох · гэрээ"
               highlight
-              onPick={() => { setErr(null); setAgree(false); setSignature(null); setPlan("commission"); setStage("contract"); }}
+              onPick={() => {
+                setErr(null);
+                setAgree(false);
+                setSignature(null);
+                setPlan("commission");
+                setStage("contract");
+              }}
             />
             <PlanCard
               title="Онцлох зар · шимтгэлгүй"
@@ -307,28 +418,63 @@ export default function Post() {
                 "Дансаар шилжүүлээд «Төлсөн» дарна — баталгаажмагц нийтлэгдэнэ",
               ]}
               cta="Сонгох · төлбөр"
-              onPick={() => { setErr(null); setPlan("paid"); setStage("paid"); }}
+              onPick={() => {
+                setErr(null);
+                setPlan("paid");
+                setStage("paid");
+              }}
             />
-            <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>Шимтгэлийн шат: {tierLines(ct.terms).join("; ")}.</T>
+            <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>
+              Шимтгэлийн шат: {tierLines(ct.terms).join("; ")}.
+            </T>
           </ScrollView>
         ) : (
           <>
             <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 200 }}>
               <View style={{ backgroundColor: C.ink, borderRadius: 18, padding: 18, gap: 6 }}>
-                <T style={{ color: C.pale, fontSize: 13 }}>{brand.trim()} {model.trim()} · {y} · {money(Number(price.replace(/\D/g, "")))}</T>
-                <T w="display" style={{ color: C.yellow, fontSize: 28 }}>{money(fPrice)}</T>
+                <T style={{ color: C.pale, fontSize: 13 }}>
+                  {brand.trim()} {model.trim()} · {y} · {money(Number(price.replace(/\D/g, "")))}
+                </T>
+                <T w="display" style={{ color: C.yellow, fontSize: 28 }}>
+                  {money(fPrice)}
+                </T>
                 <T style={{ color: C.paper, fontSize: 14 }}>⭐ {fDays} хоног онцлох · шимтгэлгүй</T>
               </View>
-              {["«Зар илгээх» дарахад зар хадгалагдаж, дансны мэдээлэл гарна.", "Гүйлгээний утгад таны кодыг бичиж шилжүүлнэ.", "«Төлбөр төлсөн» дарна — орлого баталгаажмагц зар шууд нийтлэгдэж, онцлох болно."].map((t, i) => (
+              {[
+                "«Зар илгээх» дарахад зар хадгалагдаж, дансны мэдээлэл гарна.",
+                "Гүйлгээний утгад таны кодыг бичиж шилжүүлнэ.",
+                "«Төлбөр төлсөн» дарна — орлого баталгаажмагц зар шууд нийтлэгдэж, онцлох болно.",
+              ].map((t, i) => (
                 <View key={t} style={{ flexDirection: "row", gap: 10 }}>
-                  <T w="monoBold" style={{ fontSize: 14 }}>{i + 1}.</T>
+                  <T w="monoBold" style={{ fontSize: 14 }}>
+                    {i + 1}.
+                  </T>
                   <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{t}</T>
                 </View>
               ))}
             </ScrollView>
-            <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
+            <View
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                paddingHorizontal: 20,
+                paddingTop: 12,
+                paddingBottom: Math.max(insets.bottom, 16),
+                backgroundColor: C.card,
+                borderTopWidth: 1,
+                borderColor: C.line,
+                gap: 8,
+              }}
+            >
               <FooterError err={err} />
-              <Button title="Зар илгээх · төлбөр рүү" variant="yellow" icon="arrow-right" onPress={() => send(true, "paid")} />
+              <Button
+                title="Зар илгээх · төлбөр рүү"
+                variant="yellow"
+                icon="arrow-right"
+                onPress={() => send(true, "paid")}
+              />
             </View>
           </>
         )}
@@ -338,17 +484,51 @@ export default function Post() {
 
   if (stage === "contract")
     return (
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.paper }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 }}>
-          <Pressable accessibilityLabel="Буцах" onPress={() => { setStage("plan"); setErr(null); }} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1, backgroundColor: C.paper }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: 8,
+          }}
+        >
+          <Pressable
+            accessibilityLabel="Буцах"
+            onPress={() => {
+              setStage("plan");
+              setErr(null);
+            }}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: C.card,
+              borderWidth: 1,
+              borderColor: C.line2,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Feather name="chevron-left" size={22} color={C.ink} />
           </Pressable>
           <View style={{ flex: 1 }}>
             <T style={{ fontSize: 12, color: C.muted }}>Сүүлийн алхам</T>
-            <T w="display" style={{ fontSize: 19 }}>Зуучлалын гэрээ</T>
+            <T w="display" style={{ fontSize: 19 }}>
+              Зуучлалын гэрээ
+            </T>
           </View>
         </View>
-        <ScrollView scrollEnabled={!drawing} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: err ? 220 : 150 }} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          scrollEnabled={!drawing}
+          contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: err ? 220 : 150 }}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={[s.section, { backgroundColor: C.card }]}>
             <ContractView
               data={{
@@ -365,100 +545,335 @@ export default function Post() {
               }}
             />
           </View>
-          <Field label="Овог нэр (гэрээнд бичигдэнэ)"><Input value={signName} onChangeText={setSignName} placeholder="Овог нэр" /></Field>
+          <Field label="Овог нэр (гэрээнд бичигдэнэ)">
+            <Input value={signName} onChangeText={setSignName} placeholder="Овог нэр" />
+          </Field>
           <View style={{ gap: 6 }}>
-            <T w="semibold" style={{ fontSize: 13 }}>Гарын үсэг</T>
+            <T w="semibold" style={{ fontSize: 13 }}>
+              Гарын үсэг
+            </T>
             <SignaturePad onChange={setSignature} onDrawing={setDrawing} />
           </View>
-          <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: agree }} onPress={() => setAgree((v) => !v)} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
-            <View style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: C.ink, backgroundColor: agree ? C.ink : C.card, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: agree }}
+            onPress={() => setAgree((v) => !v)}
+            style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}
+          >
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 6,
+                borderWidth: 2,
+                borderColor: C.ink,
+                backgroundColor: agree ? C.ink : C.card,
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: 1,
+              }}
+            >
               {agree && <Feather name="check" size={16} color={C.yellow} />}
             </View>
-            <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>Би гэрээг бүрэн уншиж танилцсан бөгөөд шимтгэлийн нөхцөлийг зөвшөөрч байна.</T>
+            <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>
+              Би гэрээг бүрэн уншиж танилцсан бөгөөд шимтгэлийн нөхцөлийг зөвшөөрч байна.
+            </T>
           </Pressable>
         </ScrollView>
-        <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            paddingHorizontal: 20,
+            paddingTop: 12,
+            paddingBottom: Math.max(insets.bottom, 16),
+            backgroundColor: C.card,
+            borderTopWidth: 1,
+            borderColor: C.line,
+            gap: 8,
+          }}
+        >
           <FooterError err={err} />
-          <Button title="Зөвшөөрч, зар илгээх" variant="yellow" icon="check" disabled={!signature || !agree} onPress={() => send(false, "commission")} />
-          <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>Гарын үсэгтэй гэрээний PDF “Миний зар” хэсэгт хадгалагдана</T>
+          <Button
+            title="Зөвшөөрч, зар илгээх"
+            variant="yellow"
+            icon="check"
+            disabled={!signature || !agree}
+            onPress={() => send(false, "commission")}
+          />
+          <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>
+            Гарын үсэгтэй гэрээний PDF “Миний зар” хэсэгт хадгалагдана
+          </T>
         </View>
       </KeyboardAvoidingView>
     );
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.paper }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderColor: C.line }}>
-        <Pressable accessibilityLabel="Буцах" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ flex: 1, backgroundColor: C.paper }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderColor: C.line,
+        }}
+      >
+        <Pressable
+          accessibilityLabel="Буцах"
+          onPress={() => router.back()}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            backgroundColor: C.card,
+            borderWidth: 1,
+            borderColor: C.line2,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Feather name="chevron-left" size={22} color={C.ink} />
         </Pressable>
         <View>
-          <T w="display" style={{ fontSize: 17 }}>Зар нэмэх</T>
+          <T w="display" style={{ fontSize: 17 }}>
+            Зар нэмэх
+          </T>
           <T style={{ fontSize: 12, color: C.muted }}>Алхам 2 / 2 · Машины мэдээлэл</T>
         </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 26, paddingBottom: err ? 210 : 140 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={{ padding: 20, gap: 26, paddingBottom: err ? 210 : 140 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={{ gap: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <T w="bold" style={s.h2}>1 · Зураг</T>
-            <T w="mono" style={{ fontSize: 13, color: C.muted }}>{pics.length} / {maxP}</T>
+            <T w="bold" style={s.h2}>
+              1 · Зураг
+            </T>
+            <T w="mono" style={{ fontSize: 13, color: C.muted }}>
+              {pics.length} / {maxP}
+            </T>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {pics.map((p, i) => (
-              <Pressable key={p.id} onLongPress={() => makeCover(i)} onPress={() => i > 0 && makeCover(i)} accessibilityLabel={`Зураг ${i + 1}${i === 0 ? ", нүүр зураг" : ", дарж нүүр болгох"}`} style={{ width: "23%", aspectRatio: 1, borderRadius: 10, overflow: "hidden", borderWidth: i === 0 ? 2 : 0, borderColor: C.ink }}>
+              <Pressable
+                key={p.id}
+                onLongPress={() => makeCover(i)}
+                onPress={() => i > 0 && makeCover(i)}
+                accessibilityLabel={`Зураг ${i + 1}${i === 0 ? ", нүүр зураг" : ", дарж нүүр болгох"}`}
+                style={{
+                  width: "23%",
+                  aspectRatio: 1,
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  borderWidth: i === 0 ? 2 : 0,
+                  borderColor: C.ink,
+                }}
+              >
                 <Image source={{ uri: p.uri }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
-                {i === 0 && <View style={{ position: "absolute", left: 4, bottom: 4, backgroundColor: C.ink, borderRadius: 3, paddingHorizontal: 4, paddingVertical: 1 }}><T w="monoBold" style={{ color: C.yellow, fontSize: 9 }}>НҮҮР</T></View>}
-                <Pressable accessibilityLabel={`Зураг ${i + 1} хасах`} hitSlop={6} onPress={() => setPics((x) => x.filter((q) => q.id !== p.id))} style={{ position: "absolute", right: 3, top: 3, width: 24, height: 24, borderRadius: 12, backgroundColor: "rgba(17,19,23,.8)", alignItems: "center", justifyContent: "center" }}>
+                {i === 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      left: 4,
+                      bottom: 4,
+                      backgroundColor: C.ink,
+                      borderRadius: 3,
+                      paddingHorizontal: 4,
+                      paddingVertical: 1,
+                    }}
+                  >
+                    <T w="monoBold" style={{ color: C.yellow, fontSize: 9 }}>
+                      НҮҮР
+                    </T>
+                  </View>
+                )}
+                <Pressable
+                  accessibilityLabel={`Зураг ${i + 1} хасах`}
+                  hitSlop={6}
+                  onPress={() => setPics((x) => x.filter((q) => q.id !== p.id))}
+                  style={{
+                    position: "absolute",
+                    right: 3,
+                    top: 3,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: "rgba(17,19,23,.8)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <Feather name="x" size={14} color={C.paper} />
                 </Pressable>
               </Pressable>
             ))}
             {pics.length < maxP && (
               <>
-                <Pressable onPress={() => pick(false)} accessibilityLabel="Зургийн сангаас нэмэх" style={{ width: "23%", aspectRatio: 1, borderRadius: 10, borderWidth: 1.5, borderStyle: "dashed", borderColor: "#9AA0A9", backgroundColor: C.card, alignItems: "center", justifyContent: "center", gap: 2 }}>
+                <Pressable
+                  onPress={() => pick(false)}
+                  accessibilityLabel="Зургийн сангаас нэмэх"
+                  style={{
+                    width: "23%",
+                    aspectRatio: 1,
+                    borderRadius: 10,
+                    borderWidth: 1.5,
+                    borderStyle: "dashed",
+                    borderColor: "#9AA0A9",
+                    backgroundColor: C.card,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 2,
+                  }}
+                >
                   <Feather name="image" size={20} color={C.ink} />
                   <T style={{ fontSize: 11 }}>Нэмэх</T>
                 </Pressable>
-                <Pressable onPress={() => pick(true)} accessibilityLabel="Камераар авах" style={{ width: "23%", aspectRatio: 1, borderRadius: 10, borderWidth: 1.5, borderStyle: "dashed", borderColor: "#9AA0A9", backgroundColor: C.card, alignItems: "center", justifyContent: "center", gap: 2 }}>
+                <Pressable
+                  onPress={() => pick(true)}
+                  accessibilityLabel="Камераар авах"
+                  style={{
+                    width: "23%",
+                    aspectRatio: 1,
+                    borderRadius: 10,
+                    borderWidth: 1.5,
+                    borderStyle: "dashed",
+                    borderColor: "#9AA0A9",
+                    backgroundColor: C.card,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 2,
+                  }}
+                >
                   <Feather name="camera" size={20} color={C.ink} />
                   <T style={{ fontSize: 11 }}>Камер</T>
                 </Pressable>
               </>
             )}
           </View>
-          <T style={{ fontSize: 12, color: C.muted }}>Эхний зураг нүүр зураг болно. Аль нэг зураг дээр дарж нүүр болгоно. {minP}–{maxP} зураг.</T>
+          <T style={{ fontSize: 12, color: C.muted }}>
+            Эхний зураг нүүр зураг болно. Аль нэг зураг дээр дарж нүүр болгоно. {minP}–{maxP} зураг.
+          </T>
         </View>
 
         <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>2 · Машин ба сер</T>
-          <Field label="Марк"><Input value={brand} onChangeText={setBrand} placeholder="Toyota" /></Field>
+          <T w="bold" style={s.h2}>
+            2 · Машин ба сер
+          </T>
+          <Field label="Марк">
+            <Input value={brand} onChangeText={setBrand} placeholder="Toyota" />
+          </Field>
           {!brand || !BRANDS[brand] ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              {Object.keys(BRANDS).filter((b) => !brand || b.toLowerCase().startsWith(brand.toLowerCase())).slice(0, 8).map((b) => (
-                <Pressable key={b} onPress={() => setBrand(b)} style={{ paddingHorizontal: 10, height: 32, borderRadius: 16, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, justifyContent: "center" }}><T style={{ fontSize: 13 }}>{b}</T></Pressable>
-              ))}
+              {Object.keys(BRANDS)
+                .filter((b) => !brand || b.toLowerCase().startsWith(brand.toLowerCase()))
+                .slice(0, 8)
+                .map((b) => (
+                  <Pressable
+                    key={b}
+                    onPress={() => setBrand(b)}
+                    style={{
+                      paddingHorizontal: 10,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: C.card,
+                      borderWidth: 1,
+                      borderColor: C.line2,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <T style={{ fontSize: 13 }}>{b}</T>
+                  </Pressable>
+                ))}
             </View>
           ) : null}
-          <Field label="Загвар"><Input value={model} onChangeText={setModel} placeholder="Prius" /></Field>
+          <Field label="Загвар">
+            <Input value={model} onChangeText={setModel} placeholder="Prius" />
+          </Field>
           {BRANDS[brand] && !BRANDS[brand].includes(model) ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              {BRANDS[brand].filter((m) => !model || m.toLowerCase().startsWith(model.toLowerCase())).slice(0, 10).map((m) => (
-                <Pressable key={m} onPress={() => setModel(m)} style={{ paddingHorizontal: 10, height: 32, borderRadius: 16, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, justifyContent: "center" }}><T style={{ fontSize: 13 }}>{m}</T></Pressable>
-              ))}
+              {BRANDS[brand]
+                .filter((m) => !model || m.toLowerCase().startsWith(model.toLowerCase()))
+                .slice(0, 10)
+                .map((m) => (
+                  <Pressable
+                    key={m}
+                    onPress={() => setModel(m)}
+                    style={{
+                      paddingHorizontal: 10,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: C.card,
+                      borderWidth: 1,
+                      borderColor: C.line2,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <T style={{ fontSize: 13 }}>{m}</T>
+                  </Pressable>
+                ))}
             </View>
           ) : null}
-          <Field label="Аль сер"><Input value={trim} onChangeText={setTrim} placeholder="ZVW55 · S Touring" /></Field>
+          <Field label="Аль сер">
+            <Input value={trim} onChangeText={setTrim} placeholder="ZVW55 · S Touring" />
+          </Field>
         </View>
 
         <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>3 · Он</T>
+          <T w="bold" style={s.h2}>
+            3 · Он
+          </T>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}><Field label="Үйлдвэрлэсэн он"><Input value={yearMade} onChangeText={setYearMade} keyboardType="number-pad" maxLength={4} mono placeholder="2017" /></Field></View>
-            <View style={{ flex: 1 }}><Field label="Орж ирсэн он"><Input value={yearImp} onChangeText={setYearImp} keyboardType="number-pad" maxLength={4} mono placeholder="2023" /></Field></View>
+            <View style={{ flex: 1 }}>
+              <Field label="Үйлдвэрлэсэн он">
+                <Input
+                  value={yearMade}
+                  onChangeText={setYearMade}
+                  keyboardType="number-pad"
+                  maxLength={4}
+                  mono
+                  placeholder="2017"
+                />
+              </Field>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Field label="Орж ирсэн он">
+                <Input
+                  value={yearImp}
+                  onChangeText={setYearImp}
+                  keyboardType="number-pad"
+                  maxLength={4}
+                  mono
+                  placeholder="2023"
+                />
+              </Field>
+            </View>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 12, backgroundColor: C.ink, borderRadius: 10 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              padding: 12,
+              backgroundColor: C.ink,
+              borderRadius: 10,
+            }}
+          >
             {cat ? (
               <>
-                <View style={{ backgroundColor: C.yellow, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 3 }}><T w="monoBold" style={{ fontSize: 11 }}>{cat === "new" ? `${cy}+` : `${cy}-аас өмнө`}</T></View>
+                <View style={{ backgroundColor: C.yellow, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 3 }}>
+                  <T w="monoBold" style={{ fontSize: 11 }}>
+                    {cat === "new" ? `${cy}+` : `${cy}-аас өмнө`}
+                  </T>
+                </View>
                 <T style={{ color: C.paper, fontSize: 13 }}>Ангилал оноор автоматаар тогтлоо</T>
               </>
             ) : (
@@ -468,43 +883,141 @@ export default function Post() {
         </View>
 
         <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>4 · Дугаар ба холбоо барих</T>
-          <Field label="Улсын дугаар"><Input value={plate} onChangeText={setPlate} autoCapitalize="characters" strong mono placeholder="1234 УБА" style={{ textAlign: "center", fontSize: 18, letterSpacing: 2 }} /></Field>
-          <Field label="Арлын дугаар"><Input value={vin} onChangeText={setVin} autoCapitalize="characters" mono placeholder="ZVW55-8012345" /></Field>
-          <Field label="Утасны дугаар"><Input value={phone} onChangeText={setPhone} keyboardType="phone-pad" mono /></Field>
-          <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн манай ажилтан бүтнээр нь харна.</T>
+          <T w="bold" style={s.h2}>
+            4 · Дугаар ба холбоо барих
+          </T>
+          <Field label="Улсын дугаар">
+            <Input
+              value={plate}
+              onChangeText={setPlate}
+              autoCapitalize="characters"
+              strong
+              mono
+              placeholder="1234 УБА"
+              style={{ textAlign: "center", fontSize: 18, letterSpacing: 2 }}
+            />
+          </Field>
+          <Field label="Арлын дугаар">
+            <Input value={vin} onChangeText={setVin} autoCapitalize="characters" mono placeholder="ZVW55-8012345" />
+          </Field>
+          <Field label="Утасны дугаар">
+            <Input value={phone} onChangeText={setPhone} keyboardType="phone-pad" mono />
+          </Field>
+          <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>
+            Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн манай ажилтан бүтнээр нь харна.
+          </T>
         </View>
 
         <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>5 · Нэмэлт опшн</T>
+          <T w="bold" style={s.h2}>
+            5 · Нэмэлт опшн
+          </T>
           <OptionPicker value={options} onChange={setOptions} />
         </View>
 
-        <Field label="6 · Нэмж хийсэн зүйлс"><Input value={mods} onChangeText={setMods} multiline placeholder="Өвлийн шинэ дугуй, автозапуск, салоны бүрээс..." /></Field>
-        <Field label="7 · Нэмэлт тайлбар"><Input value={desc} onChangeText={setDesc} multiline placeholder="Машины байдал, эзэмшлийн түүх, үзүүлэх цаг..." style={{ minHeight: 110 }} /></Field>
+        <Field label="6 · Нэмж хийсэн зүйлс">
+          <Input
+            value={mods}
+            onChangeText={setMods}
+            multiline
+            placeholder="Өвлийн шинэ дугуй, автозапуск, салоны бүрээс..."
+          />
+        </Field>
+        <Field label="7 · Нэмэлт тайлбар">
+          <Input
+            value={desc}
+            onChangeText={setDesc}
+            multiline
+            placeholder="Машины байдал, эзэмшлийн түүх, үзүүлэх цаг..."
+            style={{ minHeight: 110 }}
+          />
+        </Field>
 
         <View style={{ gap: 12 }}>
-          <T w="bold" style={s.h2}>8 · Үнэ</T>
-          <View style={{ flexDirection: "row", alignItems: "center", height: 60, borderWidth: 2, borderColor: C.ink, borderRadius: 14, backgroundColor: C.card, paddingHorizontal: 16, gap: 8 }}>
+          <T w="bold" style={s.h2}>
+            8 · Үнэ
+          </T>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              height: 60,
+              borderWidth: 2,
+              borderColor: C.ink,
+              borderRadius: 14,
+              backgroundColor: C.card,
+              paddingHorizontal: 16,
+              gap: 8,
+            }}
+          >
             <Input
               value={price}
-              onChangeText={(t) => { const d = t.replace(/\D/g, ""); setPrice(d ? d.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""); }}
+              onChangeText={(t) => {
+                const d = t.replace(/\D/g, "");
+                setPrice(d ? d.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "");
+              }}
               keyboardType="number-pad"
               placeholder="48,500,000"
               accessibilityLabel="Үнэ"
               style={{ flex: 1, borderWidth: 0, height: 56, paddingHorizontal: 0, fontFamily: F.display, fontSize: 22 }}
             />
-            <T w="display" style={{ fontSize: 20 }}>₮</T>
+            <T w="display" style={{ fontSize: 20 }}>
+              ₮
+            </T>
           </View>
         </View>
-        <Field label="Агентын код (заавал биш)" hint={agent && agent.code === agentCode.trim().toUpperCase() ? `✓ Агент: ${agent.name}` : "Танд манай агент туслалцаа үзүүлсэн бол түүний кодыг оруулна уу."}>
-          <Input value={agentCode} onChangeText={(t) => setAgentCode(t.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12))} autoCapitalize="characters" autoCorrect={false} mono placeholder="K7M2QX" />
+        <Field
+          label="Агентын код (заавал биш)"
+          hint={
+            agent && agent.code === agentCode.trim().toUpperCase()
+              ? `✓ Агент: ${agent.name}`
+              : "Танд манай агент туслалцаа үзүүлсэн бол түүний кодыг оруулна уу."
+          }
+        >
+          <Input
+            value={agentCode}
+            onChangeText={(t) =>
+              setAgentCode(
+                t
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9]/g, "")
+                  .slice(0, 12),
+              )
+            }
+            autoCapitalize="characters"
+            autoCorrect={false}
+            mono
+            placeholder="K7M2QX"
+          />
         </Field>
       </ScrollView>
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
+      <View
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: Math.max(insets.bottom, 16),
+          backgroundColor: C.card,
+          borderTopWidth: 1,
+          borderColor: C.line,
+          gap: 8,
+        }}
+      >
         <FooterError err={err} />
-        <Button title={dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"} variant="yellow" icon={dealer ? "check" : "arrow-right"} onPress={submit} />
-        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>{dealer ? "Авто худалдааны зар шууд нийтлэгдэнэ" : "Дараа нь: шимтгэлтэй (гэрээ, шалгалттай) эсвэл онцлох төлбөртэй (төлбөр ормогц шууд нийтлэгдэнэ)"}</T>
+        <Button
+          title={dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"}
+          variant="yellow"
+          icon={dealer ? "check" : "arrow-right"}
+          onPress={submit}
+        />
+        <T style={{ textAlign: "center", fontSize: 12, color: C.muted }}>
+          {dealer
+            ? "Авто худалдааны зар шууд нийтлэгдэнэ"
+            : "Дараа нь: шимтгэлтэй (гэрээ, шалгалттай) эсвэл онцлох төлбөртэй (төлбөр ормогц шууд нийтлэгдэнэ)"}
+        </T>
       </View>
     </KeyboardAvoidingView>
   );
@@ -514,24 +1027,68 @@ export default function Post() {
 function FooterError({ err }: { err: string | null }) {
   if (!err) return null;
   return (
-    <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ flexDirection: "row", gap: 8, alignItems: "flex-start", backgroundColor: C.dangerBg, borderRadius: 12, padding: 10 }}>
+    <View
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+      style={{
+        flexDirection: "row",
+        gap: 8,
+        alignItems: "flex-start",
+        backgroundColor: C.dangerBg,
+        borderRadius: 12,
+        padding: 10,
+      }}
+    >
       <Feather name="alert-circle" size={16} color="#9B1C1C" style={{ marginTop: 2 }} />
       <T style={{ color: "#9B1C1C", fontSize: 13.5, lineHeight: 19, flex: 1 }}>{err}</T>
     </View>
   );
 }
 
-function PlanCard({ title, price, points, cta, onPick, highlight = false }: { title: string; price: string; points: string[]; cta: string; onPick: () => void; highlight?: boolean }) {
+function PlanCard({
+  title,
+  price,
+  points,
+  cta,
+  onPick,
+  highlight = false,
+}: {
+  title: string;
+  price: string;
+  points: string[];
+  cta: string;
+  onPick: () => void;
+  highlight?: boolean;
+}) {
   return (
-    <View style={[s.card, { padding: 16, gap: 12, borderWidth: highlight ? 2 : 1, borderColor: highlight ? C.ink : C.line2 }]}>
+    <View
+      style={[
+        s.card,
+        { padding: 16, gap: 12, borderWidth: highlight ? 2 : 1, borderColor: highlight ? C.ink : C.line2 },
+      ]}
+    >
       <View style={{ gap: 4 }}>
-        <T w="bold" style={{ fontSize: 17 }}>{title}</T>
-        <T w="display" style={{ fontSize: 15 }}>{price}</T>
+        <T w="bold" style={{ fontSize: 17 }}>
+          {title}
+        </T>
+        <T w="display" style={{ fontSize: 15 }}>
+          {price}
+        </T>
       </View>
       <View style={{ gap: 8 }}>
         {points.map((p) => (
           <View key={p} style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
-            <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.yellow, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                backgroundColor: C.yellow,
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: 1,
+              }}
+            >
               <Feather name="check" size={12} color={C.ink} />
             </View>
             <T style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{p}</T>

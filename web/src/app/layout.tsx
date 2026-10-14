@@ -9,7 +9,8 @@ import { SITE_NAME, siteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: "Autoshop.mn — автомашины зар", template: "%s — Autoshop.mn" },
-  description: "Шалгагдсан автомашины зарууд Монголд. Toyota Prius, Land Cruiser зэрэг машин зарах, худалдан авах, лизингийн тооцоолуур, шинэ зарын мэдэгдэл.",
+  description:
+    "Шалгагдсан автомашины зарууд Монголд. Toyota Prius, Land Cruiser зэрэг машин зарах, худалдан авах, лизингийн тооцоолуур, шинэ зарын мэдэгдэл.",
   keywords: ["машин зар", "автомашин худалдаа", "машин зарна", "машин авна", "Prius зар", "лизинг", "Улаанбаатар"],
   openGraph: { type: "website", siteName: SITE_NAME, locale: "mn_MN", url: "/" },
   twitter: { card: "summary_large_image" },
@@ -32,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap"
         />
       </head>
-      <body className="min-h-dvh flex flex-col">
+      <body className="flex min-h-dvh flex-col">
         <PwaSetup />
         <ErrorReporter />
         {children}

@@ -15,12 +15,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!uid) return NextResponse.redirect(url(`/login?next=${encodeURIComponent("/notifications")}`));
 
   // Хөтчийн урьдчилан ачаалалт (prefetch) дээр уншсан болгохгүй — зөвхөн жинхэнэ дарахад.
-  if (request.headers.get("next-router-prefetch") || request.headers.get("purpose") === "prefetch" || request.headers.get("sec-purpose")?.includes("prefetch")) {
+  if (
+    request.headers.get("next-router-prefetch") ||
+    request.headers.get("purpose") === "prefetch" ||
+    request.headers.get("sec-purpose")?.includes("prefetch")
+  ) {
     return new NextResponse(null, { status: 204 });
   }
 
   const [{ data: n }, { data: me }] = await Promise.all([
-    supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", uid).select("type,ad_id").maybeSingle(),
+    supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", id)
+      .eq("user_id", uid)
+      .select("type,ad_id")
+      .maybeSingle(),
     supabase.from("profiles").select("role").eq("id", uid).maybeSingle(),
   ]);
   if (!n) return NextResponse.redirect(url("/notifications"));

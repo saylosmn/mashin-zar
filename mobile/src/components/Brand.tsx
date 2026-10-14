@@ -6,14 +6,23 @@ const MARK = require("../../assets/logo-mark.png");
 
 /** Autoshop.mn тэмдэг: «A» үсэг = алс руу одох зам */
 export function LogoMark({ size = 32 }: { size?: number }) {
-  return <Image source={MARK} accessibilityIgnoresInvertColors style={{ width: size, height: size, borderRadius: size * 0.22 }} />;
+  return (
+    <Image
+      source={MARK}
+      accessibilityIgnoresInvertColors
+      style={{ width: size, height: size, borderRadius: size * 0.22 }}
+    />
+  );
 }
 
 /** «Autoshop» + шар «.mn» */
 export function Wordmark({ size = 15, color = C.ink }: { size?: number; color?: string }) {
   return (
     <T w="display" style={{ fontSize: size, color }} accessibilityLabel="Autoshop.mn">
-      Autoshop<T w="display" style={{ fontSize: size, color: C.yellow }}>.mn</T>
+      Autoshop
+      <T w="display" style={{ fontSize: size, color: C.yellow }}>
+        .mn
+      </T>
     </T>
   );
 }

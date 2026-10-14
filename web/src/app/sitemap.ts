@@ -20,7 +20,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!url || !key) return pages;
   // Күүкигүй (нэвтрээгүй) клиент — зөвхөн нийтийн зарууд
   const supabase = createClient(url, key, { auth: { persistSession: false } });
-  const { data } = await supabase.from("public_ads").select("id,approved_at,created_at,photos").order("approved_at", { ascending: false }).limit(5000);
+  const { data } = await supabase
+    .from("public_ads")
+    .select("id,approved_at,created_at,photos")
+    .order("approved_at", { ascending: false })
+    .limit(5000);
   for (const a of data ?? []) {
     pages.push({
       url: `${base}/ads/${a.id}`,

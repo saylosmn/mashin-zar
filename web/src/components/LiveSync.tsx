@@ -11,7 +11,15 @@ import { createClient } from "@/lib/supabase/client";
  * - notifications: зөвхөн өөрийн мэдэгдэл (RLS)
  * router.refresh() нь серверээс шинэ өгөгдөл авчирдаг ч бөглөж буй формын утгыг алдагдуулахгүй.
  */
-export function LiveSync({ userId, role, partnerId }: { userId?: string | null; role?: string | null; partnerId?: string | null }) {
+export function LiveSync({
+  userId,
+  role,
+  partnerId,
+}: {
+  userId?: string | null;
+  role?: string | null;
+  partnerId?: string | null;
+}) {
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -25,7 +33,11 @@ export function LiveSync({ userId, role, partnerId }: { userId?: string | null; 
     const sync = supabase.channel("mz-sync").on("broadcast", { event: "change" }, refresh).subscribe();
 
     const topics = userId
-      ? [`u:${userId}`, ...(role === "admin" ? ["mz-staff"] : []), ...(role === "leasing" && partnerId ? [`p:${partnerId}`] : [])]
+      ? [
+          `u:${userId}`,
+          ...(role === "admin" ? ["mz-staff"] : []),
+          ...(role === "leasing" && partnerId ? [`p:${partnerId}`] : []),
+        ]
       : [];
     let privateChannels: ReturnType<typeof supabase.channel>[] = [];
     let cancelled = false;
@@ -35,14 +47,23 @@ export function LiveSync({ userId, role, partnerId }: { userId?: string | null; 
         .catch(() => {})
         .then(() => {
           if (cancelled) return;
-          privateChannels = topics.map((t) => supabase.channel(t, { config: { private: true } }).on("broadcast", { event: "change" }, refresh).subscribe());
+          privateChannels = topics.map((t) =>
+            supabase
+              .channel(t, { config: { private: true } })
+              .on("broadcast", { event: "change" }, refresh)
+              .subscribe(),
+          );
         });
     }
 
     const mine = userId
       ? supabase
           .channel(`notif-${userId}`)
-          .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, refresh)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+            refresh,
+          )
           .subscribe()
       : null;
 

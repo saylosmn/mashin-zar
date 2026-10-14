@@ -31,7 +31,10 @@ export function logAppError(err: unknown, where?: string) {
         p_ua: `${Platform.OS} ${Platform.Version}`.slice(0, 200),
         p_version: version(),
       })
-      .then(() => {}, () => {});
+      .then(
+        () => {},
+        () => {},
+      );
   } catch {
     // бүртгэл өөрөө алдаа үүсгэх ёсгүй
   }
@@ -42,7 +45,12 @@ let installed = false;
 export function installErrorLogging() {
   if (installed) return;
   installed = true;
-  const g = globalThis as unknown as { ErrorUtils?: { getGlobalHandler: () => (e: unknown, fatal?: boolean) => void; setGlobalHandler: (h: (e: unknown, fatal?: boolean) => void) => void } };
+  const g = globalThis as unknown as {
+    ErrorUtils?: {
+      getGlobalHandler: () => (e: unknown, fatal?: boolean) => void;
+      setGlobalHandler: (h: (e: unknown, fatal?: boolean) => void) => void;
+    };
+  };
   const eu = g.ErrorUtils;
   if (!eu) return;
   const prev = eu.getGlobalHandler();

@@ -10,7 +10,15 @@ import { errMsg, timeAgo } from "@/lib/format";
 import { confirm, isAdmin, staffRpc } from "@/lib/staff";
 import { Button, Field, Input, Skeleton, StateView, T, s } from "@/components/ui";
 
-type Row = { id: string; title: string; body: string | null; created_at: string; recipients: number; read_count: number; author: string | null };
+type Row = {
+  id: string;
+  title: string;
+  body: string | null;
+  created_at: string;
+  recipients: number;
+  read_count: number;
+  author: string | null;
+};
 
 export default function Broadcasts() {
   const { profile } = useAuth();
@@ -35,14 +43,28 @@ export default function Broadcasts() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
   useLiveSync(() => load(), ["broadcasts"]);
 
-  if (!isAdmin(profile)) return <StateView icon="lock" title="Эрх хүрэхгүй" text="Зарлалыг зөвхөн админ удирдана."><Button title="Буцах" onPress={() => router.back()} /></StateView>;
+  if (!isAdmin(profile))
+    return (
+      <StateView icon="lock" title="Эрх хүрэхгүй" text="Зарлалыг зөвхөн админ удирдана.">
+        <Button title="Буцах" onPress={() => router.back()} />
+      </StateView>
+    );
 
   async function send() {
     if (!title.trim()) return Alert.alert("Гарчиг оруулна уу");
-    if (!(await confirm("Бүх хэрэглэгчид илгээх үү?", `"${title.trim()}" мэдэгдэл бүх хэрэглэгчийн утсанд очно.`, "Илгээх"))) return;
+    if (
+      !(await confirm(
+        "Бүх хэрэглэгчид илгээх үү?",
+        `"${title.trim()}" мэдэгдэл бүх хэрэглэгчийн утсанд очно.`,
+        "Илгээх",
+      ))
+    )
+      return;
     setSending(true);
     const r = await staffRpc<number>("broadcast", { p_title: title.trim(), p_body: body.trim() || null });
     setSending(false);
@@ -66,7 +88,15 @@ export default function Broadcasts() {
   }
 
   async function remove(b: Row) {
-    if (!(await confirm("Зарлал устгах уу?", `"${b.title}" бүх хэрэглэгчийн мэдэгдлээс устна. Утсанд аль хэдийн ирсэн push мэдэгдлийг буцааж татах боломжгүй.`, "Устгах", true))) return;
+    if (
+      !(await confirm(
+        "Зарлал устгах уу?",
+        `"${b.title}" бүх хэрэглэгчийн мэдэгдлээс устна. Утсанд аль хэдийн ирсэн push мэдэгдлийг буцааж татах боломжгүй.`,
+        "Устгах",
+        true,
+      ))
+    )
+      return;
     setBusyId(b.id);
     const r = await staffRpc("delete_broadcast", { p_id: b.id });
     setBusyId(null);
@@ -76,31 +106,57 @@ export default function Broadcasts() {
   const header = (
     <View style={{ gap: 14, paddingBottom: 6 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Pressable accessibilityLabel="Буцах" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, alignItems: "center", justifyContent: "center" }}>
+        <Pressable
+          accessibilityLabel="Буцах"
+          onPress={() => router.back()}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            backgroundColor: C.card,
+            borderWidth: 1,
+            borderColor: C.line2,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Feather name="chevron-left" size={22} color={C.ink} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <T w="display" style={{ fontSize: 20 }}>Мэдэгдэл</T>
+          <T w="display" style={{ fontSize: 20 }}>
+            Мэдэгдэл
+          </T>
           <T style={{ fontSize: 12, color: C.muted }}>Зарлал илгээх, устгах</T>
         </View>
       </View>
 
       <View style={s.section}>
-        <T w="bold" style={s.h2}>Шинэ зарлал</T>
-        <Field label="Гарчиг"><Input value={title} onChangeText={setTitle} placeholder="Апп шинэчлэгдлээ" maxLength={80} /></Field>
-        <Field label="Дэлгэрэнгүй (заавал биш)"><Input multiline value={body} onChangeText={setBody} placeholder="Шинэ боломжууд..." maxLength={300} /></Field>
+        <T w="bold" style={s.h2}>
+          Шинэ зарлал
+        </T>
+        <Field label="Гарчиг">
+          <Input value={title} onChangeText={setTitle} placeholder="Апп шинэчлэгдлээ" maxLength={80} />
+        </Field>
+        <Field label="Дэлгэрэнгүй (заавал биш)">
+          <Input multiline value={body} onChangeText={setBody} placeholder="Шинэ боломжууд..." maxLength={300} />
+        </Field>
         <Button title="Бүгдэд илгээх" icon="send" variant="yellow" loading={sending} onPress={send} />
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-        <T w="bold" style={s.h2}>Илгээсэн зарлалууд</T>
+        <T w="bold" style={s.h2}>
+          Илгээсэн зарлалууд
+        </T>
         <T style={{ fontSize: 12, color: C.muted }}>{rows.length}</T>
       </View>
     </View>
   );
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.paper }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: C.paper }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <FlatList
         data={loading ? [] : rows}
         keyExtractor={(b) => b.id}
@@ -110,7 +166,11 @@ export default function Broadcasts() {
         refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={C.ink} />}
         ListEmptyComponent={
           loading ? (
-            <View style={{ gap: 10 }}>{[0, 1].map((i) => <Skeleton key={i} style={{ height: 120, borderRadius: 14 }} />)}</View>
+            <View style={{ gap: 10 }}>
+              {[0, 1].map((i) => (
+                <Skeleton key={i} style={{ height: 120, borderRadius: 14 }} />
+              ))}
+            </View>
           ) : error ? (
             <T style={{ color: C.danger, textAlign: "center", paddingVertical: 24 }}>{error}</T>
           ) : (
@@ -125,22 +185,45 @@ export default function Broadcasts() {
           return (
             <View style={[s.card, { padding: 14, gap: 10 }]}>
               <View style={{ gap: 4 }}>
-                <T w="bold" style={{ fontSize: 15 }}>{b.title}</T>
+                <T w="bold" style={{ fontSize: 15 }}>
+                  {b.title}
+                </T>
                 {b.body ? <T style={{ fontSize: 14, color: C.body, lineHeight: 20 }}>{b.body}</T> : null}
-                <T style={{ fontSize: 12, color: C.muted }}>{timeAgo(b.created_at)}{b.author ? ` · ${b.author}` : ""}</T>
+                <T style={{ fontSize: 12, color: C.muted }}>
+                  {timeAgo(b.created_at)}
+                  {b.author ? ` · ${b.author}` : ""}
+                </T>
               </View>
               <View style={{ gap: 5 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                   <T style={{ fontSize: 12, color: C.muted }}>{b.recipients} хүнд очсон</T>
-                  <T style={{ fontSize: 12, color: C.muted }}>{b.read_count} уншсан · {pct}%</T>
+                  <T style={{ fontSize: 12, color: C.muted }}>
+                    {b.read_count} уншсан · {pct}%
+                  </T>
                 </View>
                 <View style={{ height: 6, borderRadius: 3, backgroundColor: C.soft, overflow: "hidden" }}>
                   <View style={{ width: `${pct}%`, height: "100%", backgroundColor: C.yellow }} />
                 </View>
               </View>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                <Button small title="Дахин илгээх" icon="repeat" variant="ghost" style={{ flex: 1 }} disabled={busyId === b.id} onPress={() => resend(b)} />
-                <Button small title="Устгах" icon="trash-2" variant="danger" style={{ flex: 1 }} loading={busyId === b.id} onPress={() => remove(b)} />
+                <Button
+                  small
+                  title="Дахин илгээх"
+                  icon="repeat"
+                  variant="ghost"
+                  style={{ flex: 1 }}
+                  disabled={busyId === b.id}
+                  onPress={() => resend(b)}
+                />
+                <Button
+                  small
+                  title="Устгах"
+                  icon="trash-2"
+                  variant="danger"
+                  style={{ flex: 1 }}
+                  loading={busyId === b.id}
+                  onPress={() => remove(b)}
+                />
               </View>
             </View>
           );

@@ -16,8 +16,18 @@ import { checkAgentCode } from "../actions";
 
 type Photo = { id: string; file: File; url: string };
 type Draft = {
-  brand: string; model: string; trim: string | null; plate_number: string; vin: string; phone: string;
-  year_made: number; year_imported: number | null; options: string[]; modifications: string | null; description: string | null; price: number;
+  brand: string;
+  model: string;
+  trim: string | null;
+  plate_number: string;
+  vin: string;
+  phone: string;
+  year_made: number;
+  year_imported: number | null;
+  options: string[];
+  modifications: string | null;
+  description: string | null;
+  price: number;
 };
 
 async function compress(file: File, max = 1600): Promise<Blob> {
@@ -36,7 +46,11 @@ function contractKey(d: Draft, name: string) {
   return JSON.stringify([d.plate_number, d.vin, d.brand, d.model, d.price, d.year_made, d.phone, name]);
 }
 
-const normCode = (v: FormDataEntryValue | null) => String(v ?? "").trim().replace(/\s+/g, " ").toUpperCase();
+const normCode = (v: FormDataEntryValue | null) =>
+  String(v ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
 
 /** Зар оруулах 2 сонголтын үнэ, хоног (тохиргооноос) */
 export type PlanInfo = { featuredPrice: number; featuredDays: number; commissionFeaturedDays: number };
@@ -184,7 +198,9 @@ export function PostForm({
           try {
             const blob = await compress(photos[i].file);
             const path = `${userId}/${crypto.randomUUID()}.jpg`;
-            const { error: upErr } = await supabase.storage.from("ad-photos").upload(path, blob, { contentType: "image/jpeg" });
+            const { error: upErr } = await supabase.storage
+              .from("ad-photos")
+              .upload(path, blob, { contentType: "image/jpeg" });
             if (upErr) throw upErr;
             uploaded.push(path);
             paths[i] = path;
@@ -230,7 +246,14 @@ export function PostForm({
       setBusy({ step: 3, done: total });
       const { data: row, error: insErr } = await supabase
         .from("ads")
-        .insert({ ...draft, user_id: userId, photos: paths, contract_id: contractId, agent_id: agentRef.current?.id ?? null, ...(dealer ? {} : { plan }) })
+        .insert({
+          ...draft,
+          user_id: userId,
+          photos: paths,
+          contract_id: contractId,
+          agent_id: agentRef.current?.id ?? null,
+          ...(dealer ? {} : { plan }),
+        })
         .select("id")
         .single();
       if (insErr) throw insErr;
@@ -241,7 +264,11 @@ export function PostForm({
       router.push(plan === "paid" && row?.id ? `/pay/${row.id}?created=1` : "/my?created=1");
       router.refresh();
     } catch (err) {
-      if (uploaded.length) await supabase.storage.from("ad-photos").remove(uploaded).catch(() => {});
+      if (uploaded.length)
+        await supabase.storage
+          .from("ad-photos")
+          .remove(uploaded)
+          .catch(() => {});
       setBusy(null);
       setError(navigator.onLine ? `Илгээж чадсангүй: ${errMsg(err)}` : "Интернэт холболт тасарлаа. Дахин оролдоно уу.");
     }
@@ -256,12 +283,14 @@ export function PostForm({
   ];
 
   return (
-    <div className="flex flex-wrap gap-6 items-start">
-      <form id="post-form" onSubmit={submit} className="flex-[999_1_560px] min-w-0 flex flex-col gap-4.5">
-        <section className="card p-6 flex flex-col gap-3.5">
-          <div className="flex justify-between items-baseline">
+    <div className="flex flex-wrap items-start gap-6">
+      <form id="post-form" onSubmit={submit} className="flex min-w-0 flex-[999_1_560px] flex-col gap-4.5">
+        <section className="card flex flex-col gap-3.5 p-6">
+          <div className="flex items-baseline justify-between">
             <h2 className="m-0 text-[18px] font-bold">1 · Зураг</h2>
-            <span className="mono text-[13px] text-muted">{photos.length} / {maxPhotos}</span>
+            <span className="mono text-[13px] text-muted">
+              {photos.length} / {maxPhotos}
+            </span>
           </div>
           <div
             className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2.5"
@@ -287,18 +316,20 @@ export function PostForm({
                     setDragIdx(null);
                   }
                 }}
-                className={`relative aspect-square rounded-[10px] overflow-hidden bg-soft cursor-grab ${i === 0 ? "outline-2 outline-ink -outline-offset-2" : ""}`}
+                className={`relative aspect-square cursor-grab overflow-hidden rounded-[10px] bg-soft ${i === 0 ? "outline-2 -outline-offset-2 outline-ink" : ""}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt={`Зураг ${i + 1}`} className="w-full h-full object-cover" />
+                <img src={p.url} alt={`Зураг ${i + 1}`} className="h-full w-full object-cover" />
                 {i === 0 ? (
-                  <span className="mono absolute left-1.5 bottom-1.5 bg-ink text-yellow text-[9px] font-bold px-1.5 py-0.5 rounded">НҮҮР</span>
+                  <span className="mono absolute bottom-1.5 left-1.5 rounded bg-ink px-1.5 py-0.5 text-[9px] font-bold text-yellow">
+                    НҮҮР
+                  </span>
                 ) : (
                   <button
                     type="button"
                     disabled={!!busy}
                     onClick={() => move(i, 0)}
-                    className="absolute left-1 bottom-1 text-[10px] font-semibold bg-ink/80 text-paper rounded px-1.5 py-1 border-0 cursor-pointer"
+                    className="absolute bottom-1 left-1 cursor-pointer rounded border-0 bg-ink/80 px-1.5 py-1 text-[10px] font-semibold text-paper"
                   >
                     Нүүр болгох
                   </button>
@@ -308,7 +339,7 @@ export function PostForm({
                   aria-label={`Зураг ${i + 1} хасах`}
                   disabled={!!busy}
                   onClick={() => setPhotos((ph) => ph.filter((x) => x.id !== p.id))}
-                  className="absolute right-1 top-1 w-7 h-7 rounded-full bg-ink/80 text-paper flex items-center justify-center border-0 cursor-pointer"
+                  className="absolute top-1 right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-0 bg-ink/80 text-paper"
                 >
                   <IconClose size={14} />
                 </button>
@@ -318,7 +349,7 @@ export function PostForm({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="aspect-square rounded-[10px] border-[1.5px] border-dashed border-[#9aa0a9] bg-card text-ink flex flex-col items-center justify-center gap-1 text-[12px] cursor-pointer"
+                className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-[#9aa0a9] bg-card text-[12px] text-ink"
               >
                 <IconCamera size={22} /> Зураг нэмэх
               </button>
@@ -336,41 +367,75 @@ export function PostForm({
             }}
           />
           <span className="text-[13px] text-muted">
-            Чирж оруулах эсвэл сонгох. Эхний зураг нүүр зураг болно — «Нүүр болгох» товчоор эсвэл чирж солино. {minPhotos}–{maxPhotos} зураг.
+            Чирж оруулах эсвэл сонгох. Эхний зураг нүүр зураг болно — «Нүүр болгох» товчоор эсвэл чирж солино.{" "}
+            {minPhotos}–{maxPhotos} зураг.
           </span>
         </section>
 
-        <section className="card p-6 flex flex-col gap-3.5">
+        <section className="card flex flex-col gap-3.5 p-6">
           <h2 className="m-0 text-[18px] font-bold">2 · Машин, сер ба он</h2>
           <div className="flex flex-wrap gap-3">
             <label className="label flex-[1_1_200px]">
               Марк
-              <input name="brand" required list="brands" value={brand} onChange={(e) => setBrand(e.target.value)} className="input" placeholder="Toyota" />
-              <datalist id="brands">{Object.keys(BRANDS).map((b) => <option key={b} value={b} />)}</datalist>
+              <input
+                name="brand"
+                required
+                list="brands"
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                className="input"
+                placeholder="Toyota"
+              />
+              <datalist id="brands">
+                {Object.keys(BRANDS).map((b) => (
+                  <option key={b} value={b} />
+                ))}
+              </datalist>
             </label>
             <label className="label flex-[1_1_200px]">
               Загвар
               <input name="model" required list="models" className="input" placeholder="Prius" />
-              <datalist id="models">{models.map((m) => <option key={m} value={m} />)}</datalist>
+              <datalist id="models">
+                {models.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
             </label>
             <label className="label flex-[1_1_200px]">
               Аль сер
               <input name="trim" className="input" placeholder="ZVW55 · S Touring" />
             </label>
           </div>
-          <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex flex-wrap items-end gap-3">
             <label className="label flex-[1_1_200px]">
               Үйлдвэрлэсэн он
-              <input name="year_made" required type="number" min={1950} max={thisYear + 1} value={yearMade} onChange={(e) => setYearMade(e.target.value)} className="input mono" placeholder="2017" />
+              <input
+                name="year_made"
+                required
+                type="number"
+                min={1950}
+                max={thisYear + 1}
+                value={yearMade}
+                onChange={(e) => setYearMade(e.target.value)}
+                className="input mono"
+                placeholder="2017"
+              />
             </label>
             <label className="label flex-[1_1_200px]">
               Орж ирсэн он
-              <input name="year_imported" type="number" min={1950} max={thisYear + 1} className="input mono" placeholder="2023" />
+              <input
+                name="year_imported"
+                type="number"
+                min={1950}
+                max={thisYear + 1}
+                className="input mono"
+                placeholder="2023"
+              />
             </label>
-            <div className="flex-[1_1_200px] h-12 flex items-center gap-2 px-3 bg-ink text-paper rounded-[12px] text-[13px]">
+            <div className="flex h-12 flex-[1_1_200px] items-center gap-2 rounded-[12px] bg-ink px-3 text-[13px] text-paper">
               {category ? (
                 <>
-                  <span className="mono bg-yellow text-ink text-[11px] font-bold px-2 py-0.5 rounded">
+                  <span className="mono rounded bg-yellow px-2 py-0.5 text-[11px] font-bold text-ink">
                     {category === "new" ? `${cutoff}+` : `${cutoff}-аас өмнө`}
                   </span>
                   автомат ангилал
@@ -382,12 +447,17 @@ export function PostForm({
           </div>
         </section>
 
-        <section className="card p-6 flex flex-col gap-3.5">
+        <section className="card flex flex-col gap-3.5 p-6">
           <h2 className="m-0 text-[18px] font-bold">3 · Дугаар ба холбоо барих</h2>
           <div className="flex flex-wrap gap-3">
             <label className="label flex-[1_1_200px]">
               Улсын дугаар
-              <input name="plate_number" required className="input mono text-[18px] font-bold tracking-[2px] border-2 border-ink text-center uppercase" placeholder="1234 УБА" />
+              <input
+                name="plate_number"
+                required
+                className="input mono border-2 border-ink text-center text-[18px] font-bold tracking-[2px] uppercase"
+                placeholder="1234 УБА"
+              />
             </label>
             <label className="label flex-[1_1_200px]">
               Арлын дугаар
@@ -395,31 +465,48 @@ export function PostForm({
             </label>
             <label className="label flex-[1_1_200px]">
               Утасны дугаар
-              <input name="phone" required type="tel" minLength={8} defaultValue={defaultPhone} className="input mono" />
+              <input
+                name="phone"
+                required
+                type="tel"
+                minLength={8}
+                defaultValue={defaultPhone}
+                className="input mono"
+              />
             </label>
           </div>
-          <span className="text-[13px] text-muted">Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн манай ажилтан бүтнээр нь харна.</span>
+          <span className="text-[13px] text-muted">
+            Улсын болон арлын дугаар бусдад нуугдмал харагдана. Зөвхөн манай ажилтан бүтнээр нь харна.
+          </span>
         </section>
 
-        <section className="card p-6 flex flex-col gap-3.5">
+        <section className="card flex flex-col gap-3.5 p-6">
           <h2 className="m-0 text-[18px] font-bold">4 · Нэмэлт опшн</h2>
           <OptionPicker value={options} onChange={setOptions} />
         </section>
 
-        <section className="card p-6 flex flex-wrap gap-3.5">
+        <section className="card flex flex-wrap gap-3.5 p-6">
           <label className="label flex-[1_1_300px]">
             5 · Нэмж хийсэн зүйлс
-            <textarea name="modifications" className="textarea font-normal" placeholder="Өвлийн шинэ дугуй, автозапуск, салоны бүрээс..." />
+            <textarea
+              name="modifications"
+              className="textarea font-normal"
+              placeholder="Өвлийн шинэ дугуй, автозапуск, салоны бүрээс..."
+            />
           </label>
           <label className="label flex-[1_1_300px]">
             6 · Нэмэлт тайлбар
-            <textarea name="description" className="textarea font-normal" placeholder="Машины байдал, эзэмшлийн түүх, үзүүлэх цаг..." />
+            <textarea
+              name="description"
+              className="textarea font-normal"
+              placeholder="Машины байдал, эзэмшлийн түүх, үзүүлэх цаг..."
+            />
           </label>
         </section>
 
-        <section className="card p-6 flex flex-col gap-3.5">
+        <section className="card flex flex-col gap-3.5 p-6">
           <h2 className="m-0 text-[18px] font-bold">7 · Үнэ</h2>
-          <div className="flex items-center h-16 max-w-[420px] border-2 border-ink rounded-[14px] px-4 gap-2 bg-card">
+          <div className="flex h-16 max-w-[420px] items-center gap-2 rounded-[14px] border-2 border-ink bg-card px-4">
             <input
               inputMode="numeric"
               required
@@ -430,16 +517,21 @@ export function PostForm({
               }}
               aria-label="Үнэ"
               placeholder="48,500,000"
-              className="h-display flex-1 min-w-0 bg-transparent outline-none text-[24px]"
+              className="h-display min-w-0 flex-1 bg-transparent text-[24px] outline-none"
             />
             <span className="h-display text-[22px]">₮</span>
           </div>
-          <label className="label max-w-[420px] mt-1">
+          <label className="label mt-1 max-w-[420px]">
             Агентын код <span className="font-normal text-muted">(заавал биш)</span>
             <input
               value={agentCode}
               onChange={(e) => {
-                setAgentCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12));
+                setAgentCode(
+                  e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]/g, "")
+                    .slice(0, 12),
+                );
                 setAgentName(null);
               }}
               autoComplete="off"
@@ -447,12 +539,14 @@ export function PostForm({
               className="input mono font-normal"
             />
             {agentName && <span className="text-[13px] font-normal text-active-fg">✓ Агент: {agentName}</span>}
-            <span className="text-[12px] font-normal text-muted">Танд манай агент туслалцаа үзүүлсэн бол түүний кодыг оруулна уу.</span>
+            <span className="text-[12px] font-normal text-muted">
+              Танд манай агент туслалцаа үзүүлсэн бол түүний кодыг оруулна уу.
+            </span>
           </label>
         </section>
       </form>
 
-      <aside className="flex-[1_1_320px] bg-ink text-paper rounded-[18px] p-6 flex flex-col gap-4.5 lg:sticky lg:top-6">
+      <aside className="flex flex-[1_1_320px] flex-col gap-4.5 rounded-[18px] bg-ink p-6 text-paper lg:sticky lg:top-6">
         {busy ? (
           <div role="status" aria-live="polite" className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -462,30 +556,59 @@ export function PostForm({
             <p className="m-0 text-[14px] text-pale">Уншиж байна, түр хүлээнэ үү. Хуудсаа битгий хаагаарай.</p>
             <div className="flex justify-between text-[14px]">
               <span>Зураг байршуулж байна</span>
-              <span className="mono font-bold">{busy.done} / {photos.length}</span>
+              <span className="mono font-bold">
+                {busy.done} / {photos.length}
+              </span>
             </div>
-            <div role="progressbar" aria-valuemin={0} aria-valuemax={photos.length} aria-valuenow={busy.done} className="h-3 rounded-md bg-ink-line overflow-hidden">
-              <div className="h-full bg-yellow rounded-md transition-all" style={{ width: `${(busy.done / Math.max(photos.length, 1)) * 100}%` }} />
+            <div
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={photos.length}
+              aria-valuenow={busy.done}
+              className="h-3 overflow-hidden rounded-md bg-ink-line"
+            >
+              <div
+                className="h-full rounded-md bg-yellow transition-all"
+                style={{ width: `${(busy.done / Math.max(photos.length, 1)) * 100}%` }}
+              />
             </div>
-            <span className="text-[14px] text-pale">{busy.step === 2 ? "Гэрээ баталгаажуулж байна…" : busy.step === 3 ? (dealer ? "Нийтэлж байна…" : plan === "paid" ? "Илгээж байна…" : "Шалгалтад илгээж байна…") : ""}</span>
+            <span className="text-[14px] text-pale">
+              {busy.step === 2
+                ? "Гэрээ баталгаажуулж байна…"
+                : busy.step === 3
+                  ? dealer
+                    ? "Нийтэлж байна…"
+                    : plan === "paid"
+                      ? "Илгээж байна…"
+                      : "Шалгалтад илгээж байна…"
+                  : ""}
+            </span>
           </div>
         ) : (
           <>
             <span className="h-display text-[18px]">Шалгах жагсаалт</span>
-            <ul className="list-none p-0 m-0 flex flex-col gap-3 text-[14px]">
+            <ul className="m-0 flex list-none flex-col gap-3 p-0 text-[14px]">
               {checks.map((c) => (
-                <li key={c.label} className={`flex gap-2.5 items-center ${c.ok ? "" : "text-pale"}`}>
+                <li key={c.label} className={`flex items-center gap-2.5 ${c.ok ? "" : "text-pale"}`}>
                   {c.ok ? (
-                    <span className="w-[22px] h-[22px] rounded-full bg-yellow text-ink flex items-center justify-center"><IconCheck size={14} /></span>
+                    <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-yellow text-ink">
+                      <IconCheck size={14} />
+                    </span>
                   ) : (
-                    <span className="w-[22px] h-[22px] rounded-full border-2 border-muted" />
+                    <span className="h-[22px] w-[22px] rounded-full border-2 border-muted" />
                   )}
                   {c.label}
                 </li>
               ))}
             </ul>
-            {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
-            <button form="post-form" className="btn btn-lg btn-yellow">{dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"}</button>
+            {error && (
+              <p role="alert" className="m-0 rounded-xl bg-danger-bg px-3.5 py-3 text-[14px] text-[#9b1c1c]">
+                {error}
+              </p>
+            )}
+            <button form="post-form" className="btn btn-lg btn-yellow">
+              {dealer ? "Зар нийтлэх" : "Үргэлжлүүлэх · Сонголт"}
+            </button>
             <p className="m-0 text-[13px] leading-relaxed text-pale">
               {dealer
                 ? "Авто худалдааны зар шалгалтгүйгээр шууд нийтлэгдэнэ."
@@ -496,27 +619,44 @@ export function PostForm({
       </aside>
 
       {draft && (
-        <div role="dialog" aria-modal="true" aria-labelledby="contract-title" className="fixed inset-0 z-50 bg-ink/60 flex items-end sm:items-center justify-center sm:p-4">
-          <div className="bg-card w-full sm:max-w-[760px] max-h-[94dvh] rounded-t-[22px] sm:rounded-[22px] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="contract-title"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/60 sm:items-center sm:p-4"
+        >
+          <div className="flex max-h-[94dvh] w-full flex-col overflow-hidden rounded-t-[22px] bg-card sm:max-w-[760px] sm:rounded-[22px]">
+            <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
               <div className="flex flex-col">
                 <span className="text-[12px] text-muted">{plan ? "Алхам 3 / 3" : "Алхам 2 / 3 · Сонголт"}</span>
                 <h2 id="contract-title" className="m-0 text-[18px] font-bold">
-                  {plan === "commission" ? "Зуучлалын гэрээ" : plan === "paid" ? "Онцлох зар · шимтгэлгүй" : "Зараа хэрхэн байршуулах вэ?"}
+                  {plan === "commission"
+                    ? "Зуучлалын гэрээ"
+                    : plan === "paid"
+                      ? "Онцлох зар · шимтгэлгүй"
+                      : "Зараа хэрхэн байршуулах вэ?"}
                 </h2>
               </div>
-              <button type="button" aria-label="Хаах" disabled={!!busy} onClick={() => setDraft(null)} className="w-10 h-10 rounded-xl bg-paper border-0 flex items-center justify-center cursor-pointer disabled:opacity-40">
+              <button
+                type="button"
+                aria-label="Хаах"
+                disabled={!!busy}
+                onClick={() => setDraft(null)}
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border-0 bg-paper disabled:opacity-40"
+              >
                 <IconClose size={20} />
               </button>
             </div>
 
             {!plan && (
-              <div className="overflow-y-auto px-5 py-4 flex flex-col gap-3">
+              <div className="flex flex-col gap-3 overflow-y-auto px-5 py-4">
                 <PlanCard
                   title="Шимтгэлтэй · агент зарна"
                   price={`Одоо 0₮ · зарагдвал ${maxPct}% хүртэл`}
                   points={[
-                    plans.commissionFeaturedDays > 0 ? `⭐ ${plans.commissionFeaturedDays} хоног онцлох зар — үнэгүй, жагсаалтын эхэнд` : "Зар нийтэд үнэгүй харагдана",
+                    plans.commissionFeaturedDays > 0
+                      ? `⭐ ${plans.commissionFeaturedDays} хоног онцлох зар — үнэгүй, жагсаалтын эхэнд`
+                      : "Зар нийтэд үнэгүй харагдана",
                     "Манай агентууд худалдан авагч хайж, хурдан зарж өгнө",
                     "Шимтгэлийг зөвхөн машин зарагдсаны дараа төлнө (гэрээтэй)",
                   ]}
@@ -543,28 +683,48 @@ export function PostForm({
                   }}
                   cta="Сонгох · төлбөр"
                 />
-                <span className="text-[12px] text-muted">Дэлгэрэнгүй: шимтгэлийн шат — {tierLines(contract.terms).join("; ")}.</span>
+                <span className="text-[12px] text-muted">
+                  Дэлгэрэнгүй: шимтгэлийн шат — {tierLines(contract.terms).join("; ")}.
+                </span>
               </div>
             )}
 
             {plan === "paid" && (
               <>
-                <div className="overflow-y-auto px-5 py-4 flex flex-col gap-4">
-                  <div className="rounded-2xl bg-ink text-paper p-5 flex flex-col gap-2">
-                    <span className="text-[13px] text-pale">{draft.brand} {draft.model} · {draft.year_made} · {money(draft.price)}</span>
+                <div className="flex flex-col gap-4 overflow-y-auto px-5 py-4">
+                  <div className="flex flex-col gap-2 rounded-2xl bg-ink p-5 text-paper">
+                    <span className="text-[13px] text-pale">
+                      {draft.brand} {draft.model} · {draft.year_made} · {money(draft.price)}
+                    </span>
                     <span className="h-display text-[28px] text-yellow">{money(plans.featuredPrice)}</span>
                     <span className="text-[14px]">⭐ {plans.featuredDays} хоног онцлох · шимтгэлгүй</span>
                   </div>
-                  <ol className="m-0 pl-5 flex flex-col gap-1.5 text-[14px] leading-snug">
+                  <ol className="m-0 flex flex-col gap-1.5 pl-5 text-[14px] leading-snug">
                     <li>«Зар илгээх» дарахад зар хадгалагдаж, дансны мэдээлэл гарна.</li>
                     <li>Гүйлгээний утгад таны кодыг бичиж шилжүүлнэ.</li>
                     <li>«Төлбөр төлсөн» дарна — орлого баталгаажмагц зар шууд нийтлэгдэж, онцлох болно.</li>
                   </ol>
-                  {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
+                  {error && (
+                    <p role="alert" className="m-0 rounded-xl bg-danger-bg px-3.5 py-3 text-[14px] text-[#9b1c1c]">
+                      {error}
+                    </p>
+                  )}
                 </div>
-                <div className="px-5 py-4 border-t border-line flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
-                  <button type="button" disabled={!!busy} onClick={() => setPlan(null)} className="btn btn-lg btn-ghost">Буцах</button>
-                  <button type="button" disabled={!!busy} onClick={() => send(draft, null, "paid")} className="btn btn-lg btn-yellow disabled:opacity-50">
+                <div className="flex flex-col-reverse gap-2.5 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    disabled={!!busy}
+                    onClick={() => setPlan(null)}
+                    className="btn btn-lg btn-ghost"
+                  >
+                    Буцах
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!!busy}
+                    onClick={() => send(draft, null, "paid")}
+                    className="btn btn-lg btn-yellow disabled:opacity-50"
+                  >
                     {busy ? (
                       <>
                         <IconSpinner size={20} />
@@ -580,8 +740,8 @@ export function PostForm({
 
             {plan === "commission" && (
               <>
-                <div className="overflow-y-auto px-5 py-4 flex flex-col gap-5">
-                  <div className="rounded-xl bg-paper p-4 max-h-[42dvh] overflow-y-auto border border-line">
+                <div className="flex flex-col gap-5 overflow-y-auto px-5 py-4">
+                  <div className="max-h-[42dvh] overflow-y-auto rounded-xl border border-line bg-paper p-4">
                     <ContractView
                       data={{
                         company: contract.company,
@@ -597,28 +757,65 @@ export function PostForm({
                       }}
                     />
                   </div>
-                  <a href="/api/contracts/template" target="_blank" rel="noreferrer" className="text-[13px] font-semibold self-start">Гэрээний загварыг PDF-ээр үзэх ↗</a>
+                  <a
+                    href="/api/contracts/template"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="self-start text-[13px] font-semibold"
+                  >
+                    Гэрээний загварыг PDF-ээр үзэх ↗
+                  </a>
                   <label className="label">
                     Овог нэр (гэрээнд бичигдэнэ)
-                    <input value={signName} onChange={(e) => setSignName(e.target.value)} className="input" placeholder="Овог нэр" />
+                    <input
+                      value={signName}
+                      onChange={(e) => setSignName(e.target.value)}
+                      className="input"
+                      placeholder="Овог нэр"
+                    />
                   </label>
                   <div className="flex flex-col gap-1.5">
                     <span className="text-[13px] font-semibold">Гарын үсэг</span>
                     <SignaturePad onChange={setSignature} />
                   </div>
-                  <label className="flex items-start gap-3 text-[14px] leading-snug cursor-pointer">
-                    <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#111317]" />
+                  <label className="flex cursor-pointer items-start gap-3 text-[14px] leading-snug">
+                    <input
+                      type="checkbox"
+                      checked={agree}
+                      onChange={(e) => setAgree(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 accent-[#111317]"
+                    />
                     <span>Би гэрээг бүрэн уншиж танилцсан бөгөөд шимтгэлийн нөхцөлийг зөвшөөрч байна.</span>
                   </label>
-                  {error && <p role="alert" className="m-0 rounded-xl bg-danger-bg text-[#9b1c1c] px-3.5 py-3 text-[14px]">{error}</p>}
+                  {error && (
+                    <p role="alert" className="m-0 rounded-xl bg-danger-bg px-3.5 py-3 text-[14px] text-[#9b1c1c]">
+                      {error}
+                    </p>
+                  )}
                 </div>
-                <div className="px-5 py-4 border-t border-line flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
-                  <button type="button" disabled={!!busy} onClick={() => setPlan(null)} className="btn btn-lg btn-ghost">Буцах</button>
-                  <button type="button" disabled={!!busy || !signature || !agree} onClick={confirmAndSend} className="btn btn-lg btn-yellow disabled:opacity-50">
+                <div className="flex flex-col-reverse gap-2.5 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    disabled={!!busy}
+                    onClick={() => setPlan(null)}
+                    className="btn btn-lg btn-ghost"
+                  >
+                    Буцах
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!!busy || !signature || !agree}
+                    onClick={confirmAndSend}
+                    className="btn btn-lg btn-yellow disabled:opacity-50"
+                  >
                     {busy ? (
                       <>
                         <IconSpinner size={20} />
-                        {busy.step === 1 ? `Зураг ${busy.done} / ${photos.length}` : busy.step === 2 ? "Гэрээ хадгалж байна…" : "Илгээж байна…"}
+                        {busy.step === 1
+                          ? `Зураг ${busy.done} / ${photos.length}`
+                          : busy.step === 2
+                            ? "Гэрээ хадгалж байна…"
+                            : "Илгээж байна…"}
                       </>
                     ) : (
                       "Зөвшөөрч, зар илгээх"
@@ -634,22 +831,46 @@ export function PostForm({
   );
 }
 
-function PlanCard({ title, price, points, onPick, cta, highlight = false }: { title: string; price: string; points: string[]; onPick: () => void; cta: string; highlight?: boolean }) {
+function PlanCard({
+  title,
+  price,
+  points,
+  onPick,
+  cta,
+  highlight = false,
+}: {
+  title: string;
+  price: string;
+  points: string[];
+  onPick: () => void;
+  cta: string;
+  highlight?: boolean;
+}) {
   return (
-    <div className={`rounded-2xl p-4.5 flex flex-col gap-3 ${highlight ? "border-2 border-ink" : "border border-line-2"}`}>
-      <div className="flex justify-between items-baseline gap-3 flex-wrap">
-        <span className="font-bold text-[17px]">{title}</span>
+    <div
+      className={`flex flex-col gap-3 rounded-2xl p-4.5 ${highlight ? "border-2 border-ink" : "border border-line-2"}`}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <span className="text-[17px] font-bold">{title}</span>
         <span className="h-display text-[15px]">{price}</span>
       </div>
-      <ul className="list-none p-0 m-0 flex flex-col gap-1.5 text-[14px]">
+      <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[14px]">
         {points.map((p) => (
-          <li key={p} className="flex gap-2 items-start">
-            <span className="w-5 h-5 mt-px rounded-full bg-yellow text-ink flex items-center justify-center shrink-0"><IconCheck size={12} /></span>
+          <li key={p} className="flex items-start gap-2">
+            <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-yellow text-ink">
+              <IconCheck size={12} />
+            </span>
             {p}
           </li>
         ))}
       </ul>
-      <button type="button" onClick={onPick} className={`btn ${highlight ? "btn-ink" : "btn-yellow"} self-stretch sm:self-end`}>{cta}</button>
+      <button
+        type="button"
+        onClick={onPick}
+        className={`btn ${highlight ? "btn-ink" : "btn-yellow"} self-stretch sm:self-end`}
+      >
+        {cta}
+      </button>
     </div>
   );
 }

@@ -21,12 +21,21 @@ export type Section = { heading?: string; lines: string[] };
 
 const BLANK = "______________________";
 const pct = (n: number) => `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })}%`;
-export const amount = (n?: number | null) => (n ? `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} төгрөг` : BLANK);
+export const amount = (n?: number | null) =>
+  n ? `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} төгрөг` : BLANK;
 
 /** Улаанбаатарын цагаар огноо, цагийн хэсгүүд */
 export function ubParts(iso: string) {
   const p = Object.fromEntries(
-    new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Ulaanbaatar", year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Ulaanbaatar",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
       .formatToParts(new Date(iso))
       .map((x) => [x.type, x.value]),
   );
@@ -102,14 +111,27 @@ export function contractSections(c: ContractData): Section[] {
 export const CONTRACT_TITLE = "АВТОМАШИН ЗУУЧЛАН БОРЛУУЛАХ ГЭРЭЭ";
 export const shortNo = (id?: string | null) => (id ? id.replace(/-/g, "").slice(0, 8).toUpperCase() : null);
 
-export const DEFAULT_TERMS: ContractTerms = { tiers: [{ days: 2, percent: 3 }, { days: 7, percent: 2 }, { days: 10, percent: 1.5 }], after: 1.5 };
+export const DEFAULT_TERMS: ContractTerms = {
+  tiers: [
+    { days: 2, percent: 3 },
+    { days: 7, percent: 2 },
+    { days: 10, percent: 1.5 },
+  ],
+  after: 1.5,
+};
 
 /** Тохиргооноос гэрээний нөхцөл (SQL ажиллаагүй үед анхны утга) */
-export function termsFrom(s: { company_name?: string | null; commission_tiers?: Tier[] | null; commission_after?: number | string | null }) {
+export function termsFrom(s: {
+  company_name?: string | null;
+  commission_tiers?: Tier[] | null;
+  commission_after?: number | string | null;
+}) {
   return {
     company: s.company_name || "Autoshop ХХК",
     terms: {
-      tiers: s.commission_tiers?.length ? s.commission_tiers.map((t) => ({ days: Number(t.days), percent: Number(t.percent) })) : DEFAULT_TERMS.tiers,
+      tiers: s.commission_tiers?.length
+        ? s.commission_tiers.map((t) => ({ days: Number(t.days), percent: Number(t.percent) }))
+        : DEFAULT_TERMS.tiers,
       after: s.commission_after != null ? Number(s.commission_after) : DEFAULT_TERMS.after,
     } as ContractTerms,
   };

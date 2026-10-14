@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { agentAmount, commissionAmount, commissionFor, expiryInfo, hoursAgo, isFeatured, recentlyRequested } from "@shared/commission";
+import {
+  agentAmount,
+  commissionAmount,
+  commissionFor,
+  expiryInfo,
+  hoursAgo,
+  isFeatured,
+  recentlyRequested,
+} from "@shared/commission";
 import { DEFAULT_TERMS } from "@shared/contract";
 
 const pub = "2026-10-01T00:00:00Z";
@@ -19,7 +27,13 @@ describe("commissionFor — гэрээний шат (2 хоног 3%, 7 хоно
     expect(commissionFor({ ...DEFAULT_TERMS, after: 1 }, pub, at(30 * 24)).percent).toBe(1);
   });
   it("шат эрэмбэгүй ирсэн ч зөв, хамгийн бага нь 1 хоног", () => {
-    const t = { tiers: [{ days: 7, percent: 2 }, { days: 2, percent: 3 }], after: 1 };
+    const t = {
+      tiers: [
+        { days: 7, percent: 2 },
+        { days: 2, percent: 3 },
+      ],
+      after: 1,
+    };
     expect(commissionFor(t, pub, at(10))).toEqual({ days: 1, percent: 3 });
     expect(commissionFor(t, pub, pub).days).toBe(1);
   });
@@ -42,7 +56,8 @@ describe("дүн", () => {
 
 describe("expiryInfo", () => {
   const now = new Date("2026-10-10T12:00:00Z");
-  it("хугацаагүй", () => expect(expiryInfo(null, now)).toEqual({ none: true, expired: false, daysLeft: 0, renewable: false }));
+  it("хугацаагүй", () =>
+    expect(expiryInfo(null, now)).toEqual({ none: true, expired: false, daysLeft: 0, renewable: false }));
   it("30 хоног үлдсэн — сунгах боломжгүй", () => {
     const e = expiryInfo("2026-11-09T12:00:00Z", now);
     expect(e).toMatchObject({ expired: false, daysLeft: 30, renewable: false });
@@ -51,8 +66,10 @@ describe("expiryInfo", () => {
     expect(expiryInfo("2026-10-17T12:00:00Z", now).renewable).toBe(true);
     expect(expiryInfo("2026-10-17T12:00:01Z", now).renewable).toBe(false);
   });
-  it("хагас хоног үлдсэн бол 1 хоног гэж харуулна", () => expect(expiryInfo("2026-10-11T00:00:00Z", now).daysLeft).toBe(1));
-  it("дууссан", () => expect(expiryInfo("2026-10-10T11:59:59Z", now)).toMatchObject({ expired: true, daysLeft: 0, renewable: true }));
+  it("хагас хоног үлдсэн бол 1 хоног гэж харуулна", () =>
+    expect(expiryInfo("2026-10-11T00:00:00Z", now).daysLeft).toBe(1));
+  it("дууссан", () =>
+    expect(expiryInfo("2026-10-10T11:59:59Z", now)).toMatchObject({ expired: true, daysLeft: 0, renewable: true }));
 });
 
 describe("онцлох", () => {

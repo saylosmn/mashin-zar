@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Dimensions, FlatList, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native";
+import {
+  Alert,
+  Dimensions,
+  FlatList,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -41,8 +51,15 @@ export default function AdDetail() {
       setError(null);
       const favP = supabase.from("favorites").select("ad_id").eq("ad_id", id).maybeSingle();
       // Лизингийн түншүүд — алдаа гарвал тооцоолуур л харагдахгүй, зар нээгдэнэ
-      supabase.from("leasing_partners").select("*").eq("active", true).order("name")
-        .then(({ data: lp }) => setPartners((lp ?? []) as Partner[]), () => setPartners([]));
+      supabase
+        .from("leasing_partners")
+        .select("*")
+        .eq("active", true)
+        .order("name")
+        .then(
+          ({ data: lp }) => setPartners((lp ?? []) as Partner[]),
+          () => setPartners([]),
+        );
       const { data, error: e } = await supabase.from("public_ads").select("*").eq("id", id).maybeSingle();
       if (e) throw e;
       if (data) {
@@ -52,7 +69,14 @@ export default function AdDetail() {
         const { data: own } = await supabase.from("ads").select("*").eq("id", id).maybeSingle();
         if (own) {
           const a = own as Ad;
-          setAd({ ...a, plate_masked: a.plate_number, vin_masked: a.vin, seller_name: "", seller_city: null, seller_ad_count: 0 } as PublicAd);
+          setAd({
+            ...a,
+            plate_masked: a.plate_number,
+            vin_masked: a.vin,
+            seller_name: "",
+            seller_city: null,
+            seller_ad_count: 0,
+          } as PublicAd);
         } else setAd(null);
       }
       const { data: f } = await favP;
@@ -64,8 +88,15 @@ export default function AdDetail() {
     }
   }, [id, uid]);
 
-  useEffect(() => { load(); }, [load]);
-  useLiveSync((e) => { if (e.table === "leasing_partners" || !e.id || e.id === id) load(); }, ["ads", "leasing_partners"]);
+  useEffect(() => {
+    load();
+  }, [load]);
+  useLiveSync(
+    (e) => {
+      if (e.table === "leasing_partners" || !e.id || e.id === id) load();
+    },
+    ["ads", "leasing_partners"],
+  );
 
   async function toggleFav() {
     if (!uid) return requireLogin(`/ads/${id}`);
@@ -86,14 +117,35 @@ export default function AdDetail() {
         </View>
       </View>
     );
-  if (error) return <StateView icon="warning" title="Алдаа гарлаа" text={error}><Button title="Дахин оролдох" icon="refresh-cw" onPress={() => { setLoading(true); load(); }} /><Button title="Буцах" variant="ghost" onPress={() => router.back()} /></StateView>;
-  if (!ad) return <StateView icon="slash" title="Зар олдсонгүй" text="Зар устгагдсан, зарагдсан эсвэл холбоос буруу байж магадгүй."><Button title="Бүх зар руу" onPress={() => router.replace("/")} /></StateView>;
+  if (error)
+    return (
+      <StateView icon="warning" title="Алдаа гарлаа" text={error}>
+        <Button
+          title="Дахин оролдох"
+          icon="refresh-cw"
+          onPress={() => {
+            setLoading(true);
+            load();
+          }}
+        />
+        <Button title="Буцах" variant="ghost" onPress={() => router.back()} />
+      </StateView>
+    );
+  if (!ad)
+    return (
+      <StateView icon="slash" title="Зар олдсонгүй" text="Зар устгагдсан, зарагдсан эсвэл холбоос буруу байж магадгүй.">
+        <Button title="Бүх зар руу" onPress={() => router.replace("/")} />
+      </StateView>
+    );
 
   const mine = ad.user_id === uid;
   const cy = settings.cutoff_year;
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: C.paper }}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ flex: 1, backgroundColor: C.paper }}
+    >
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
         <View>
           {ad.photos.length ? (
@@ -109,17 +161,57 @@ export default function AdDetail() {
           ) : (
             <Photo style={{ width: W, height: 300 }} />
           )}
-          <Pressable accessibilityLabel="Буцах" onPress={() => router.back()} style={{ position: "absolute", left: 16, top: 16, width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, alignItems: "center", justifyContent: "center" }}>
+          <Pressable
+            accessibilityLabel="Буцах"
+            onPress={() => router.back()}
+            style={{
+              position: "absolute",
+              left: 16,
+              top: 16,
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: C.card,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Feather name="chevron-left" size={22} color={C.ink} />
           </Pressable>
           {!mine && (
-            <Pressable accessibilityLabel={fav ? "Хадгалснаас хасах" : "Хадгалах"} onPress={toggleFav} style={{ position: "absolute", right: 16, top: 16, width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, alignItems: "center", justifyContent: "center" }}>
+            <Pressable
+              accessibilityLabel={fav ? "Хадгалснаас хасах" : "Хадгалах"}
+              onPress={toggleFav}
+              style={{
+                position: "absolute",
+                right: 16,
+                top: 16,
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                backgroundColor: C.card,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <Feather name="heart" size={20} color={fav ? "#C0262D" : C.ink} />
             </Pressable>
           )}
           {ad.photos.length > 0 && (
-            <View style={{ position: "absolute", right: 16, bottom: 14, backgroundColor: C.ink, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
-              <T w="mono" style={{ color: C.paper, fontSize: 12 }}>{idx + 1} / {ad.photos.length}</T>
+            <View
+              style={{
+                position: "absolute",
+                right: 16,
+                bottom: 14,
+                backgroundColor: C.ink,
+                borderRadius: 6,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+              }}
+            >
+              <T w="mono" style={{ color: C.paper, fontSize: 12 }}>
+                {idx + 1} / {ad.photos.length}
+              </T>
             </View>
           )}
         </View>
@@ -131,19 +223,31 @@ export default function AdDetail() {
               {ad.status !== "active" && <StatusBadge s={ad.status} />}
               <T style={{ fontSize: 12, color: C.muted }}>{timeAgo(ad.approved_at ?? ad.created_at)}</T>
             </View>
-            <T w="bold" style={{ fontSize: 24, lineHeight: 30 }}>{ad.brand} {ad.model}{ad.trim ? ` · ${ad.trim}` : ""}</T>
-            <T w="display" style={{ fontSize: 26 }}>{money(ad.price)}</T>
+            <T w="bold" style={{ fontSize: 24, lineHeight: 30 }}>
+              {ad.brand} {ad.model}
+              {ad.trim ? ` · ${ad.trim}` : ""}
+            </T>
+            <T w="display" style={{ fontSize: 26 }}>
+              {money(ad.price)}
+            </T>
           </View>
 
           {mine && ad.status === "active" && expiryInfo(ad.expires_at).expired && (
-            <Pressable onPress={() => router.push("/my")} style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}>
-              <T style={{ color: "#9B1C1C", fontSize: 14, lineHeight: 20 }}>Зарын хугацаа дууссан тул нийтэд харагдахгүй байна. «Миний зар» хэсгээс сунгана уу →</T>
+            <Pressable
+              onPress={() => router.push("/my")}
+              style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 12 }}
+            >
+              <T style={{ color: "#9B1C1C", fontSize: 14, lineHeight: 20 }}>
+                Зарын хугацаа дууссан тул нийтэд харагдахгүй байна. «Миний зар» хэсгээс сунгана уу →
+              </T>
             </Pressable>
           )}
 
           {ad.status === "pending" && (
             <View style={{ backgroundColor: C.pendingBg, borderRadius: 12, padding: 12 }}>
-              <T style={{ color: C.pendingFg, fontSize: 14, lineHeight: 20 }}>Энэ зар шалгалтыг хүлээж байна. Батлагдсаны дараа бусдад харагдана.</T>
+              <T style={{ color: C.pendingFg, fontSize: 14, lineHeight: 20 }}>
+                Энэ зар шалгалтыг хүлээж байна. Батлагдсаны дараа бусдад харагдана.
+              </T>
             </View>
           )}
 
@@ -154,56 +258,103 @@ export default function AdDetail() {
               ["Улсын дугаар", ad.plate_masked, true],
               ["Арлын дугаар", ad.vin_masked, true],
             ].map(([k, v, mono]) => (
-              <View key={String(k)} style={{ width: (W - 48) / 2, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 12, gap: 4 }}>
+              <View
+                key={String(k)}
+                style={{
+                  width: (W - 48) / 2,
+                  backgroundColor: C.card,
+                  borderWidth: 1,
+                  borderColor: C.line,
+                  borderRadius: 12,
+                  padding: 12,
+                  gap: 4,
+                }}
+              >
                 <T style={{ fontSize: 12, color: C.muted }}>{k}</T>
-                <T w={mono ? "monoBold" : "semibold"} style={{ fontSize: mono ? 14 : 16 }}>{v}</T>
+                <T w={mono ? "monoBold" : "semibold"} style={{ fontSize: mono ? 14 : 16 }}>
+                  {v}
+                </T>
               </View>
             ))}
           </View>
 
           <View style={{ gap: 10 }}>
-            <T w="bold" style={s.h2}>Машин ба сер</T>
+            <T w="bold" style={s.h2}>
+              Машин ба сер
+            </T>
             <View style={[s.card]}>
-              {[["Марк", ad.brand], ["Загвар", ad.model], ["Сер", ad.trim || "—"], ["Үзэлт", String(ad.views)]].map(([k, v], i) => (
-                <View key={k} style={{ flexDirection: "row", justifyContent: "space-between", padding: 12, paddingHorizontal: 14, borderTopWidth: i ? 1 : 0, borderColor: "#ECEDE9" }}>
+              {[
+                ["Марк", ad.brand],
+                ["Загвар", ad.model],
+                ["Сер", ad.trim || "—"],
+                ["Үзэлт", String(ad.views)],
+              ].map(([k, v], i) => (
+                <View
+                  key={k}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    padding: 12,
+                    paddingHorizontal: 14,
+                    borderTopWidth: i ? 1 : 0,
+                    borderColor: "#ECEDE9",
+                  }}
+                >
                   <T style={{ fontSize: 14, color: C.muted }}>{k}</T>
-                  <T w="semibold" style={{ fontSize: 14 }}>{v}</T>
+                  <T w="semibold" style={{ fontSize: 14 }}>
+                    {v}
+                  </T>
                 </View>
               ))}
             </View>
           </View>
 
           <View style={{ gap: 10 }}>
-            <T w="bold" style={s.h2}>Нэмэлт опшн</T>
+            <T w="bold" style={s.h2}>
+              Нэмэлт опшн
+            </T>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {ad.options.length ? ad.options.map((o) => (
-                <View key={o} style={{ paddingHorizontal: 12, paddingVertical: 7, backgroundColor: C.card, borderWidth: 1, borderColor: C.line2, borderRadius: 16 }}>
-                  <T style={{ fontSize: 13 }}>{o}</T>
-                </View>
-              )) : <T style={{ color: C.muted, fontSize: 14 }}>Оруулаагүй</T>}
+              {ad.options.length ? (
+                ad.options.map((o) => (
+                  <View
+                    key={o}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 7,
+                      backgroundColor: C.card,
+                      borderWidth: 1,
+                      borderColor: C.line2,
+                      borderRadius: 16,
+                    }}
+                  >
+                    <T style={{ fontSize: 13 }}>{o}</T>
+                  </View>
+                ))
+              ) : (
+                <T style={{ color: C.muted, fontSize: 14 }}>Оруулаагүй</T>
+              )}
             </View>
           </View>
 
           {ad.modifications ? (
             <View style={{ gap: 10 }}>
-              <T w="bold" style={s.h2}>Нэмж хийсэн зүйлс</T>
+              <T w="bold" style={s.h2}>
+                Нэмж хийсэн зүйлс
+              </T>
               <T style={{ fontSize: 14, lineHeight: 21 }}>{ad.modifications}</T>
             </View>
           ) : null}
           {ad.description ? (
             <View style={{ gap: 10 }}>
-              <T w="bold" style={s.h2}>Тайлбар</T>
+              <T w="bold" style={s.h2}>
+                Тайлбар
+              </T>
               <T style={{ fontSize: 14, lineHeight: 22, color: "#2B2F35" }}>{ad.description}</T>
             </View>
           ) : null}
 
           {!mine && ad.status === "active" && partners.length > 0 && (
-            <LoanCalculator
-              key={ad.id + ad.price}
-              adId={ad.id}
-              price={ad.price}
-              partners={partners}
-            />
+            <LoanCalculator key={ad.id + ad.price} adId={ad.id} price={ad.price} partners={partners} />
           )}
 
           {ad.status === "active" && (
@@ -217,25 +368,61 @@ export default function AdDetail() {
                 onPress={() => compare.toggle(ad.id)}
               />
               {!mine && (
-                <Button small variant="ghost" icon="flag" title="Мэдээлэх" style={{ flex: 1 }} onPress={() => (uid ? setReporting(true) : requireLogin(`/ads/${id}`))} />
+                <Button
+                  small
+                  variant="ghost"
+                  icon="flag"
+                  title="Мэдээлэх"
+                  style={{ flex: 1 }}
+                  onPress={() => (uid ? setReporting(true) : requireLogin(`/ads/${id}`))}
+                />
               )}
             </View>
           )}
           {compare.ids.length >= 2 ? (
-            <Button small variant="yellow" icon="columns" title={`Харьцуулах хуудас (${compare.ids.length}/${COMPARE_MAX}) →`} onPress={() => router.push("/compare")} />
+            <Button
+              small
+              variant="yellow"
+              icon="columns"
+              title={`Харьцуулах хуудас (${compare.ids.length}/${COMPARE_MAX}) →`}
+              onPress={() => router.push("/compare")}
+            />
           ) : compare.ids.length === 1 && compare.ids.includes(ad.id.toLowerCase()) ? (
             <T style={{ fontSize: 12, color: C.muted }}>Дахиад 1–2 машин сонгоод зэрэгцүүлж харна.</T>
           ) : null}
 
           {ad.seller_name ? (
             <View style={[s.card, { flexDirection: "row", alignItems: "center", gap: 12, padding: 12 }]}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: ad.seller_shop ? C.yellow : C.ink, alignItems: "center", justifyContent: "center" }}>
-                {ad.seller_shop ? <Feather name="shopping-bag" size={18} color={C.ink} /> : <T w="bold" style={{ color: C.yellow }}>{initial(ad.seller_name)}</T>}
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: ad.seller_shop ? C.yellow : C.ink,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {ad.seller_shop ? (
+                  <Feather name="shopping-bag" size={18} color={C.ink} />
+                ) : (
+                  <T w="bold" style={{ color: C.yellow }}>
+                    {initial(ad.seller_name)}
+                  </T>
+                )}
               </View>
               <View style={{ gap: 2 }}>
-                {ad.seller_shop ? <T w="bold" style={{ fontSize: 10, color: C.pendingFg, letterSpacing: 0.5 }}>АВТО ХУДАЛДАА</T> : null}
-                <T w="semibold" style={{ fontSize: 14 }}>{ad.seller_shop ?? ad.seller_name}</T>
-                <T style={{ fontSize: 12, color: C.muted }}>{ad.seller_city ?? "Монгол"} · {ad.seller_ad_count} зар</T>
+                {ad.seller_shop ? (
+                  <T w="bold" style={{ fontSize: 10, color: C.pendingFg, letterSpacing: 0.5 }}>
+                    АВТО ХУДАЛДАА
+                  </T>
+                ) : null}
+                <T w="semibold" style={{ fontSize: 14 }}>
+                  {ad.seller_shop ?? ad.seller_name}
+                </T>
+                <T style={{ fontSize: 12, color: C.muted }}>
+                  {ad.seller_city ?? "Монгол"} · {ad.seller_ad_count} зар
+                </T>
               </View>
             </View>
           ) : null}
@@ -243,9 +430,30 @@ export default function AdDetail() {
       </ScrollView>
 
       {!mine && ad.status === "active" && (
-        <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16), backgroundColor: C.card, borderTopWidth: 1, borderColor: C.line }}>
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            flexDirection: "row",
+            gap: 10,
+            paddingHorizontal: 20,
+            paddingTop: 12,
+            paddingBottom: Math.max(insets.bottom, 16),
+            backgroundColor: C.card,
+            borderTopWidth: 1,
+            borderColor: C.line,
+          }}
+        >
           {phone ? (
-            <Button title={phone} icon="phone" variant="yellow" style={{ flex: 1 }} onPress={() => Linking.openURL(`tel:${phone}`)} />
+            <Button
+              title={phone}
+              icon="phone"
+              variant="yellow"
+              style={{ flex: 1 }}
+              onPress={() => Linking.openURL(`tel:${phone}`)}
+            />
           ) : (
             <Button
               title={uid ? "Дугаар харах" : "Нэвтэрч дугаар харах"}
@@ -263,7 +471,16 @@ export default function AdDetail() {
               }}
             />
           )}
-          <Button title="Чат" icon="message-circle" style={{ flex: 0.7 }} onPress={() => (uid ? router.push({ pathname: "/chat/[id]", params: { id: "new", ad: ad.id } }) : requireLogin(`/ads/${id}`))} />
+          <Button
+            title="Чат"
+            icon="message-circle"
+            style={{ flex: 0.7 }}
+            onPress={() =>
+              uid
+                ? router.push({ pathname: "/chat/[id]", params: { id: "new", ad: ad.id } })
+                : requireLogin(`/ads/${id}`)
+            }
+          />
         </View>
       )}
       <ReportAdSheet adId={ad.id} visible={reporting} onClose={() => setReporting(false)} />

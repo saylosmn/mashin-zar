@@ -5,7 +5,19 @@ import { requireLogin } from "@/lib/guest";
 import { Button, StateView } from "./ui";
 
 /** Нэвтрэх шаардлагатай табыг нэвтрээгүй хэрэглэгчид тайлбартай харуулна. */
-export function GuestGate({ icon, title, text, next, children }: { icon: keyof typeof Feather.glyphMap; title: string; text: string; next: string; children: ReactNode }) {
+export function GuestGate({
+  icon,
+  title,
+  text,
+  next,
+  children,
+}: {
+  icon: keyof typeof Feather.glyphMap;
+  title: string;
+  text: string;
+  next: string;
+  children: ReactNode;
+}) {
   const { session } = useAuth();
   if (session) return <>{children}</>;
   return (

@@ -6,36 +6,76 @@ import { LoanApplication } from "./LoanApplication";
 
 export const metadata = { title: "Лизингийн хүсэлт" };
 
-export default async function LoanPage({ params, searchParams }: { params: Promise<{ adId: string }>; searchParams: Promise<{ partner?: string; down?: string; term?: string }> }) {
+export default async function LoanPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ adId: string }>;
+  searchParams: Promise<{ partner?: string; down?: string; term?: string }>;
+}) {
   const { adId } = await params;
   const sp = await searchParams;
   const me = await requireUser(`/loan/${adId}?partner=${sp.partner ?? ""}&down=${sp.down ?? ""}&term=${sp.term ?? ""}`);
   const supabase = await createClient();
   const [adRes, pRes, lastRes, openRes] = await Promise.all([
     supabase.from("public_ads").select("id,user_id,brand,model,year_made,price,status").eq("id", adId).maybeSingle(),
-    supabase.from("leasing_partners").select("*").eq("id", sp.partner ?? "00000000-0000-0000-0000-000000000000").eq("active", true).maybeSingle(),
-    supabase.from("loan_requests").select("full_name,phone,applicant,docs").eq("user_id", me.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("loan_requests").select("id").eq("user_id", me.id).eq("ad_id", adId).eq("partner_id", sp.partner ?? "00000000-0000-0000-0000-000000000000").in("status", ["new", "contacted"]).limit(1).maybeSingle(),
+    supabase
+      .from("leasing_partners")
+      .select("*")
+      .eq("id", sp.partner ?? "00000000-0000-0000-0000-000000000000")
+      .eq("active", true)
+      .maybeSingle(),
+    supabase
+      .from("loan_requests")
+      .select("full_name,phone,applicant,docs")
+      .eq("user_id", me.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("loan_requests")
+      .select("id")
+      .eq("user_id", me.id)
+      .eq("ad_id", adId)
+      .eq("partner_id", sp.partner ?? "00000000-0000-0000-0000-000000000000")
+      .in("status", ["new", "contacted"])
+      .limit(1)
+      .maybeSingle(),
   ]);
-  const ad = adRes.data as { id: string; user_id: string; brand: string; model: string; year_made: number; price: number; status: string } | null;
+  const ad = adRes.data as {
+    id: string;
+    user_id: string;
+    brand: string;
+    model: string;
+    year_made: number;
+    price: number;
+    status: string;
+  } | null;
   const partner = pRes.data as Partner | null;
 
   const stop = (title: string, text: string) => (
-    <main className="max-w-[640px] w-full mx-auto px-4 sm:px-6 py-12 flex flex-col gap-4">
+    <main className="mx-auto flex w-full max-w-[640px] flex-col gap-4 px-4 py-12 sm:px-6">
       <h1 className="h-display m-0 text-[26px]">{title}</h1>
       <p className="m-0 text-body">{text}</p>
-      <Link href={ad ? `/ads/${ad.id}` : "/"} className="btn btn-ink self-start">← Буцах</Link>
+      <Link href={ad ? `/ads/${ad.id}` : "/"} className="btn btn-ink self-start">
+        ← Буцах
+      </Link>
     </main>
   );
-  if (!ad || ad.status !== "active") return stop("Зар идэвхтэй биш байна", "Энэ зар зарагдсан эсвэл нуугдсан байж магадгүй.");
+  if (!ad || ad.status !== "active")
+    return stop("Зар идэвхтэй биш байна", "Энэ зар зарагдсан эсвэл нуугдсан байж магадгүй.");
   if (ad.user_id === me.id) return stop("Өөрийн зар", "Өөрийн зарт лизингийн хүсэлт илгээх боломжгүй.");
   if (!partner) return stop("Лизингийн компани олдсонгүй", "Зарын хуудаснаас лизингийн компаниа дахин сонгоно уу.");
   if (openRes.data)
     return (
-      <main className="max-w-[640px] w-full mx-auto px-4 sm:px-6 py-12 flex flex-col gap-4">
+      <main className="mx-auto flex w-full max-w-[640px] flex-col gap-4 px-4 py-12 sm:px-6">
         <h1 className="h-display m-0 text-[26px]">Хүсэлт аль хэдийн илгээсэн</h1>
-        <p className="m-0 text-body">Та энэ машинд {partner.name}-д хүсэлт илгээсэн байна. Хариуг “Лизингийн хүсэлтүүд” хэсгээс харна.</p>
-        <Link href="/loans" className="btn btn-ink self-start">Хүсэлтээ харах</Link>
+        <p className="m-0 text-body">
+          Та энэ машинд {partner.name}-д хүсэлт илгээсэн байна. Хариуг “Лизингийн хүсэлтүүд” хэсгээс харна.
+        </p>
+        <Link href="/loans" className="btn btn-ink self-start">
+          Хүсэлтээ харах
+        </Link>
       </main>
     );
 
@@ -45,11 +85,18 @@ export default async function LoanPage({ params, searchParams }: { params: Promi
   const min = minDown(ad.price, partner.min_down_pct);
   const reqDown = Math.round(Number(sp.down) || 0);
   const down = reqDown >= min && reqDown < ad.price ? reqDown : min;
-  const last = lastRes.data as { full_name: string; phone: string; applicant: Applicant; docs: Record<string, string> | null } | null;
+  const last = lastRes.data as {
+    full_name: string;
+    phone: string;
+    applicant: Applicant;
+    docs: Record<string, string> | null;
+  } | null;
 
   return (
-    <main className="max-w-[760px] w-full mx-auto px-4 sm:px-6 pt-6 pb-16 flex flex-col gap-5">
-      <Link href={`/ads/${ad.id}`} className="text-[14px] text-muted no-underline">← {ad.brand} {ad.model} · {ad.year_made}</Link>
+    <main className="mx-auto flex w-full max-w-[760px] flex-col gap-5 px-4 pt-6 pb-16 sm:px-6">
+      <Link href={`/ads/${ad.id}`} className="text-[14px] text-muted no-underline">
+        ← {ad.brand} {ad.model} · {ad.year_made}
+      </Link>
       <div className="flex flex-col gap-1">
         <h1 className="h-display m-0 text-[clamp(24px,3vw,30px)]">Лизингийн хүсэлт</h1>
         <span className="text-[14px] text-muted">{partner.name} · анкет бөглөж, баримтаа хавсаргана</span>
@@ -60,7 +107,13 @@ export default async function LoanPage({ params, searchParams }: { params: Promi
         partner={partner}
         down={down}
         term={term}
-        defaults={{ full_name: last?.full_name ?? me.full_name ?? "", phone: last?.phone ?? me.phone ?? "", city: me.city ?? "Улаанбаатар", applicant: last?.applicant ?? null, docs: last?.docs ?? {} }}
+        defaults={{
+          full_name: last?.full_name ?? me.full_name ?? "",
+          phone: last?.phone ?? me.phone ?? "",
+          city: me.city ?? "Улаанбаатар",
+          applicant: last?.applicant ?? null,
+          docs: last?.docs ?? {},
+        }}
       />
     </main>
   );

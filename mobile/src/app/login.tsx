@@ -29,7 +29,13 @@ export default function Login() {
   return (
     <View style={{ flex: 1, backgroundColor: C.ink, paddingHorizontal: 24, paddingTop: 40, paddingBottom: 32 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Нэвтрэлгүйгээр үзэх" onPress={skip} hitSlop={12} style={{ position: "absolute", right: 0, paddingVertical: 6 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Нэвтрэлгүйгээр үзэх"
+          onPress={skip}
+          hitSlop={12}
+          style={{ position: "absolute", right: 0, paddingVertical: 6 }}
+        >
           <T style={{ color: C.pale, fontSize: 14 }}>Алгасах ✕</T>
         </Pressable>
         <BrandRow size={16} color={C.paper} mark={34} />
@@ -38,14 +44,30 @@ export default function Login() {
         <View style={{ gap: 12 }}>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <View style={{ backgroundColor: C.yellow, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 }}>
-              <T w="monoBold" style={{ fontSize: 13 }}>2016+</T>
+              <T w="monoBold" style={{ fontSize: 13 }}>
+                2016+
+              </T>
             </View>
-            <View style={{ borderWidth: 1.5, borderColor: "#3A3F47", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <T w="mono" style={{ fontSize: 13, color: "#C9CDD3" }}>2016-аас өмнө</T>
+            <View
+              style={{
+                borderWidth: 1.5,
+                borderColor: "#3A3F47",
+                borderRadius: 6,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+              }}
+            >
+              <T w="mono" style={{ fontSize: 13, color: "#C9CDD3" }}>
+                2016-аас өмнө
+              </T>
             </View>
           </View>
-          <T w="display" style={{ color: C.paper, fontSize: 32, lineHeight: 38 }}>Машинаа зар.{"\n"}Дараагийнхаа машиныг ол.</T>
-          <T style={{ color: C.pale, fontSize: 16, lineHeight: 24 }}>Улсын болон арлын дугаартай, 16 хүртэл зурагтай, шалгагдсан зарууд.</T>
+          <T w="display" style={{ color: C.paper, fontSize: 32, lineHeight: 38 }}>
+            Машинаа зар.{"\n"}Дараагийнхаа машиныг ол.
+          </T>
+          <T style={{ color: C.pale, fontSize: 16, lineHeight: 24 }}>
+            Улсын болон арлын дугаартай, 16 хүртэл зурагтай, шалгагдсан зарууд.
+          </T>
         </View>
       </View>
       <View style={{ gap: 14 }}>
@@ -76,9 +98,13 @@ export default function Login() {
         <Button title="Нэвтрэлгүйгээр зар үзэх" variant="darkGhost" onPress={skip} />
         <T style={{ textAlign: "center", fontSize: 13, color: "#9AA0A9", lineHeight: 20 }}>
           Нэвтэрснээр{" "}
-          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL(`${WEB_URL}/terms`)}>үйлчилгээний нөхцөл</T>{" "}
+          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL(`${WEB_URL}/terms`)}>
+            үйлчилгээний нөхцөл
+          </T>{" "}
           болон{" "}
-          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL(`${WEB_URL}/privacy`)}>нууцлалын бодлогыг</T>{" "}
+          <T style={{ color: C.yellow, fontSize: 13 }} onPress={() => Linking.openURL(`${WEB_URL}/privacy`)}>
+            нууцлалын бодлогыг
+          </T>{" "}
           зөвшөөрнө.
         </T>
       </View>

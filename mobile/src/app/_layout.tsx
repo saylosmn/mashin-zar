@@ -4,7 +4,13 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { useFonts, Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold } from "@expo-google-fonts/onest";
+import {
+  useFonts,
+  Onest_400Regular,
+  Onest_500Medium,
+  Onest_600SemiBold,
+  Onest_700Bold,
+} from "@expo-google-fonts/onest";
 import { Unbounded_700Bold } from "@expo-google-fonts/unbounded";
 import { JetBrainsMono_500Medium, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider, useAuth } from "@/lib/auth";
@@ -47,7 +53,14 @@ function RootStack() {
   if (!ready) return <Splash />;
   if (session && profile?.is_blocked) return <Blocked />;
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.paper }, animation: "fade_from_bottom", animationDuration: 180 }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: C.paper },
+        animation: "fade_from_bottom",
+        animationDuration: 180,
+      }}
+    >
       {/* Нэвтрэлгүйгээр зар үзнэ; бусад дэлгэц нэвтэрсэн хэрэглэгчид */}
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="ads/[id]" />

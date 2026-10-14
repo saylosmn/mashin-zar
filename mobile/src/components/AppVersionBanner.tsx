@@ -7,9 +7,15 @@ import { C } from "@/lib/theme";
 import { WEB_URL } from "@/lib/staff";
 import { T } from "./ui";
 
-const num = (v?: string | null) => String(v ?? "0").split(".").map((x) => Number(x) || 0).concat([0, 0, 0]).slice(0, 3);
+const num = (v?: string | null) =>
+  String(v ?? "0")
+    .split(".")
+    .map((x) => Number(x) || 0)
+    .concat([0, 0, 0])
+    .slice(0, 3);
 const newer = (a?: string | null, b?: string | null) => {
-  const x = num(a), y = num(b);
+  const x = num(a),
+    y = num(b);
   return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
 };
 
@@ -41,11 +47,29 @@ export function AppVersionBanner() {
 
   if (!info || hidden) return null;
   return (
-    <View style={{ backgroundColor: C.ink, flexDirection: "row", alignItems: "center", gap: 10, paddingLeft: 16, paddingRight: 6, paddingVertical: 8 }}>
+    <View
+      style={{
+        backgroundColor: C.ink,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        paddingLeft: 16,
+        paddingRight: 6,
+        paddingVertical: 8,
+      }}
+    >
       <Feather name="smartphone" size={18} color={C.yellow} />
-      <T w="semibold" style={{ flex: 1, fontSize: 13, color: C.paper }}>Апп-ын шинэ хувилбар (v{info.version}) гарлаа</T>
-      <Pressable accessibilityRole="button" onPress={() => Linking.openURL(info.url).catch(() => {})} style={{ backgroundColor: C.yellow, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
-        <T w="bold" style={{ fontSize: 12 }}>Татах</T>
+      <T w="semibold" style={{ flex: 1, fontSize: 13, color: C.paper }}>
+        Апп-ын шинэ хувилбар (v{info.version}) гарлаа
+      </T>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => Linking.openURL(info.url).catch(() => {})}
+        style={{ backgroundColor: C.yellow, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
+      >
+        <T w="bold" style={{ fontSize: 12 }}>
+          Татах
+        </T>
       </Pressable>
       <Pressable accessibilityLabel="Хаах" hitSlop={8} onPress={() => setHidden(true)} style={{ padding: 6 }}>
         <Feather name="x" size={16} color={C.pale} />

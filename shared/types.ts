@@ -146,11 +146,34 @@ export type Notification = {
 };
 
 export type ChatRow = {
-  id: string; ad_id: string | null; car: string; photo: string | null; price: number | null; ad_status: string | null;
-  role: "buyer" | "seller"; other_name: string; last_message: string | null; last_message_at: string; last_from_me: boolean; unread: number;
+  id: string;
+  ad_id: string | null;
+  car: string;
+  photo: string | null;
+  price: number | null;
+  ad_status: string | null;
+  role: "buyer" | "seller";
+  other_name: string;
+  last_message: string | null;
+  last_message_at: string;
+  last_from_me: boolean;
+  unread: number;
 };
 export type ChatInfo = {
-  id: string; ad_id: string | null; car: string; photo: string | null; price: number | null; ad_status: string | null;
-  role: "buyer" | "seller" | "staff"; other_name: string; other_id: string;
+  id: string;
+  ad_id: string | null;
+  car: string;
+  photo: string | null;
+  price: number | null;
+  ad_status: string | null;
+  role: "buyer" | "seller" | "staff";
+  other_name: string;
+  other_id: string;
 };
-export type Message = { id: number; conversation_id: string; sender_id: string | null; body: string; created_at: string };
+export type Message = {
+  id: number;
+  conversation_id: string;
+  sender_id: string | null;
+  body: string;
+  created_at: string;
+};

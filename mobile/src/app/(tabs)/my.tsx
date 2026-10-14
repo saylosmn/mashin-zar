@@ -31,11 +31,19 @@ function MyAdsInner() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const { data, error: e } = await supabase.from("ads").select("*").eq("user_id", uid).order("created_at", { ascending: false });
+      const { data, error: e } = await supabase
+        .from("ads")
+        .select("*")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false });
       if (e) throw e;
       setAds((data ?? []) as Ad[]);
       // Нээлттэй төлбөрүүд (төлөх, шалгагдаж буй, ороогүй)
-      const { data: pays } = await supabase.from("payments").select("ad_id,status,ref").eq("user_id", uid).in("status", ["awaiting", "submitted", "rejected"]);
+      const { data: pays } = await supabase
+        .from("payments")
+        .select("ad_id,status,ref")
+        .eq("user_id", uid)
+        .in("status", ["awaiting", "submitted", "rejected"]);
       setPayOf(new Map(((pays ?? []) as OpenPay[]).map((p) => [p.ad_id, p])));
       const { data: favs } = await supabase.from("favorites").select("ad_id").eq("user_id", uid);
       const ids = (favs ?? []).map((f) => f.ad_id);
@@ -50,22 +58,40 @@ function MyAdsInner() {
     }
   }, [uid]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
   // Админ батлах, санал илгээх, зарагдсан болгоход төлөв шууд солигдоно
   useLiveSync(() => load(), ["ads", "payments"]);
 
   async function remove(a: Ad) {
-    const ok = await confirm("Зар устгах уу?", `${a.brand} ${a.model} зарыг бүр мөсөн устгана. Энэ үйлдлийг буцаах боломжгүй.`, "Устгах", true);
+    const ok = await confirm(
+      "Зар устгах уу?",
+      `${a.brand} ${a.model} зарыг бүр мөсөн устгана. Энэ үйлдлийг буцаах боломжгүй.`,
+      "Устгах",
+      true,
+    );
     if (!ok) return;
     const { data, error: e } = await supabase.from("ads").delete().eq("id", a.id).select("id");
     if (e) return Alert.alert("Устгаж чадсангүй", errMsg(e));
     // RLS: борлуулалтын тайлантай зарыг устгахгүй — алдаагүй ч 0 мөр устана
-    if (!data || data.length === 0) return Alert.alert("Устгах боломжгүй", "Энэ зарт борлуулалтын тайлан бүртгэгдсэн тул устгах боломжгүй");
+    if (!data || data.length === 0)
+      return Alert.alert("Устгах боломжгүй", "Энэ зарт борлуулалтын тайлан бүртгэгдсэн тул устгах боломжгүй");
     setAds((x) => x.filter((y) => y.id !== a.id));
-    if (a.photos.length) supabase.storage.from("ad-photos").remove(a.photos).then(() => {}, () => {});
+    if (a.photos.length)
+      supabase.storage
+        .from("ad-photos")
+        .remove(a.photos)
+        .then(
+          () => {},
+          () => {},
+        );
   }
 
-  const count = (t: Tab) => (t === "all" ? ads.length : t === "saved" ? saved.length : ads.filter((a) => a.status === t).length);
+  const count = (t: Tab) =>
+    t === "all" ? ads.length : t === "saved" ? saved.length : ads.filter((a) => a.status === t).length;
   const tabs: { key: Tab; label: string }[] = [
     { key: "all", label: "Бүгд" },
     ...(dealer ? [] : [{ key: "pending" as Tab, label: "Хүлээгдэж" }]),
@@ -94,16 +120,52 @@ function MyAdsInner() {
   const shown = tab === "all" ? ads : tab === "saved" ? [] : ads.filter((a) => a.status === tab);
 
   if (error && !ads.length)
-    return <StateView icon="warning" title="Алдаа гарлаа" text={error}><Button title="Дахин оролдох" icon="refresh-cw" onPress={() => { setLoading(true); load(); }} /></StateView>;
+    return (
+      <StateView icon="warning" title="Алдаа гарлаа" text={error}>
+        <Button
+          title="Дахин оролдох"
+          icon="refresh-cw"
+          onPress={() => {
+            setLoading(true);
+            load();
+          }}
+        />
+      </StateView>
+    );
 
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 14 }}>
-        <T w="display" style={{ fontSize: 22 }}>Миний зарууд</T>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingBottom: 10 }}>
+        <T w="display" style={{ fontSize: 22 }}>
+          Миний зарууд
+        </T>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 6, paddingBottom: 10 }}
+        >
           {tabs.map((t) => (
-            <Pressable key={t.key} accessibilityRole="tab" accessibilityState={{ selected: tab === t.key }} onPress={() => setTab(t.key)} style={{ height: 36, paddingHorizontal: 12, borderRadius: 18, backgroundColor: tab === t.key ? C.ink : C.card, borderWidth: tab === t.key ? 0 : 1, borderColor: C.line2, justifyContent: "center" }}>
-              <T w={tab === t.key ? "semibold" : "body"} style={{ fontSize: 13, color: tab === t.key ? C.yellow : C.ink }}>{t.label} {count(t.key)}</T>
+            <Pressable
+              key={t.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === t.key }}
+              onPress={() => setTab(t.key)}
+              style={{
+                height: 36,
+                paddingHorizontal: 12,
+                borderRadius: 18,
+                backgroundColor: tab === t.key ? C.ink : C.card,
+                borderWidth: tab === t.key ? 0 : 1,
+                borderColor: C.line2,
+                justifyContent: "center",
+              }}
+            >
+              <T
+                w={tab === t.key ? "semibold" : "body"}
+                style={{ fontSize: 13, color: tab === t.key ? C.yellow : C.ink }}
+              >
+                {t.label} {count(t.key)}
+              </T>
             </Pressable>
           ))}
         </ScrollView>
@@ -113,13 +175,24 @@ function MyAdsInner() {
           data={saved}
           keyExtractor={(a) => a.id}
           contentContainerStyle={{ padding: 20, paddingTop: 4, gap: 12 }}
-          ListEmptyComponent={<T style={{ textAlign: "center", color: C.muted, paddingVertical: 40 }}>Хадгалсан зар алга. Зарын ♡ товчийг дарж хадгална.</T>}
+          ListEmptyComponent={
+            <T style={{ textAlign: "center", color: C.muted, paddingVertical: 40 }}>
+              Хадгалсан зар алга. Зарын ♡ товчийг дарж хадгална.
+            </T>
+          }
           renderItem={({ item }) => (
-            <Pressable onPress={() => router.push(`/ads/${item.id}`)} style={[s.card, { flexDirection: "row", gap: 12, padding: 12 }]}>
+            <Pressable
+              onPress={() => router.push(`/ads/${item.id}`)}
+              style={[s.card, { flexDirection: "row", gap: 12, padding: 12 }]}
+            >
               <Photo path={item.photos[0]} style={{ width: 84, height: 84, borderRadius: 10 }} />
               <View style={{ flex: 1, gap: 4 }}>
-                <T w="semibold">{item.brand} {item.model} · {item.year_made}</T>
-                <T w="display" style={{ fontSize: 15 }}>{money(item.price)}</T>
+                <T w="semibold">
+                  {item.brand} {item.model} · {item.year_made}
+                </T>
+                <T w="display" style={{ fontSize: 15 }}>
+                  {money(item.price)}
+                </T>
               </View>
             </Pressable>
           )}
@@ -131,7 +204,11 @@ function MyAdsInner() {
           contentContainerStyle={{ padding: 20, paddingTop: 4, gap: 12 }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={C.ink} />}
           ListEmptyComponent={
-            loading ? <View style={{ gap: 12 }}><CardSkeleton /></View> : (
+            loading ? (
+              <View style={{ gap: 12 }}>
+                <CardSkeleton />
+              </View>
+            ) : (
               <View style={{ alignItems: "center", gap: 14, paddingVertical: 40 }}>
                 <T style={{ color: C.body }}>Энд зар алга байна.</T>
                 <Button title="Зар нэмэх" onPress={() => router.push("/post")} style={{ alignSelf: "stretch" }} />
@@ -141,43 +218,132 @@ function MyAdsInner() {
           renderItem={({ item: a }) => (
             <View style={[s.card, { padding: 12, gap: 12 }]}>
               <Pressable onPress={() => router.push(`/ads/${a.id}`)} style={{ flexDirection: "row", gap: 12 }}>
-                <Photo path={a.photos[0]} style={{ width: 84, height: 84, borderRadius: 10, opacity: a.status === "sold" ? 0.6 : 1 }} />
+                <Photo
+                  path={a.photos[0]}
+                  style={{ width: 84, height: 84, borderRadius: 10, opacity: a.status === "sold" ? 0.6 : 1 }}
+                />
                 <View style={{ flex: 1, gap: 4 }}>
                   <StatusBadge s={a.status} />
-                  <T w="semibold" style={{ color: a.status === "sold" ? C.body : C.ink }}>{a.brand} {a.model} · {a.year_made}</T>
-                  <T w="display" style={{ fontSize: 15, color: a.status === "sold" ? C.body : C.ink, textDecorationLine: a.status === "sold" ? "line-through" : "none" }}>{money(a.price)}</T>
+                  <T w="semibold" style={{ color: a.status === "sold" ? C.body : C.ink }}>
+                    {a.brand} {a.model} · {a.year_made}
+                  </T>
+                  <T
+                    w="display"
+                    style={{
+                      fontSize: 15,
+                      color: a.status === "sold" ? C.body : C.ink,
+                      textDecorationLine: a.status === "sold" ? "line-through" : "none",
+                    }}
+                  >
+                    {money(a.price)}
+                  </T>
                   <AdLife a={a} />
                   {payOf.get(a.id) ? (
-                    <Pressable onPress={() => router.push(`/pay/${a.id}`)} style={{ alignSelf: "flex-start", backgroundColor: PAY_STATUS[payOf.get(a.id)!.status].bg, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
-                      <T w="semibold" style={{ fontSize: 11, color: PAY_STATUS[payOf.get(a.id)!.status].fg }}>💳 {PAY_STATUS[payOf.get(a.id)!.status].label}</T>
+                    <Pressable
+                      onPress={() => router.push(`/pay/${a.id}`)}
+                      style={{
+                        alignSelf: "flex-start",
+                        backgroundColor: PAY_STATUS[payOf.get(a.id)!.status].bg,
+                        borderRadius: 6,
+                        paddingHorizontal: 7,
+                        paddingVertical: 3,
+                      }}
+                    >
+                      <T w="semibold" style={{ fontSize: 11, color: PAY_STATUS[payOf.get(a.id)!.status].fg }}>
+                        💳 {PAY_STATUS[payOf.get(a.id)!.status].label}
+                      </T>
                     </Pressable>
                   ) : null}
                 </View>
               </Pressable>
               {(a.status !== "sold" || a.contract_id) && (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: dealer ? "flex-start" : "space-between", borderTopWidth: 1, borderColor: "#ECEDE9", paddingTop: 10, gap: 8 }}>
-                  <T style={{ fontSize: 12, color: a.offer_amount ? C.pendingFg : C.muted, flex: dealer ? undefined : 1, flexBasis: dealer ? "100%" : undefined }} w={a.offer_amount ? "semibold" : "body"}>
-                    {a.offer_amount ? `Санал: ${money(a.offer_amount)}` : a.status === "pending" ? (a.plan === "paid" ? "Төлбөр баталгаажсаны дараа нийтлэгдэнэ" : "Манай ажилтан удахгүй холбогдоно") : a.status === "rejected" ? "Татгалзагдсан" : `${a.views} үзэлт`}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    justifyContent: dealer ? "flex-start" : "space-between",
+                    borderTopWidth: 1,
+                    borderColor: "#ECEDE9",
+                    paddingTop: 10,
+                    gap: 8,
+                  }}
+                >
+                  <T
+                    style={{
+                      fontSize: 12,
+                      color: a.offer_amount ? C.pendingFg : C.muted,
+                      flex: dealer ? undefined : 1,
+                      flexBasis: dealer ? "100%" : undefined,
+                    }}
+                    w={a.offer_amount ? "semibold" : "body"}
+                  >
+                    {a.offer_amount
+                      ? `Санал: ${money(a.offer_amount)}`
+                      : a.status === "pending"
+                        ? a.plan === "paid"
+                          ? "Төлбөр баталгаажсаны дараа нийтлэгдэнэ"
+                          : "Манай ажилтан удахгүй холбогдоно"
+                        : a.status === "rejected"
+                          ? "Татгалзагдсан"
+                          : `${a.views} үзэлт`}
                   </T>
-                  {a.contract_id ? <Button small title="Гэрээ" icon="file-text" variant="ghost" onPress={() => openContract(a.contract_id!)} /> : null}
+                  {a.contract_id ? (
+                    <Button
+                      small
+                      title="Гэрээ"
+                      icon="file-text"
+                      variant="ghost"
+                      onPress={() => openContract(a.contract_id!)}
+                    />
+                  ) : null}
                   {(a.status === "active" || a.status === "hidden") && expiryInfo(a.expires_at).renewable ? (
                     <Button small title="Сунгах" icon="refresh-cw" variant="yellow" onPress={() => renew(a)} />
                   ) : null}
                   {payOf.get(a.id) && needsAction(payOf.get(a.id)!.status) ? (
-                    <Button small title="Төлөх" icon="credit-card" variant="yellow" onPress={() => router.push(`/pay/${a.id}`)} />
-                  ) : a.status === "active" && !expiryInfo(a.expires_at).expired && !isFeatured(a.featured_until) && !payOf.get(a.id) ? (
-                    <Button small title="Онцлох" icon="star" variant="ghost" onPress={() => router.push(`/pay/${a.id}`)} />
+                    <Button
+                      small
+                      title="Төлөх"
+                      icon="credit-card"
+                      variant="yellow"
+                      onPress={() => router.push(`/pay/${a.id}`)}
+                    />
+                  ) : a.status === "active" &&
+                    !expiryInfo(a.expires_at).expired &&
+                    !isFeatured(a.featured_until) &&
+                    !payOf.get(a.id) ? (
+                    <Button
+                      small
+                      title="Онцлох"
+                      icon="star"
+                      variant="ghost"
+                      onPress={() => router.push(`/pay/${a.id}`)}
+                    />
                   ) : null}
                   {dealer && a.status !== "sold" ? (
                     <>
-                      <Button small title="Засах" icon="edit-2" variant="ghost" onPress={() => router.push(`/edit/${a.id}`)} />
+                      <Button
+                        small
+                        title="Засах"
+                        icon="edit-2"
+                        variant="ghost"
+                        onPress={() => router.push(`/edit/${a.id}`)}
+                      />
                       {(a.status === "active" || a.status === "hidden") && (
-                        <Button small title={a.status === "active" ? "Нуух" : "Гаргах"} icon={a.status === "active" ? "eye-off" : "eye"} variant="ghost" onPress={() => setStatus(a, a.status === "active" ? "hidden" : "active")} />
+                        <Button
+                          small
+                          title={a.status === "active" ? "Нуух" : "Гаргах"}
+                          icon={a.status === "active" ? "eye-off" : "eye"}
+                          variant="ghost"
+                          onPress={() => setStatus(a, a.status === "active" ? "hidden" : "active")}
+                        />
                       )}
                       <Button small title="Зарагдсан" icon="check" onPress={() => setStatus(a, "sold")} />
                     </>
                   ) : null}
-                  {a.status !== "sold" && <Button small title="Устгах" icon="trash-2" variant="danger" onPress={() => remove(a)} />}
+                  {a.status !== "sold" && (
+                    <Button small title="Устгах" icon="trash-2" variant="danger" onPress={() => remove(a)} />
+                  )}
                 </View>
               )}
             </View>
@@ -199,8 +365,14 @@ function AdLife({ a }: { a: Ad }) {
           {e.expired ? "Хугацаа дууссан — нийтэд харагдахгүй" : `${e.daysLeft} хоног үлдсэн`}
         </T>
       )}
-      {isFeatured(a.featured_until) ? <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>⭐ Онцлох зар</T> : null}
-      {recentlyRequested(a.featured_requested_at) ? <T style={{ fontSize: 12, color: C.muted }}>⭐ Онцлох хүсэлт илгээсэн</T> : null}
+      {isFeatured(a.featured_until) ? (
+        <T w="semibold" style={{ fontSize: 12, color: C.pendingFg }}>
+          ⭐ Онцлох зар
+        </T>
+      ) : null}
+      {recentlyRequested(a.featured_requested_at) ? (
+        <T style={{ fontSize: 12, color: C.muted }}>⭐ Онцлох хүсэлт илгээсэн</T>
+      ) : null}
     </View>
   );
 }

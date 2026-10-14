@@ -19,8 +19,10 @@ export default async function EditAdPage({ params }: { params: Promise<{ id: str
   if (ad.status === "sold") redirect("/my?err=" + encodeURIComponent("Зарагдсан зарыг засах боломжгүй"));
   const settings = await getSettings();
   return (
-    <main className="max-w-[900px] w-full mx-auto px-4 sm:px-6 pt-8 pb-16 flex flex-col gap-5">
-      <Link href="/my" className="text-[14px] text-muted">← Миний зарууд</Link>
+    <main className="mx-auto flex w-full max-w-[900px] flex-col gap-5 px-4 pt-8 pb-16 sm:px-6">
+      <Link href="/my" className="text-[14px] text-muted">
+        ← Миний зарууд
+      </Link>
       <h1 className="h-display m-0 text-[clamp(24px,3vw,32px)]">Зар засах</h1>
       <EditAdForm ad={ad} userId={me.id} maxPhotos={settings.max_photos} />
     </main>

@@ -11,7 +11,19 @@ const MARK = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 export default async function OgImage() {
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#111317", color: "#f3f4f1", padding: 72, fontFamily: "sans-serif" }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          background: "#111317",
+          color: "#f3f4f1",
+          padding: 72,
+          fontFamily: "sans-serif",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <img src={MARK} width={80} height={80} alt="" style={{ borderRadius: 20, border: "2px solid #2e333a" }} />
           <div style={{ display: "flex", fontSize: 48, fontWeight: 700 }}>
@@ -20,12 +32,37 @@ export default async function OgImage() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.05, maxWidth: 980 }}>Машинаа зар. Дараагийнхаа машиныг ол.</div>
-          <div style={{ fontSize: 34, color: "#b7bcc4" }}>Шалгагдсан зарууд · лизингийн тооцоолуур · шинэ зарын мэдэгдэл</div>
+          <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.05, maxWidth: 980 }}>
+            Машинаа зар. Дараагийнхаа машиныг ол.
+          </div>
+          <div style={{ fontSize: 34, color: "#b7bcc4" }}>
+            Шалгагдсан зарууд · лизингийн тооцоолуур · шинэ зарын мэдэгдэл
+          </div>
         </div>
         <div style={{ display: "flex", gap: 16 }}>
-          <div style={{ background: "#f5b800", color: "#111317", fontSize: 30, fontWeight: 700, padding: "10px 22px", borderRadius: 10 }}>2016+</div>
-          <div style={{ border: "2px solid #2e333a", color: "#c9cdd3", fontSize: 30, padding: "8px 20px", borderRadius: 10 }}>2016-аас өмнө</div>
+          <div
+            style={{
+              background: "#f5b800",
+              color: "#111317",
+              fontSize: 30,
+              fontWeight: 700,
+              padding: "10px 22px",
+              borderRadius: 10,
+            }}
+          >
+            2016+
+          </div>
+          <div
+            style={{
+              border: "2px solid #2e333a",
+              color: "#c9cdd3",
+              fontSize: 30,
+              padding: "8px 20px",
+              borderRadius: 10,
+            }}
+          >
+            2016-аас өмнө
+          </div>
         </div>
       </div>
     ),

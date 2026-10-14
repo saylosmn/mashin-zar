@@ -16,10 +16,15 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ code: 1, error: "bad json" }, { status: 400 });
   }
-  const str = (v: unknown, max: number) => (typeof v === "string" || typeof v === "number" ? String(v).slice(0, max) : "");
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const str = (v: unknown, max: number) =>
+    typeof v === "string" || typeof v === "number" ? String(v).slice(0, max) : "";
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
+  );
   const { data, error } = await supabase.rpc("sms_ingest", {
     p_key: key,
     p_money: str(b.money, 40),

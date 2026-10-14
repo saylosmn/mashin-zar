@@ -15,19 +15,27 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {profile && <PushPrompt />}
       <OfflineBanner />
       <LiveSync userId={profile?.id} role={profile?.role} partnerId={profile?.partner_id} />
-      <div className="flex-1 flex flex-col">{children}</div>
-      <footer className={`border-t border-line mt-8 sm:pb-0 ${profile ? "pb-[84px]" : ""}`}>
-        <div className="max-w-[1280px] mx-auto px-6 py-6 flex flex-wrap justify-between gap-3 text-[13px] text-muted">
+      <div className="flex flex-1 flex-col">{children}</div>
+      <footer className={`mt-8 border-t border-line sm:pb-0 ${profile ? "pb-[84px]" : ""}`}>
+        <div className="mx-auto flex max-w-[1280px] flex-wrap justify-between gap-3 px-6 py-6 text-[13px] text-muted">
           <span className="flex flex-wrap gap-x-3 gap-y-1">
             <span>© {new Date().getFullYear()} Autoshop.mn</span>
-            <a href="/app" className="underline">Android апп</a>
-            <a href="/compare" className="underline">Харьцуулах</a>
-            <a href="/terms" className="underline">Үйлчилгээний нөхцөл</a>
-            <a href="/privacy" className="underline">Нууцлалын бодлого</a>
+            <a href="/app" className="underline">
+              Android апп
+            </a>
+            <a href="/compare" className="underline">
+              Харьцуулах
+            </a>
+            <a href="/terms" className="underline">
+              Үйлчилгээний нөхцөл
+            </a>
+            <a href="/privacy" className="underline">
+              Нууцлалын бодлого
+            </a>
           </span>
           {profile && (
             <form action="/auth/signout" method="post">
-              <button className="underline cursor-pointer bg-transparent border-0 text-muted p-0">Гарах</button>
+              <button className="cursor-pointer border-0 bg-transparent p-0 text-muted underline">Гарах</button>
             </form>
           )}
         </div>
