@@ -1,153 +1,103 @@
-# Autoshop.mn (машин зар)
+# Autoshop.mn
 
-Автомашины зарын marketplace — вэб, апп хоёр **нэг Supabase** (өгөгдлийн сан + Google нэвтрэлт + зургийн сан) ашиглана.
+Автомашины зарын платформ: вэб сайт, Android апп, админ панел. Вэб болон апп нэг Supabase project
+(Postgres + Auth + Storage + Realtime) ашигладаг.
 
-| Хавтас | Юу вэ | Хаана ажиллана |
-|---|---|---|
-| `web/` | Next.js вэб сайт + админ панел (`/admin`) | Vercel |
-| `mobile/` | Expo (React Native) апп — Android / iOS | Таны утас (EAS build) |
-| `supabase/schema.sql` | Хүснэгт, эрхийн хамгаалалт (RLS), менежер/админы үйлдлүүд | Supabase SQL Editor |
+```
+web/        Next.js 16 (App Router) - сайт, админ панел, лизингийн панел, API route-ууд   → Vercel
+mobile/     Expo (React Native) - Android апп                                              → EAS Build / Update
+shared/     Вэб, апп хоёулаа ашигладаг TypeScript: төрлүүд, шимтгэл, лизинг, зар оруулах урсгал
+supabase/   schema.sql (бүтэн схем), migrations/, tests/
+sms-app/    Банкны орлогын SMS-ийг /api/sms руу дамжуулдаг жижиг Android апп
+```
 
-## Апп-ыг компьютер дээрээ ажиллуулах
+## Хөгжүүлэлт
 
 ```bash
-git clone https://github.com/saylosmn/mashin-zar
-cd mashin-zar/mobile
-npm install
-npx expo start
+# вэб
+cd web && npm install && npm run dev          # http://localhost:3000
+
+# апп
+cd mobile && npm install && npx expo start    # Expo Go-оор QR уншуулна (push ажиллахгүй)
 ```
-Утсандаа **Expo Go** суулгаад QR кодыг уншуулна.
 
-> Push мэдэгдэл Expo Go дээр ажиллахгүй. Жинхэнэ апп (APK) хийхдээ доорх алхмыг хийнэ.
+`web/.env.local`:
 
-## APK гаргах (EAS)
-
-Windows дээр хамгийн хялбар нь: `mobile/build-apk.bat` файл дээр 2 удаа дарна.
-Build дуусахад гарах `.apk` холбоосыг вэбийн **Админ → Тохиргоо → Апп татах (APK)** хэсэгт оруулна.
-Ингэснээр сайтын **Апп татах** товч (`/app` хуудас) тэр холбоос руу заана.
-
-Гараар хийх бол:
-
-```bash
-cd mobile
-npx eas-cli@latest login
-npx eas-cli@latest init          # app.json-д projectId нэмнэ
-npx eas-cli@latest build -p android --profile preview
 ```
-Build дуусахад гарах холбоосоор APK татаж утсандаа суулгана.
-Кодоо засаад шууд шинэчлэх: `npx eas-cli@latest update --auto`
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
+NEXT_PUBLIC_SITE_URL=https://autoshop.mn        # заавал биш (sitemap, OG, агентын холбоос)
+PUSH_SECRET=...                                 # DB → /api/push/web
+VAPID_PRIVATE_KEY=...                           # вэб push
+GH_RELEASE_TOKEN=...                            # repo private бол "Апп татах" APK-д
+```
 
-## Supabase тохиргоо
+Апп-ын түлхүүрүүд `mobile/eas.json` болон `mobile/.env.example`-д.
 
-1. SQL Editor дээр `supabase/schema.sql`-ийг ажиллуулна (дахин ажиллуулахад аюулгүй). Өмнө нь ажиллуулсан бол зөвхөн `fix-02-realtime.sql`.
-2. Authentication → Providers → **Google** асаана.
-3. Authentication → **URL Configuration**:
-   - Site URL: `https://<таны-vercel-домэйн>`
-   - Redirect URLs: `https://<таны-vercel-домэйн>/**`, `mashinzar://**`, `exp://**`
-4. Өөрийгөө админ болгох (SQL Editor):
-   ```sql
-   insert into public.staff_invites(email, role) values ('таны@gmail.com','admin')
-     on conflict (email) do update set role='admin';
-   update public.profiles set role='admin' where lower(email)=lower('таны@gmail.com');
-   ```
+`shared/`-ийг вэб `@shared/*` (tsconfig paths + `turbopack.root`), апп Metro-ийн `watchFolders`-оор
+уншдаг. Тусдаа npm package биш.
+
+## Өгөгдлийн сан
+
+- Шинэ project: `supabase/schema.sql`-ийг SQL Editor-оор бүтнээр нь ажиллуулна (idempotent).
+- Ажиллаж буй project: `supabase/migrations/`-аас ажиллуулаагүй файлуудыг дарааллаар нь.
+- Google нэвтрэлт: Authentication → Providers → Google. Redirect URL-д сайтын домэйн,
+  `mashinzar://**`, `exp://**`.
+- `pg_cron` (зарын хугацааны сануулга) болон `pg_net` (push) extension-уудыг асаана.
+
+Эхний админ:
+
+```sql
+insert into public.staff_invites(email, role) values ('you@gmail.com', 'admin')
+  on conflict (email) do update set role = 'admin';
+update public.profiles set role = 'admin' where lower(email) = lower('you@gmail.com');
+```
 
 ## Эрхүүд
-- **Хэрэглэгч** — зар үзэх, профайл үүсгэх, зар тавих (админ шалгана), өөрийн зарыг устгах, мэдэгдэл авах.
-- **Админ** — бүх эрх: шинэ зар батлах/татгалзах (`/admin/review`), гомдол, зарагдсан тайлан бүртгэх, аккаунт хаах/нээх, бүх зар засах/устгах, тохиргоо.
-- **Авто худалдаа, агент, лизинг** — тусгай эрхүүд (админ олгоно).
-- «Менежер» эрх fix-19-өөр бүрэн хасагдсан. Хуучин `/manager/*` холбоос админ панел руу шилжинэ.
 
-## Шууд шинэчлэл (realtime)
-Зар нэмэгдэх, батлагдах, зарагдах, устгагдах, аккаунт хаагдах, тохиргоо өөрчлөгдөх бүрт өгөгдлийн сангийн trigger
-`mz-sync` суваг руу дохио илгээнэ. Вэб (`LiveSync`) болон апп (`useLiveSync`) энэ дохиогоор refresh-гүйгээр шинэчлэгдэнэ.
-
-## Апп автоматаар build/update хийх (GitHub Actions + Release)
-
-Нэг удаагийн тохиргоо:
-1. expo.dev → Account settings → Access tokens → **Create token** → хуулна.
-2. GitHub → repo → Settings → Secrets and variables → Actions → **New repository secret**
-   нэр: `EXPO_TOKEN`, утга: хуулсан токен.
-3. Repo **private** бол: GitHub → Settings → Developer settings → Fine-grained tokens → энэ repo,
-   Permissions → **Contents: Read-only** → токен үүсгэнэ → Vercel → Project → Settings →
-   Environment Variables → `GH_RELEASE_TOKEN` = токен → Redeploy. (Repo public бол энэ алхам хэрэггүй.)
-4. GitHub → Actions → **Mobile (EAS Update / Build)** → Run workflow.
-
-Үүний дараа:
-- `mobile/` доторх код өөрчлөгдөх бүрт → EAS Update → суулгасан апп дээр "Шинэчлэх" мөр гарна.
-- `app.json`, `package.json`, `eas.json`, `assets/` өөрчлөгдвөл → шинэ APK build →
-  GitHub Release-д `mashin-zar.apk` болж хавсрагдана → сайтын "Апп татах" (`/app/download`) товч
-  хамгийн сүүлийн Release-ээс шууд татна.
-
-## Push мэдэгдэл (Android)
-1. Supabase SQL Editor дээр `supabase/fix-03-push.sql` ажиллуулна (push-ийг өгөгдлийн сангаас илгээнэ).
-2. Firebase (console.firebase.google.com) → төсөл → Android апп `mn.mashinzar.app` нэмж `google-services.json` татна →
-   `mobile/google-services.json` болгож repo-д нэмнэ (энэ файл нууц биш).
-3. Firebase → Project settings → Service accounts → **Generate new private key** →
-   expo.dev → mashin-zar → Credentials → Android → **FCM V1 service account key** → Upload. (Энэ файлыг хэнд ч бүү өг.)
-4. Push хийхэд workflow шинэ APK (хувилбар автоматаар +1) бүтээж Release-д тавина; хуучин апп-д "Шинэ хувилбар гарлаа · Татах" гарна.
-
-## Агент, зарын хугацаа, гомдол, онцлох зар, алдааны бүртгэл (fix-13)
-1. Supabase → **Database → Extensions → `pg_cron`** асаана (хугацааны сануулгыг цаг тутам илгээнэ).
-2. SQL Editor дээр `supabase/fix-13-agents-expiry-flags-featured.sql` ажиллуулна.
-3. (Заавал биш) Vercel → Environment Variables:
-   - `NEXT_PUBLIC_SITE_URL` = `https://таны-домэйн` (sitemap, хуваалцах зураг, агентын холбоос)
-   - `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_CONTACT_PHONE` (үйлчилгээний нөхцөл, нууцлалын бодлогод харагдана)
-4. Vercel → Project → **Analytics** болон **Speed Insights** асаана (хандалтын статистик).
-
-| Боломж | Хаана |
+| Эрх | |
 |---|---|
-| **Агент** — админ «Аккаунтууд → Агент»-аас нэмнэ; агент `/agent` (апп: Профайл → Агентын самбар) дээр код, урилгын холбоос (`/?ref=КОД`), орлогоо харна. Зар оруулахад код бөглөгдөж, тайлан батлагдахад шимтгэлийн `agent_share`% (анх 50%) агентад ногдоно. Төлсөн эсэхийг «Тайлангууд»-аас тэмдэглэнэ. | вэб + апп |
-| **Зарын хугацаа** — `ad_days` (анх 60) хоногийн дараа нийтээс хасагдана, 3 хоногийн өмнө сануулна, «Миний зар»-аас сунгана. | вэб + апп |
-| **Гомдол** — зарын хуудсан дээр «Зарыг мэдээлэх»; менежер «Гомдол» хэсгээс нууж/хаана. | вэб + апп |
-| **Онцлох зар** — эзэн «⭐ Онцлох» хүсэлт илгээнэ, админ «Бүх зар»-аас идэвхжүүлнэ; жагсаалтын эхэнд харагдана. Үнэ, хоногийг «Тохиргоо»-нд. | вэб + апп |
-| **Харьцуулах** — 3 хүртэл машин, `/compare?ids=…` (хуваалцаж болно). | вэб + апп |
-| **Алдааны бүртгэл** — вэб, сервер, апп-ын алдаа «Админ → Алдааны бүртгэл»-д. | вэб + апп |
-| **SEO** — `sitemap.xml`, `robots.txt`, зар бүрт хуваалцах зураг, schema.org/Car. | вэб |
-| **Үйлчилгээний нөхцөл, нууцлалын бодлого** — `/terms`, `/privacy` (загвар — хуульчаар хянуулна уу). | вэб + апп |
+| Хэрэглэгч | Зар үзэх, тавих (шалгалтаар), чат, лизингийн хүсэлт |
+| Авто худалдаа | Зар нь шалгалтгүй шууд нийтлэгдэнэ, өөрсдөө засна/нууна |
+| Агент | Өөрийн кодоор ирсэн зарын шимтгэлээс хувь авна (`/agent`) |
+| Лизинг | Өөрийн компанийн хүсэлтүүд, шаардлага (`/leasing`) |
+| Админ | Бүгд: зар шалгах, төлбөр, тайлан, аккаунт, тохиргоо (`/admin`) |
 
-## Чат, утас зөвхөн нэвтэрсэн хүнд (fix-14)
-SQL Editor дээр `supabase/fix-14-chat-phone.sql` ажиллуулна.
-- Худалдагчийн утас нэвтэрсэн хүнд л харагдана (`reveal_phone`). Хэн хэзээ харсныг менежер «Шинэ зар ба санал» → зар → «Сонирхсон» хэсгээс харна.
-- Чат: зарын хуудсан дээр «Худалдагчтай чатлах» (вэб `/messages`, апп «Чат» таб). Шинэ мессежид push очно (нэг чатаас 10 минутад нэг). Менежер/админ чатыг харж болно, бичихгүй.
+Эрхийг зөвхөн админ өөрчилнө. `profiles.role`-ийг клиентээс бичих эрх байхгүй, DB trigger давхар шалгадаг.
 
-## Зар оруулах 2 сонголт + төлбөр (fix-16)
-1. Supabase SQL Editor дээр `supabase/fix-16-plans-payments-telegram.sql` ажиллуулна (дараа нь fix-17, fix-18 — Telegram хэсгийг fix-18 устгана).
-2. Вэб → **Админ → Тохиргоо** → «Зар оруулах 2 сонголт · төлбөрийн данс» — банк, дансны дугаар, хүлээн авагч, шимтгэлтэй зарын үнэгүй онцлох хоног.
+## Зар оруулах
 
-| Сонголт | Юу болох |
-|---|---|
-| **Шимтгэлтэй** | Гэрээнд гарын үсэг зурна, зарагдвал шатлалтай % (Тохиргоо → Гэрээ ба шимтгэл). Менежер батлангуут N хоног үнэгүй онцлох, агентууд зарна. |
-| **Онцлох · шимтгэлгүй** | Гэрээгүй. Зар илгээмэгц `/pay/<зар>` хуудсанд данс, дүн, гүйлгээний утга (MZXXXXXX) гарна → шилжүүлмэгц SMS апп орлогыг автоматаар батална → зар **менежерийн шалгалтгүйгээр шууд нийтлэгдэж**, онцлох болно. Шимтгэл 0%. |
+1. Шимтгэлтэй: гэрээнд гарын үсэг зурна → админ шалгаж нийтэлнэ → зарагдвал шатлалтай шимтгэл.
+2. Онцлох (шимтгэлгүй): `/pay/<id>` дээр данс, гүйлгээний утга (`MZXXXXXX`) гарна → SMS апп орлогыг
+   барьж `sms_ingest()` автоматаар батална → зар шууд нийтлэгдэнэ.
 
-- Нийтлэгдсэн зарыг «⭐ Онцлох» товчоор мөн ийм төлбөрөөр онцлох болгоно (сунгана).
-- Автоматаар батлагдаагүй төлбөрийг **Админ → Төлбөрүүд**-ээс гараар батална.
+Урсгал нь `shared/ad-post.ts` (`publishAd`) - вэб, апп хоёулаа үүнийг ашигладаг.
 
-## Банкны орлогын SMS-ээр төлбөр автоматаар батлах (fix-17)
-1. Supabase SQL Editor дээр `supabase/fix-17-sms-income.sql` ажиллуулна.
-2. Дансны орлогын SMS ирдэг Android утсан дээр **«Орлого SMS»** апп (`sms-app/`, `mn.messageparser`) суулгана — APK-г GitHub → **Releases → «Орлого SMS апп #…»**-аас татна (Actions → «SMS апп APK» автоматаар build хийнэ).
-3. Вэб → **Админ → Тохиргоо → SMS апп** хэсгээс **серверийн хаяг** (`https://…/api/sms`) ба **түлхүүр**-ийг хуулж апп-ын Тохиргоонд оруулна, банкны SMS ирдэг дугаарыг бичнэ → «Туршиж илгээх».
+## Апп build
 
-- Орлогын SMS ирэхэд апп дүн, гүйлгээний утга, бүтэн текстийг `/api/sms` руу илгээнэ (`X-Api-Key` header).
-- `sms_ingest()` гүйлгээний утгаас `MZXXXXXX` кодыг хайна (жижиг үсэг, зайг үл тооно). Дүн хүрэлцвэл төлбөр **автоматаар батлагдана** (`decided_via = 'sms'`).
-- Код олдоогүй эсвэл дүн дутуу орлогыг батлахгүй, админуудад мэдэгдэл очно — **Админ → Төлбөрүүд** доод хэсгийн «Ирсэн орлого»-оос харж гараар шийднэ.
-- Нэг SMS-ийг давхар бүртгэхгүй. Түлхүүр алдагдсан бол «Солих».
+`mobile/` өөрчлөгдөхөд GitHub Actions (`mobile.yml`):
 
-## Онцлох зар шууд нийтлэгдэнэ + Telegram хасагдсан (fix-18)
-SQL Editor дээр `supabase/fix-18-autopublish-no-telegram.sql` ажиллуулна.
-- Төлбөртэй (шимтгэлгүй) зарын төлбөр SMS эсвэл вэбээс батлагдмагц зар менежергүйгээр нийтлэгдэнэ. Өмнө нь төлбөр нь батлагдаад менежер хүлээж байсан зарууд энэ SQL-ийг ажиллуулахад нийтлэгдэнэ. Менежер татгалзсан зар, шимтгэлтэй зар өмнөх шигээ менежерээр батлагдана.
-- Telegram бот бүрэн хасагдсан: SQL нь ботын webhook-ийг салгаж, токен, тохиргоо, функцийг устгана. Ботыг өөрөө устгах бол @BotFather → `/deletebot`.
+- JS өөрчлөлт → `eas update` (суулгасан апп дараа нээгдэхдээ татна)
+- `app.json` / `package.json` / `assets/` өөрчлөлт → APK build → GitHub Release (`mashin-zar.apk`),
+  сайтын `/app/download` хамгийн сүүлийн Release-ээс татна
 
-## Менежер хасагдсан + халдлагаас хамгаалалт (fix-19)
-SQL Editor дээр `supabase/fix-19-no-manager-security.sql` ажиллуулна.
-- Менежерүүд энгийн хэрэглэгч болно; зар батлах, гомдол, тайланг админ хийнэ.
-- Хэрэглэгч өөрийн эрхийг (role, хаагдсан эсэх) өөрчилж чадахгүй — trigger давхар хамгаална.
-- Нэг хэрэглэгч өдөрт 10 зар (авто худалдаа 100), 20-оос олон шалгагдаагүй зар оруулахгүй.
-- Зургийн сан: зөвхөн JPG/PNG/WEBP, өдөрт 150 зураг (авто худалдаа/админ 800).
+Шаардлагатай secret: `EXPO_TOKEN`. Push-д `mobile/google-services.json` болон EAS дээр FCM V1 түлхүүр.
 
-Вэб (`web/src/lib/shield.ts`, `proxy.ts`): сканнерын хаяг (`/.env`, `/wp-admin`, `*.php`…) → 404,
-халдлагын хэрэгсэл (sqlmap, nikto…) → 403, IP тутмын хурдны хязгаар (SMS API 40/мин, нэвтрэх 30/мин,
-маягт 45/мин) → 429, хэт том хүсэлт → 413. Аюулгүй байдлын толгойнууд (CSP, HSTS, COOP, CORP).
+## Аюулгүй байдал
+
+- `web/src/proxy.ts` + `web/src/lib/shield.ts`: сканнерын хаяг, халдлагын хэрэгслийн User-Agent,
+  IP тутмын rate limit, хэт том хүсэлтийг Supabase руу очихоос өмнө хаана.
+- CSP, HSTS, COOP/CORP толгойнууд `web/next.config.ts`-д.
+- RLS бүх хүснэгт дээр. Ажилтны үйлдлүүд `security definer` функцээр, эрхийг дотор нь шалгана.
+- Хэрэглэгч тутам өдрийн лимит: зар, зураг, гэрээ, чат, гомдол, утас харах.
 
 ## Тест
-- Вэб: `cd web && npm test` (шимтгэл, хугацаа, харьцуулалт, лизинг, вэб↔апп хуулбарын шалгалт)
-- SQL: `supabase/tests/stubs.sql` → `schema.sql` → `supabase/tests/flows.sql` (GitHub Actions **CI** автоматаар ажиллуулна)
+
+```bash
+cd web && npm test              # unit (shared/ логик, shield, мэдэгдлийн чиглүүлэлт)
+cd web && npm run lint && npm run typecheck
+cd mobile && npm run typecheck
+```
+
+SQL: `supabase/tests/stubs.sql` → `schema.sql` → `supabase/tests/flows.sql`. CI (`ci.yml`) үүнийг
+`schema.sql` болон `migrations/` хоёр замаар ажиллуулдаг.

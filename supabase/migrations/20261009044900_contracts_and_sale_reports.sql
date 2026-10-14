@@ -1,10 +1,4 @@
--- =====================================================================
--- ЗАСВАР 06: Зарын гэрээ (гарын үсэгтэй) + шимтгэл + менежерийн борлуулалтын тайлан
---   * Хэрэглэгч зар оруулахын өмнө гэрээ уншиж, гарын үсэг зурж зөвшөөрнө
---   * Шимтгэл: зар нийтлэгдсэнээс 2 хоногт 3%, 7 хоногт 2%, 10 хоногт 1.5%, түүнээс хойш 1.5%
---   * Менежер "энэ машиныг зарсан" тайлан илгээнэ → админ батлах/буцаах
--- SQL Editor → New query → бүтнээр нь Run. Дахин ажиллуулахад аюулгүй.
--- =====================================================================
+-- Гарын үсэгтэй зуучлалын гэрээ, шатлалтай шимтгэл, борлуулалтын тайлан.
 
 -- ---------- Тохиргоо ----------
 alter table public.settings add column if not exists company_name text not null default 'Autoshop ХХК';
@@ -251,7 +245,7 @@ create policy "contracts update" on storage.objects for update to authenticated
   using (bucket_id = 'contracts' and ((storage.foldername(name))[1] = auth.uid()::text or public.is_staff()));
 
 -- ---------- Push мэдэгдлийн холбоос (тайлангийн шинэ төрлүүд) ----------
--- Мэдэгдэл → Expo push (Android апп) + вэб push
+-- Мэдэгдэл -> Expo push (Android апп) + вэб push
 create or replace function public.notify_push() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare msgs jsonb; wmsgs jsonb; chunk jsonb; i int; n int;

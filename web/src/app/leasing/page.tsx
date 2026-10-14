@@ -75,7 +75,7 @@ export default async function LeasingPanel({
   if (tab !== "all" && tab !== "terms") q = q.eq("status", tab);
   const [list, all] = await Promise.all([tab === "terms" ? Promise.resolve({ data: [], error: null }) : q, qs]);
   const rows = (list.data ?? []) as LoanRequest[];
-  // Үйл явдлын түүх (илгээсэн, төлөв, баримт хэн нээсэн) — RLS: админ бүгдийг, компани өөрийнхийг
+  // Үйл явдлын түүх (илгээсэн, төлөв, баримт хэн нээсэн) - RLS: админ бүгдийг, компани өөрийнхийг
   const events = new Map<string, LoanEvent[]>();
   if (rows.length) {
     const { data: ev } = await supabase

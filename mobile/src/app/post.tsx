@@ -83,7 +83,7 @@ export default function PostScreen() {
     setStage((st) => (st === "plan" ? "form" : "plan"));
   }, []);
 
-  // Android-ын "буцах" товч: илгээж байхад хаахгүй, гэрээ/төлбөр → сонголт → маягт
+  // Android-ын "буцах" товч: илгээж байхад хаахгүй, гэрээ/төлбөр -> сонголт -> маягт
   useFocusEffect(
     useCallback(() => {
       const sub = BackHandler.addEventListener("hardwareBackPress", () => {

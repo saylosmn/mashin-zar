@@ -66,7 +66,7 @@ function Footer({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Маягт бөглөсний дараах цонх: сонголт → гэрээ эсвэл төлбөр */
+/** Маягт бөглөсний дараах цонх: сонголт -> гэрээ эсвэл төлбөр */
 export function PlanDialog({
   draft,
   plan,

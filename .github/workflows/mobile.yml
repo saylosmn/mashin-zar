@@ -125,7 +125,7 @@ jobs:
           TAG="apk-v$VERSION-${{ github.run_number }}"
           gh release create "$TAG" mashin-zar.apk \
             --target "${{ github.sha }}" \
-            --title "Машин зар v$VERSION" \
+            --title "Autoshop.mn v$VERSION" \
             --notes "Android апп (APK). Сайтын \"Апп татах\" товчоор татагдана." \
             --latest
 

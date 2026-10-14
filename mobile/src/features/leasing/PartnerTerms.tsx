@@ -43,7 +43,7 @@ export function Terms({ partner, editable, onSaved }: { partner: Partner; editab
   const [saved, setSaved] = useState(false);
   const set = (k: keyof TermsForm) => (v: string) => setF((x) => ({ ...x, [k]: v }));
 
-  // Зөвхөн өөр түнш сонгогдох эсвэл хадгалагдсан үед (updated_at өөрчлөгдөхөд) формыг шинэчилнэ —
+  // Зөвхөн өөр түнш сонгогдох эсвэл хадгалагдсан үед (updated_at өөрчлөгдөхөд) формыг шинэчилнэ -
   // live шинэчлэлтээр шинэ объект ирэхэд бичиж буй утгыг арилгахгүй.
   const partnerRef = useRef(partner);
   partnerRef.current = partner;

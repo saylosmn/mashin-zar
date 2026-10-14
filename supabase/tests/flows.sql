@@ -1,6 +1,6 @@
 -- =====================================================================
 -- SQL урсгалын тест (CI): агент, зарын хугацаа, гомдол, онцлох зар, шимтгэл, алдааны бүртгэл, RLS.
--- stubs.sql → schema.sql (2 удаа, idempotent шалгалт) → энэ файл. Алдаа гарвал psql 1-ээр гарна.
+-- stubs.sql -> schema.sql (2 удаа, idempotent шалгалт) -> энэ файл. Алдаа гарвал psql 1-ээр гарна.
 -- =====================================================================
 \set ON_ERROR_STOP 1
 create or replace function pg_temp.as_user(u text) returns void language sql as $$ select set_config('test.uid', u, false) $$;
@@ -25,10 +25,10 @@ insert into auth.users(id, email, email_confirmed_at) values
  ('00000000-0000-0000-0000-00000000000d','agent@x.mn', now()),
  ('00000000-0000-0000-0000-00000000000e','buyer@x.mn', now());
 update public.profiles set role = 'admin' where email = 'admin@x.mn';
-update public.profiles set role = 'admin' where email = 'mgr@x.mn';  -- менежер эрх хасагдсан (fix-19): 2 дахь админ
+update public.profiles set role = 'admin' where email = 'mgr@x.mn';  -- хоёр дахь админ
 update public.profiles set profile_completed = true, full_name = 'Бат Болд', phone = '99112233';
 
--- 1. Агент урих → код үүснэ, кодоор олдоно
+-- 1. Агент урих -> код үүснэ, кодоор олдоно
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 set role authenticated;
 select public.invite_agent('agent@x.mn', 'Агент Дорж', '88001122');
@@ -100,7 +100,7 @@ reset role;
 select pg_temp.eq((select featured from public.public_ads where id = :'ad'), true, 'онцлох');
 select pg_temp.eq((select featured_requested_at is null from public.ads where id = :'ad'), true, 'хүсэлт цэвэрлэгдсэн');
 
--- 6. Хугацаа: сануулга → дууссан → нийтээс хасагдана → сунгах
+-- 6. Хугацаа: сануулга -> дууссан -> нийтээс хасагдана -> сунгах
 update public.ads set expires_at = now() + interval '2 days' where id = :'ad';
 select pg_temp.eq(public.expire_ads_job(), 1, 'сануулга');
 select pg_temp.eq(public.expire_ads_job(), 0, 'давхар сануулахгүй');
@@ -321,7 +321,7 @@ select public.approve_ad(:'cad');
 reset role;
 select pg_temp.eq((select round(extract(epoch from featured_until - now()) / 86400)::int from public.ads where id = :'cad'), 7, 'шимтгэлтэй зар 7 хоног онцлох');
 
--- 15. Банкны орлогын SMS-ээр төлбөр автоматаар батлах (fix-17)
+-- 15. Банкны орлогын SMS-ээр төлбөр автоматаар батлах
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 set role authenticated;
 insert into public.ads(user_id, brand, model, plate_number, vin, phone, year_made, price, photos, plan)
@@ -363,7 +363,7 @@ select public.regen_sms_key();
 select pg_temp.eq((public.sms_admin()->>'api_key') <> :'skey', true, 'түлхүүр солигдсон');
 reset role;
 
--- 16. Менежер эрх хасагдсан + халдлагаас хамгаалалт (fix-19)
+-- 16. Менежер эрх байхгүй, эрх/спамын хамгаалалт
 reset role;
 select pg_temp.as_user('');
 select pg_temp.fails($$update public.profiles set role = 'manager' where email = 'buyer@x.mn'$$, 'менежер эрх байхгүй (constraint)');

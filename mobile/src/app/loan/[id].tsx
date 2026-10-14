@@ -231,7 +231,7 @@ function Application({
     });
     setBusy(false);
     if (e) {
-      // DB "… дутуу байна: ndsh" гэж буцаадаг — түлхүүрийг баримтын нэрээр солино
+      // DB "… дутуу байна: ndsh" гэж буцаадаг - түлхүүрийг баримтын нэрээр солино
       return setError(errMsg(e).replace(/дутуу байна: (\w+)/, (_m, k: string) => `дутуу байна: ${docLabel(k)}`));
     }
     setSubmitted(true);

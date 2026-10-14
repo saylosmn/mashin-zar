@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { useLiveSync } from "./live";
 
-/** Уншаагүй чатын мессежийн тоо — шинэ мессеж ирэх, уншихад шууд шинэчлэгдэнэ. */
+/** Уншаагүй чатын мессежийн тоо - шинэ мессеж ирэх, уншихад шууд шинэчлэгдэнэ. */
 export function useChatUnread(signedIn: boolean) {
   const [n, setN] = useState(0);
   const load = useCallback(() => {

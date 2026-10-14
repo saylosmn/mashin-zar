@@ -188,7 +188,7 @@ export function RequestCard({ r, onDone, partnerName }: { r: LoanRequest; onDone
   );
 }
 
-/** Баримтыг нээнэ: loan_doc_open RPC эрхийг шалгаж, хэн нээснийг бүртгээд замыг буцаана → 2 минутын түр холбоос */
+/** Баримтыг нээнэ: loan_doc_open RPC эрхийг шалгаж, хэн нээснийг бүртгээд замыг буцаана -> 2 минутын түр холбоос */
 async function openDoc(requestId: string, key: string) {
   try {
     const { data: path, error } = await supabase.rpc("loan_doc_open", { p_request: requestId, p_key: key });
@@ -249,7 +249,7 @@ function eventText(e: LoanEvent) {
   }
 }
 
-/** Хүсэлтийн түүх (хэн, хэзээ, юу хийсэн) — зөвхөн админ, тухайн компанийн ажилтанд RLS зөвшөөрнө */
+/** Хүсэлтийн түүх (хэн, хэзээ, юу хийсэн) - зөвхөн админ, тухайн компанийн ажилтанд RLS зөвшөөрнө */
 function History({ requestId, version }: { requestId: string; version: string }) {
   const [events, setEvents] = useState<LoanEvent[] | null>(null);
   const [err, setErr] = useState<string | null>(null);

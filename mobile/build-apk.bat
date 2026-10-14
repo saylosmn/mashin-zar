@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-echo === Машин зар: Android APK гаргах ===
+echo === Autoshop.mn: Android APK гаргах ===
 cd /d %~dp0
 call npm install || goto :err
 echo.

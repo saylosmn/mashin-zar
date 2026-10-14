@@ -11,7 +11,7 @@ export function siteUrl(): string {
 
 export const SITE_NAME = "Autoshop.mn";
 
-/** Агентын урилгын холбоос (нүүр хуудас ?ref=КОД → зар оруулахад код автоматаар бөглөгдөнө) */
+/** Агентын урилгын холбоос (нүүр хуудас ?ref=КОД -> зар оруулахад код автоматаар бөглөгдөнө) */
 export const agentLink = (code: string) => `${siteUrl()}/?ref=${encodeURIComponent(code)}`;
 
 /** Агентын код: 4–12 латин үсэг/тоо. Бусад үед null. */

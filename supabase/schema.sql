@@ -1,6 +1,6 @@
 -- =====================================================================
--- Машин зар — Supabase schema (вэб + апп хоёуланд нэг өгөгдлийн сан)
--- Supabase → SQL Editor → New query → энэ файлыг бүтнээр нь хуулж Run.
+-- Autoshop.mn: Supabase schema (вэб, апп нэг өгөгдлийн сан)
+-- Шинэ project-д SQL Editor-оор бүтнээр нь ажиллуулна. Ажиллаж буй DB-д migrations/ хангалттай.
 -- Дахин ажиллуулахад аюулгүй (idempotent) байхаар бичсэн.
 -- =====================================================================
 
@@ -169,7 +169,7 @@ language sql security definer set search_path = public as $$
 $$;
 
 -- ---------------------------------------------------------------------
--- Шинэ хэрэглэгч → профайл (урилга байвал эрх онооно)
+-- Шинэ хэрэглэгч -> профайл (урилга байвал эрх онооно)
 -- ---------------------------------------------------------------------
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
@@ -232,7 +232,7 @@ create trigger ads_after_insert after insert on public.ads
 for each row execute function public.ads_after_insert();
 
 -- ---------------------------------------------------------------------
--- Нийтэд харагдах зар (дугаар нуусан) — зөвхөн идэвхтэй зарууд
+-- Нийтэд харагдах зар (дугаар нуусан) - зөвхөн идэвхтэй зарууд
 -- ---------------------------------------------------------------------
 drop view if exists public.public_ads;
 create view public.public_ads as
@@ -495,7 +495,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- ---------------------------------------------------------------------
--- Эрх (GRANT) — шинэ Supabase project-д автоматаар өгөгддөггүй
+-- Эрх (GRANT) - шинэ Supabase project-д автоматаар өгөгддөггүй
 -- ---------------------------------------------------------------------
 grant usage on schema public to anon, authenticated;
 
@@ -729,7 +729,7 @@ grant execute on function public.save_web_push(text, text, text, text) to authen
 grant execute on function public.remove_web_push(text) to authenticated;
 grant execute on function public.prune_web_push(text[]) to anon, authenticated;
 
--- Мэдэгдэл → Expo push (Android апп) + вэб push
+-- Мэдэгдэл -> Expo push (Android апп) + вэб push
 create or replace function public.notify_push() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare msgs jsonb; wmsgs jsonb; chunk jsonb; i int; n int;
@@ -1157,7 +1157,7 @@ create policy "contracts update" on storage.objects for update to authenticated
   using (bucket_id = 'contracts' and ((storage.foldername(name))[1] = auth.uid()::text or public.is_staff()));
 
 -- ---------- Push мэдэгдлийн холбоос (тайлангийн шинэ төрлүүд) ----------
--- Мэдэгдэл → Expo push (Android апп) + вэб push
+-- Мэдэгдэл -> Expo push (Android апп) + вэб push
 create or replace function public.notify_push() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare msgs jsonb; wmsgs jsonb; chunk jsonb; i int; n int;
@@ -1806,7 +1806,7 @@ create trigger mz_sync_partners after insert or update or delete on public.leasi
 for each row execute function public.mz_broadcast();
 
 -- API-ийн кэшийг шинэчлэх (хүснэгтүүд шууд харагдана)
--- ---------- Лизингийн шаардлага, анкет, баримт (fix-09) ----------
+-- ---------- Лизингийн шаардлага, анкет, баримт ----------
 -- ---------- Түншийн шаардлага ----------
 alter table public.leasing_partners add column if not exists min_age int not null default 18;
 alter table public.leasing_partners add column if not exists max_age int not null default 65;
@@ -2051,7 +2051,7 @@ grant execute on function public.set_partner_terms(uuid, jsonb) to authenticated
 grant execute on function public.rd_birth_date(text) to authenticated;
 grant execute on function public.loan_doc_kinds() to anon, authenticated;
 
--- ---------- Аюулгүй байдал + лизингийн аудит (fix-10) ----------
+-- ---------- Аюулгүй байдал + лизингийн аудит ----------
 -- ---------- 1. Тусламжийн функцуудын search_path ----------
 alter function public.mask_plate(text) set search_path = public;
 alter function public.mask_vin(text) set search_path = public;
@@ -2580,7 +2580,7 @@ begin
 end $$;
 
 -- Баримт нээх: эрх шалгаж, хэн хэзээ нээснийг бүртгээд файлын замыг буцаана.
--- (Дараа нь клиент 2 минутын түр холбоос үүсгэнэ — storage RLS дахин шалгана)
+-- (Дараа нь клиент 2 минутын түр холбоос үүсгэнэ - storage RLS дахин шалгана)
 create or replace function public.loan_doc_open(p_request uuid, p_key text) returns text
 language plpgsql security definer set search_path = public as $$
 declare r public.loan_requests; pth text;
@@ -2635,7 +2635,7 @@ grant execute on function public.increment_view(uuid) to anon;
 grant execute on function public.prune_web_push(text[], text) to anon;
 alter default privileges in schema public revoke execute on functions from public;
 
--- ---------- Realtime: хувийн сувгууд (fix-11) ----------
+-- ---------- Realtime: хувийн сувгууд ----------
 create or replace function public.mz_broadcast() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare rec jsonb; o jsonb; payload jsonb; st text; ost text; uid text; pid text;
@@ -2699,7 +2699,7 @@ exception when others then
   raise notice 'realtime.messages policy: %', sqlerrm;
 end $$;
 
--- ---------- Bloat/спам хамгаалалт (fix-12) ----------
+-- ---------- Bloat/спам хамгаалалт ----------
 -- ---------- 1. Зарын текст талбарын хязгаар ----------
 do $$
 begin
@@ -2749,7 +2749,7 @@ drop trigger if exists web_push_cap on public.web_push_subs;
 create trigger web_push_cap before insert on public.web_push_subs
 for each row execute function public.cap_rows_per_user();
 
--- ---------- Агент, зарын хугацаа, гомдол, онцлох зар, алдааны бүртгэл (fix-13) ----------
+-- ---------- Агент, зарын хугацаа, гомдол, онцлох зар, алдааны бүртгэл ----------
 -- ---------- 0. Тохиргоо ----------
 alter table public.settings add column if not exists agent_share numeric(5,2) not null default 50;   -- шимтгэлийн хэдэн % нь агентад
 alter table public.settings add column if not exists featured_price bigint not null default 50000;   -- онцлох зарын үнэ (₮)
@@ -3332,7 +3332,7 @@ grant execute on function public.increment_view(uuid) to anon, authenticated;
 grant execute on function public.notify_url(text, uuid) to authenticated;
 
 -- ---------- 11. Цагийн ажил (pg_cron) ----------
--- Supabase → Database → Extensions → pg_cron асаагүй бол энэ хэсэг алгасагдана
+-- Supabase -> Database -> Extensions -> pg_cron асаагүй бол энэ хэсэг алгасагдана
 -- (хугацаа дууссан зар нийтэд харагдахгүй хэвээр, зөвхөн сануулга мэдэгдэл ирэхгүй).
 do $$
 begin
@@ -3344,7 +3344,7 @@ exception when others then
 end $$;
 
 
--- ---------- Утас зөвхөн нэвтэрсэн хүнд, чат (fix-14) ----------
+-- ---------- Утас зөвхөн нэвтэрсэн хүнд, чат ----------
 -- ---------- 1. Нийтийн зар: утасгүй ----------
 drop view if exists public.public_ads;
 create view public.public_ads as
@@ -3635,7 +3635,7 @@ end $$;
 grant execute on function public.notify_url(text, uuid) to authenticated;
 
 
--- ---------- Push токен шилжүүлэх, туршилтын мэдэгдэл (fix-15) ----------
+-- ---------- Push токен шилжүүлэх, туршилтын мэдэгдэл ----------
 -- Токеныг одоогийн хэрэглэгчид шилжүүлж хадгална
 create or replace function public.save_push_token(p_token text, p_platform text default null) returns void
 language plpgsql security definer set search_path = public as $$
@@ -3699,7 +3699,7 @@ revoke execute on function public.push_token_count() from public, anon;
 grant execute on function public.push_token_count() to authenticated;
 
 
--- ---------- Зар оруулах 2 сонголт, төлбөр (fix-16) ----------
+-- ---------- Зар оруулах 2 сонголт, төлбөр ----------
 -- ---------- 0. Тохиргоо ----------
 alter table public.settings add column if not exists commission_featured_days int not null default 7; -- шимтгэлтэй зарыг үнэгүй онцлох хоног (0 = үгүй)
 alter table public.settings add column if not exists pay_bank text;      -- банкны нэр
@@ -3849,7 +3849,7 @@ begin
   return public._open_payment(p_ad);
 end $$;
 
--- Хэрэглэгч: «Төлбөр төлсөн» → админуудад мэдэгдэл
+-- Хэрэглэгч: «Төлбөр төлсөн» -> админуудад мэдэгдэл
 create or replace function public.submit_payment(p_id uuid, p_note text default null) returns void
 language plpgsql security definer set search_path = public as $$
 declare p public.payments; a public.ads;
@@ -4105,7 +4105,7 @@ begin
 end $$;
 
 
--- ---------- Банкны орлогын SMS-ээр төлбөр автоматаар батлах (fix-17) ----------
+-- ---------- Банкны орлогын SMS-ээр төлбөр автоматаар батлах ----------
 -- ---------- 1. Шийдвэрийн суваг: sms ----------
 alter table public.payments drop constraint if exists payments_decided_via_check;
 alter table public.payments add constraint payments_decided_via_check check (decided_via in ('web','telegram','sms'));
@@ -4188,7 +4188,7 @@ begin
   insert into public.sms_income(amount, value, body, sender, sms_date, hash, payment_id, result)
   values (amt, nullif(left(trim(coalesce(p_value, '')), 200), ''), left(p_body, 1000), left(p_sender, 40), left(p_date, 40), h, p.id, res);
 
-  -- Код олдоогүй / дүн дутуу орлогыг админуудад мэдэгдэнэ (апп, push) — «Админ → Төлбөрүүд»-ээс шийднэ
+  -- Код олдоогүй / дүн дутуу орлогыг админуудад мэдэгдэнэ (апп, push) - «Админ -> Төлбөрүүд»-ээс шийднэ
   if res in ('unmatched','short') then
     insert into public.notifications(user_id, type, title, body, ad_id)
     select pr.id, 'payment_submitted',
@@ -4225,12 +4225,12 @@ revoke execute on function public.sms_admin() from public, anon;
 grant execute on function public.sms_admin() to authenticated;
 revoke execute on function public.regen_sms_key() from public, anon;
 grant execute on function public.regen_sms_key() to authenticated;
--- Апп-аас (нэвтрээгүй) ирэх хүсэлт — нууц түлхүүрээр шалгана
+-- Апп-аас (нэвтрээгүй) ирэх хүсэлт - нууц түлхүүрээр шалгана
 revoke execute on function public.sms_ingest(text, text, text, text, text, text) from public;
 grant execute on function public.sms_ingest(text, text, text, text, text, text) to anon, authenticated;
 
 
--- ---------- Онцлох зар төлбөр ормогц шууд нийтлэгдэнэ, Telegram хасагдсан (fix-18) ----------
+-- ---------- Онцлох зар төлбөр ормогц шууд нийтлэгдэнэ, Telegram хасагдсан ----------
 -- Telegram бот бүрэн хасагдсан: webhook-ийг салгаж, хүснэгт, функц, баганыг устгана
 do $$
 declare tok text;
@@ -4296,7 +4296,7 @@ begin
   values (null, 'Төлбөр орсон онцлох зар автоматаар нийтлэгдэв: ' || a.brand || ' ' || a.model, a.id);
 end $$;
 
--- Шийдвэр (вэб, SMS хоёулаа энийг дуудна). fix-16-ийнхтэй ижил, зөвхөн шалгагдаж буй
+-- Шийдвэр (вэб, SMS хоёулаа энийг дуудна). listing_plans_and_payments-ийнхтэй ижил, зөвхөн шалгагдаж буй
 -- төлбөртэй зарыг менежерт илгээхийн оронд шууд нийтэлдэг болсон.
 create or replace function public._decide_payment(p_id uuid, p_approve boolean, p_via text, p_actor uuid, p_actor_name text, p_note text default null)
 returns text
@@ -4362,7 +4362,7 @@ begin
 end $$;
 
 
--- ---------- Менежер эрх хасагдсан + халдлагаас хамгаалалт (fix-19) ----------
+-- ---------- Менежер эрх хасагдсан + халдлагаас хамгаалалт ----------
 -- ---------- 1. Менежер эрх хасах ----------
 update public.profiles set role = 'user' where role = 'manager';
 delete from public.staff_invites where role = 'manager';
@@ -4435,7 +4435,7 @@ language plpgsql security definer set search_path = public as $$
 begin
   -- SQL Editor / service_role (auth.uid() байхгүй) болон админ чөлөөтэй
   if auth.uid() is null or public.is_admin() then return new; end if;
-  -- Шинэ хэрэглэгч бүртгэгдэх (handle_new_user урилгаар эрх олгоно) — insert-д хамаарахгүй
+  -- Шинэ хэрэглэгч бүртгэгдэх (handle_new_user урилгаар эрх олгоно) - insert-д хамаарахгүй
   if tg_op = 'UPDATE' and (
        new.role is distinct from old.role
     or new.is_blocked is distinct from old.is_blocked

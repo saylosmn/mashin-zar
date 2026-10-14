@@ -273,7 +273,7 @@ function AdLife({ a, pay }: { a: Ad; pay?: OpenPay }) {
   );
 }
 
-/** Зарын үйлдлүүд (гэрээ, сунгах, онцлох/төлөх, засах, нуух, зарагдсан, устгах) — хүснэгт ба утасны картад хоёуланд нь. */
+/** Зарын үйлдлүүд (гэрээ, сунгах, онцлох/төлөх, засах, нуух, зарагдсан, устгах) - хүснэгт ба утасны картад хоёуланд нь. */
 function AdActions({ a, dealer, className, pay }: { a: Ad; dealer: boolean; className?: string; pay?: OpenPay }) {
   const e = expiryInfo(a.expires_at);
   const featured = isFeatured(a.featured_until);

@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-echo === Машин зар: суулгасан аппыг шинэчлэх (EAS Update) ===
+echo === Autoshop.mn: суулгасан аппыг шинэчлэх (EAS Update) ===
 echo APK дахин суулгах шаардлагагүй - апп дараа нээгдэхдээ шинэ кодоо татна.
 cd /d %~dp0
 git pull

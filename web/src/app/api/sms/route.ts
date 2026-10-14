@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * Утсан дээрх «Орлого SMS» апп банкны орлогын SMS-ийг энд илгээнэ.
- * Header: X-Api-Key (Админ → Тохиргоо → SMS апп), JSON: { money, value, body, sender, date }.
+ * Header: X-Api-Key (Админ -> Тохиргоо -> SMS апп), JSON: { money, value, body, sender, date }.
  * Кодыг тааруулж батлах бүх шийдвэрийг өгөгдлийн сангийн sms_ingest() гаргана.
  * Хариу { code: 0 } бол апп «✓ Илгээсэн» гэж тэмдэглэнэ; бусад үед дараа дахин илгээнэ.
  */

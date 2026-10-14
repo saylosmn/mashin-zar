@@ -1,11 +1,4 @@
--- =====================================================================
--- ЗАСВАР 18: Онцлох зар төлбөр ормогц шууд нийтлэгдэнэ + Telegram бүрэн хасагдсан
---   1. Онцлох (төлбөртэй) зарын төлбөр SMS эсвэл вэбээс батлагдмагц зар менежерийн шалгалтгүйгээр
---      нийтлэгдэж, онцлох болно. Менежер татгалзсан зар, шимтгэлтэй зар өмнөх шигээ менежерээр батлагдана.
---   2. Telegram бот: webhook-ийг салгаж, тохиргоо, функц, баганыг устгана. Төлбөрийг SMS апп автоматаар,
---      эсвэл «Админ → Төлбөрүүд»-ээс гараар батална. Код олдоогүй / дүн дутуу орлого админд мэдэгдлээр ирнэ.
--- SQL Editor → New query → бүтнээр нь Run. Дахин ажиллуулахад аюулгүй. fix-17-ийн дараа.
--- =====================================================================
+-- Онцлох зарын төлбөр батлагдмагц шууд нийтлэгдэнэ. Telegram ботын хэсгийг устгав.
 
 -- Telegram бот бүрэн хасагдсан: webhook-ийг салгаж, хүснэгт, функц, баганыг устгана
 do $$
@@ -38,7 +31,7 @@ alter table public.payments drop column if exists tg_request_id, drop column if 
 
 -- ---------- Telegram-гүй хувилбарууд ----------
 
--- Хэрэглэгч: «Төлбөр төлсөн» → админуудад мэдэгдэл
+-- Хэрэглэгч: «Төлбөр төлсөн» -> админуудад мэдэгдэл
 create or replace function public.submit_payment(p_id uuid, p_note text default null) returns void
 language plpgsql security definer set search_path = public as $$
 declare p public.payments; a public.ads;
@@ -153,7 +146,7 @@ begin
   insert into public.sms_income(amount, value, body, sender, sms_date, hash, payment_id, result)
   values (amt, nullif(left(trim(coalesce(p_value, '')), 200), ''), left(p_body, 1000), left(p_sender, 40), left(p_date, 40), h, p.id, res);
 
-  -- Код олдоогүй / дүн дутуу орлогыг админуудад мэдэгдэнэ (апп, push) — «Админ → Төлбөрүүд»-ээс шийднэ
+  -- Код олдоогүй / дүн дутуу орлогыг админуудад мэдэгдэнэ (апп, push) - «Админ -> Төлбөрүүд»-ээс шийднэ
   if res in ('unmatched','short') then
     insert into public.notifications(user_id, type, title, body, ad_id)
     select pr.id, 'payment_submitted',
@@ -204,7 +197,7 @@ begin
   values (null, 'Төлбөр орсон онцлох зар автоматаар нийтлэгдэв: ' || a.brand || ' ' || a.model, a.id);
 end $$;
 
--- Шийдвэр (вэб, SMS хоёулаа энийг дуудна). fix-16-ийнхтэй ижил, зөвхөн шалгагдаж буй
+-- Шийдвэр (вэб, SMS хоёулаа энийг дуудна). listing_plans_and_payments-ийнхтэй ижил, зөвхөн шалгагдаж буй
 -- төлбөртэй зарыг менежерт илгээхийн оронд шууд нийтэлдэг болсон.
 create or replace function public._decide_payment(p_id uuid, p_approve boolean, p_via text, p_actor uuid, p_actor_name text, p_note text default null)
 returns text

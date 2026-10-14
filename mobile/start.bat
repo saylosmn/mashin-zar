@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-echo === Машин зар: Expo Go дээр турших ===
+echo === Autoshop.mn: Expo Go дээр турших ===
 cd /d %~dp0
 git pull
 call npm install || goto :err

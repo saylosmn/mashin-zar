@@ -1,9 +1,4 @@
--- =====================================================================
--- ЗАСВАР 04: Вэб push (iPhone-ийн нүүр дэлгэцэнд суулгасан сайт, Android Chrome, компьютер)
---   * web_push_subs: хөтөч бүрийн мэдэгдлийн захиалга
---   * notify_push: Expo (Android апп) + вэб push хоёуланд нь илгээнэ
--- SQL Editor → New query → бүтнээр нь Run. Дахин ажиллуулахад аюулгүй.
--- =====================================================================
+-- Вэб push: web_push_subs хүснэгт, notify_push нь Expo + вэб хоёуланд илгээнэ.
 
 create extension if not exists pg_net;
 
@@ -49,7 +44,7 @@ grant execute on function public.save_web_push(text, text, text, text) to authen
 grant execute on function public.remove_web_push(text) to authenticated;
 grant execute on function public.prune_web_push(text[]) to anon, authenticated;
 
--- Мэдэгдэл → Expo push (Android апп) + вэб push
+-- Мэдэгдэл -> Expo push (Android апп) + вэб push
 create or replace function public.notify_push() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare msgs jsonb; wmsgs jsonb; chunk jsonb; i int; n int;

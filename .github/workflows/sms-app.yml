@@ -1,6 +1,6 @@
 # «Орлого SMS» Android апп (sms-app/) → APK build хийж GitHub Release-д тавина.
 # Actions → "SMS апп APK" → Run workflow (эсвэл sms-app/ өөрчлөгдөхөд автоматаар).
-# Release-ийн нэр sms-app-…, «latest» болгохгүй (Машин зар аппын татах холбоост нөлөөлөхгүй).
+# Release-ийн нэр sms-app-…, «latest» болгохгүй (Autoshop.mn аппын татах холбоост нөлөөлөхгүй).
 name: SMS апп APK
 
 on:
@@ -42,5 +42,5 @@ jobs:
           gh release create "sms-app-${{ github.run_number }}" orlogo-sms.apk \
             --target "${{ github.sha }}" \
             --title "Орлого SMS апп #${{ github.run_number }}" \
-            --notes "Банкны орлогын SMS-ийг Машин зар руу дамжуулах Android апп. Утсандаа татаж суулгаад Админ → Тохиргоо → SMS апп хэсгийн хаяг, түлхүүрийг оруулна." \
+            --notes "Банкны орлогын SMS-ийг Autoshop.mn руу дамжуулах Android апп. Утсандаа татаж суулгаад Админ → Тохиргоо → SMS апп хэсгийн хаяг, түлхүүрийг оруулна." \
             --latest=false

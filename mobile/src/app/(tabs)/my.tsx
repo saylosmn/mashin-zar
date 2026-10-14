@@ -76,7 +76,7 @@ function MyAdsInner() {
     if (!ok) return;
     const { data, error: e } = await supabase.from("ads").delete().eq("id", a.id).select("id");
     if (e) return Alert.alert("Устгаж чадсангүй", errMsg(e));
-    // RLS: борлуулалтын тайлантай зарыг устгахгүй — алдаагүй ч 0 мөр устана
+    // RLS: борлуулалтын тайлантай зарыг устгахгүй - алдаагүй ч 0 мөр устана
     if (!data || data.length === 0)
       return Alert.alert("Устгах боломжгүй", "Энэ зарт борлуулалтын тайлан бүртгэгдсэн тул устгах боломжгүй");
     setAds((x) => x.filter((y) => y.id !== a.id));

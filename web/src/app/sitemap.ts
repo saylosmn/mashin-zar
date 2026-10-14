@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return pages;
-  // Күүкигүй (нэвтрээгүй) клиент — зөвхөн нийтийн зарууд
+  // Күүкигүй (нэвтрээгүй) клиент - зөвхөн нийтийн зарууд
   const supabase = createClient(url, key, { auth: { persistSession: false } });
   const { data } = await supabase
     .from("public_ads")

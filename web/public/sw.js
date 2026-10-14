@@ -1,4 +1,4 @@
-/* Машин зар — service worker: push мэдэгдэл харуулах, дарахад холбогдох хуудсыг нээх */
+/* Service worker: push мэдэгдэл харуулж, дарахад холбогдох хуудсыг нээнэ */
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
@@ -7,9 +7,9 @@ self.addEventListener("push", (event) => {
   try {
     d = event.data ? event.data.json() : {};
   } catch {
-    d = { title: "Машин зар", body: event.data ? event.data.text() : "" };
+    d = { title: "Autoshop.mn", body: event.data ? event.data.text() : "" };
   }
-  const title = d.title || "Машин зар";
+  const title = d.title || "Autoshop.mn";
   event.waitUntil(
     self.registration.showNotification(title, {
       body: d.body || "",

@@ -5,7 +5,7 @@ import type { ContractTerms } from "@shared/contract";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-// Загвар нөхцөл өөрчлөгдсөн үед л дахин үүснэ — давтан PDF үүсгэлтээс сэргийлж модульд кэшлэнэ.
+// Загвар нөхцөл өөрчлөгдсөн үед л дахин үүснэ - давтан PDF үүсгэлтээс сэргийлж модульд кэшлэнэ.
 let cache: { key: string; pdf: Uint8Array } | null = null;
 
 /** Хэвлэж бөглөх хоосон гэрээний загвар (PDF). Зөвхөн нэвтэрсэн хэрэглэгч; нөхцөлөөр нэг л удаа үүсгээд кэшлэнэ. */

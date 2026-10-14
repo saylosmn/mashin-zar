@@ -38,7 +38,7 @@ export const BRANDS: Record<string, string[]> = {
   BYD: ["Song", "Han", "Atto 3", "Seal", "Tang"],
 };
 
-/** Машины опшн — бүлгээр. Хуучин заруудын нэрс (Арын камер, Люк гэх мэт) хэвээр тул тохирно. */
+/** Машины опшн - бүлгээр. Хуучин заруудын нэрс (Арын камер, Люк гэх мэт) хэвээр тул тохирно. */
 export const OPTION_GROUPS: { title: string; items: string[] }[] = [
   {
     title: "Аюулгүй байдал",

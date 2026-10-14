@@ -1,12 +1,4 @@
--- =====================================================================
--- ЗАСВАР 16: Зар оруулах 2 сонголт + төлбөрийг Telegram-аар батлах
---   1. Шимтгэлтэй (commission) — зарагдвал гэрээний % шимтгэл; зар үнэгүй онцлох, агент зарна
---   2. Онцлох төлбөртэй (paid) — шимтгэлгүй, онцлох зарын төлбөрийг урьдчилж шилжүүлнэ
---   Төлбөр: хэрэглэгч «Төлсөн» дарна → Telegram бот руу «✅ Орлого орсон / ❌ Ороогүй» товчтой мессеж
---   → дарахад зар онцлох болж, хэрэглэгчид мэдэгдэл очно. Вэбийн «Админ → Төлбөрүүд»-ээс ч батална.
--- SQL Editor → New query → бүтнээр нь Run. Дахин ажиллуулахад аюулгүй. fix-15-ийн дараа.
--- Telegram бот токеныг энд бичихгүй: «Админ → Тохиргоо → Telegram» хэсэгт оруулна.
--- =====================================================================
+-- Зар оруулах 2 сонголт (шимтгэлтэй / онцлох төлбөртэй), төлбөрийн бүртгэл.
 
 -- ---------- 0. Тохиргоо ----------
 alter table public.settings add column if not exists commission_featured_days int not null default 7; -- шимтгэлтэй зарыг үнэгүй онцлох хоног (0 = үгүй)
@@ -259,7 +251,7 @@ begin
   return public._open_payment(p_ad);
 end $$;
 
--- Хэрэглэгч: «Төлбөр төлсөн» → админуудад мэдэгдэл + Telegram
+-- Хэрэглэгч: «Төлбөр төлсөн» -> админуудад мэдэгдэл + Telegram
 create or replace function public.submit_payment(p_id uuid, p_note text default null) returns void
 language plpgsql security definer set search_path = public as $$
 declare p public.payments; a public.ads;
@@ -596,7 +588,7 @@ begin
     execute format('grant execute on function %s to authenticated', f);
   end loop;
 end $$;
--- Webhook: нэвтрээгүй (Telegram-аас ирсэн) хүсэлт — нууц түлхүүрээр шалгана
+-- Webhook: нэвтрээгүй (Telegram-аас ирсэн) хүсэлт - нууц түлхүүрээр шалгана
 revoke execute on function public.tg_webhook(text, jsonb) from public;
 grant execute on function public.tg_webhook(text, jsonb) to anon, authenticated;
 grant execute on function public.tg_esc(text) to anon, authenticated;

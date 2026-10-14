@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const uid = claims?.claims?.sub;
   if (!uid) return NextResponse.redirect(url(`/login?next=${encodeURIComponent("/notifications")}`));
 
-  // Хөтчийн урьдчилан ачаалалт (prefetch) дээр уншсан болгохгүй — зөвхөн жинхэнэ дарахад.
+  // Хөтчийн урьдчилан ачаалалт (prefetch) дээр уншсан болгохгүй - зөвхөн жинхэнэ дарахад.
   if (
     request.headers.get("next-router-prefetch") ||
     request.headers.get("purpose") === "prefetch" ||

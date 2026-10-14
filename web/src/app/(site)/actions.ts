@@ -107,7 +107,7 @@ export async function renewAd(fd: FormData) {
   redirect(`/my?${error ? `err=${encodeURIComponent(error.message)}` : `ok=${encodeURIComponent("Зар сунгагдлаа")}`}`);
 }
 
-/** Онцлох зарын төлбөр нээх (нийтлэгдсэн зар) → төлбөрийн хуудас */
+/** Онцлох зарын төлбөр нээх (нийтлэгдсэн зар) -> төлбөрийн хуудас */
 export async function startPayment(fd: FormData) {
   await requireUser();
   const id = String(fd.get("id"));
@@ -117,7 +117,7 @@ export async function startPayment(fd: FormData) {
   redirect(`/pay/${id}${error ? `?err=${encodeURIComponent(error.message)}` : ""}`);
 }
 
-/** «Төлбөр төлсөн» — админд мэдэгдэл очно (SMS апп орлогыг автоматаар батална) */
+/** «Төлбөр төлсөн» - админд мэдэгдэл очно (SMS апп орлогыг автоматаар батална) */
 export async function submitPayment(fd: FormData) {
   await requireUser();
   const ad = String(fd.get("ad"));
@@ -166,7 +166,7 @@ export async function revealPhone(adId: string): Promise<{ phone?: string; error
   return error ? { error: error.message } : { phone: String(data ?? "") };
 }
 
-/** Зарын эзэнтэй чат эхлүүлэх → чат руу шилжинэ */
+/** Зарын эзэнтэй чат эхлүүлэх -> чат руу шилжинэ */
 export async function startChat(adId: string, body: string): Promise<{ error?: string }> {
   await requireUser(`/messages/start/${adId}`);
   const supabase = await createClient();

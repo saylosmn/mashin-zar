@@ -2,7 +2,7 @@ import type { PublicAd } from "@shared/types";
 import type { StaffAd } from "./staff";
 
 /**
- * Жагсаалтаас нээсэн зарын мэдээллийг түр хадгална — дэлгэрэнгүй хуудас
+ * Жагсаалтаас нээсэн зарын мэдээллийг түр хадгална - дэлгэрэнгүй хуудас
  * сүлжээ хүлээлгүйгээр шууд гарч ирээд, ард нь шинэчлэгдэнэ.
  */
 export const adCache = new Map<string, PublicAd>();

@@ -7,7 +7,7 @@ import { revealPhone, toggleFavorite } from "../../actions";
 
 /**
  * Утас харах (зөвхөн нэвтэрсэн хүнд), чатлах, хадгалах.
- * loginHref өгөгдсөн бол нэвтрээгүй — товчнууд нэвтрэх хуудас руу үсэрнэ.
+ * loginHref өгөгдсөн бол нэвтрээгүй - товчнууд нэвтрэх хуудас руу үсэрнэ.
  */
 export function ContactBox({
   adId,

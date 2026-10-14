@@ -81,7 +81,7 @@ export async function savePaymentSettings(fd: FormData) {
   );
 }
 
-/** SMS апп-ын түлхүүрийг солино — хуучин түлхүүртэй утас холбогдохоо болино */
+/** SMS апп-ын түлхүүрийг солино - хуучин түлхүүртэй утас холбогдохоо болино */
 export async function regenSmsKey(fd: FormData) {
   await requireAdmin();
   const supabase = await createClient();

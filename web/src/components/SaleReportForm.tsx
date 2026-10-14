@@ -17,7 +17,7 @@ export type AgentOption = { id: string; name: string };
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
 
-/** "Зарагдсан" тайлангийн маягт (админ) — шимтгэлийг шууд тооцож харуулна. */
+/** "Зарагдсан" тайлангийн маягт (админ) - шимтгэлийг шууд тооцож харуулна. */
 export function SaleReportForm({
   ads,
   defaultAd,

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/data";
 import { backUrl, run } from "./helpers";
 
-/** "YYYY-MM-DD" → тухайн өдрийн Улаанбаатарын 12:00 (өнөөдөр бол одоо) */
+/** "YYYY-MM-DD" -> тухайн өдрийн Улаанбаатарын 12:00 (өнөөдөр бол одоо) */
 function soldAtFrom(d: string) {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ulaanbaatar" }).format(new Date());
   if (!d || d === today) return new Date().toISOString();

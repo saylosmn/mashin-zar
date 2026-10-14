@@ -50,7 +50,7 @@ export default function AdDetail() {
     try {
       setError(null);
       const favP = supabase.from("favorites").select("ad_id").eq("ad_id", id).maybeSingle();
-      // Лизингийн түншүүд — алдаа гарвал тооцоолуур л харагдахгүй, зар нээгдэнэ
+      // Лизингийн түншүүд - алдаа гарвал тооцоолуур л харагдахгүй, зар нээгдэнэ
       supabase
         .from("leasing_partners")
         .select("*")

@@ -59,6 +59,6 @@ jobs:
           [ -z "$VER" ] && VER=$(node -p "require('./mobile/app.json').expo.version")
           gh release create "apk-v$VER-${{ github.run_number }}" mashin-zar.apk \
             --target "${{ github.sha }}" \
-            --title "Машин зар v$VER" \
+            --title "Autoshop.mn v$VER" \
             --notes "Android апп (APK). Сайтын \"Апп татах\" товчоор шууд татагдана." \
             --latest

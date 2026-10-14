@@ -2,7 +2,7 @@ import "expo-sqlite/localStorage/install";
 import { AppState, Platform } from "react-native";
 import { createClient } from "@supabase/supabase-js";
 
-// Нээлттэй (publishable) түлхүүр — апп-д оруулахад аюулгүй, хамгаалалт нь RLS дээр.
+// Нээлттэй (publishable) түлхүүр - апп-д оруулахад аюулгүй, хамгаалалт нь RLS дээр.
 export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "https://nthyjkkdkxyilwuamnqd.supabase.co";
 const SUPABASE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_FbZFXiBuJYyO7TjhDECimQ_IqD2y_Jt";

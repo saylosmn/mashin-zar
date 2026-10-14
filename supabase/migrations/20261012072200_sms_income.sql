@@ -1,12 +1,4 @@
--- =====================================================================
--- ЗАСВАР 17: Банкны орлогын SMS-ээр төлбөрийг автоматаар батлах
---   Утсан дээрх «Орлого SMS» апп банкны орлогын SMS-ийг /api/sms руу илгээнэ →
---   гүйлгээний утгаас MZXXXXXX кодыг олж, дүн хүрэлцэж байвал төлбөр автоматаар батлагдана
---   (зар онцлох болж, хэрэглэгчид мэдэгдэл очно).
---   Код олдоогүй, дүн дутуу орлогыг админуудад мэдэгдэнэ, «Админ → Төлбөрүүд»-д жагсаана.
--- SQL Editor → New query → бүтнээр нь Run. Дахин ажиллуулахад аюулгүй. fix-16-ийн дараа.
--- Түлхүүрийг «Админ → Тохиргоо → SMS апп» хэсгээс хуулж утсан дээрх апп-д оруулна.
--- =====================================================================
+-- Банкны орлогын SMS-ээр төлбөрийг автоматаар батлах (sms_ingest, X-Api-Key).
 
 -- ---------- 1. Шийдвэрийн суваг: sms ----------
 alter table public.payments drop constraint if exists payments_decided_via_check;
@@ -90,7 +82,7 @@ begin
   insert into public.sms_income(amount, value, body, sender, sms_date, hash, payment_id, result)
   values (amt, nullif(left(trim(coalesce(p_value, '')), 200), ''), left(p_body, 1000), left(p_sender, 40), left(p_date, 40), h, p.id, res);
 
-  -- Код олдоогүй / дүн дутуу орлогыг админуудад мэдэгдэнэ (апп, push) — «Админ → Төлбөрүүд»-ээс шийднэ
+  -- Код олдоогүй / дүн дутуу орлогыг админуудад мэдэгдэнэ (апп, push) - «Админ -> Төлбөрүүд»-ээс шийднэ
   if res in ('unmatched','short') then
     insert into public.notifications(user_id, type, title, body, ad_id)
     select pr.id, 'payment_submitted',
@@ -127,7 +119,7 @@ revoke execute on function public.sms_admin() from public, anon;
 grant execute on function public.sms_admin() to authenticated;
 revoke execute on function public.regen_sms_key() from public, anon;
 grant execute on function public.regen_sms_key() to authenticated;
--- Апп-аас (нэвтрээгүй) ирэх хүсэлт — нууц түлхүүрээр шалгана
+-- Апп-аас (нэвтрээгүй) ирэх хүсэлт - нууц түлхүүрээр шалгана
 revoke execute on function public.sms_ingest(text, text, text, text, text, text) from public;
 grant execute on function public.sms_ingest(text, text, text, text, text, text) to anon, authenticated;
 

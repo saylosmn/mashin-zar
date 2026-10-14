@@ -4,7 +4,7 @@ import webpush from "web-push";
 import { VAPID_PUBLIC_KEY } from "@/lib/webpush-key";
 
 /**
- * Өгөгдлийн сангийн trigger (pg_net) мэдэгдэл бүрийг энд илгээнэ → вэб push (iPhone, Android Chrome, компьютер).
+ * Өгөгдлийн сангийн trigger (pg_net) мэдэгдэл бүрийг энд илгээнэ -> вэб push (iPhone, Android Chrome, компьютер).
  * Хүсэлт өөрөө хүлээн авагчийн захиалгыг (subscription) агуулдаг тул зөвхөн тэр хүмүүст л очно.
  */
 type Msg = {
@@ -17,7 +17,7 @@ type Msg = {
 
 export const maxDuration = 30;
 
-/** Зөвхөн өгөгдлийн сан (notify_push) нууц түлхүүрээр дуудна — бусад хүн push илгээж чадахгүй */
+/** Зөвхөн өгөгдлийн сан (notify_push) нууц түлхүүрээр дуудна - бусад хүн push илгээж чадахгүй */
 function authorized(request: Request) {
   const secret = process.env.PUSH_SECRET;
   const got = request.headers.get("x-push-secret") ?? "";

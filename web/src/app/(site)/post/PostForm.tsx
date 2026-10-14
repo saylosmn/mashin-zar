@@ -57,7 +57,7 @@ export function PostForm({
   const [fields, setFields] = useState<AdFields>(() => emptyAdFields(defaultPhone));
   const [agentCode, setAgentCode] = useState(defaultAgentCode);
   const [agent, setAgent] = useState<{ code: string; id: string; name: string } | null>(null);
-  /** Маягт шалгагдсаны дараах цонх (сонголт → гэрээ/төлбөр) */
+  /** Маягт шалгагдсаны дараах цонх (сонголт -> гэрээ/төлбөр) */
   const [draft, setDraft] = useState<AdDraft | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [signName, setSignName] = useState(fullName);

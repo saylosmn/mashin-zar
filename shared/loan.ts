@@ -132,7 +132,7 @@ export const LOAN_DOCS: { kind: string; label: string; source?: string }[] = [
 
 // Олон хуудастай баримт: kind, kind_2 … kind_5
 export const MAX_DOC_PAGES = 5;
-/** "bank_statement_2" → { base: "bank_statement", page: 2 } */
+/** "bank_statement_2" -> { base: "bank_statement", page: 2 } */
 export function docPage(key: string): { base: string; page: number } {
   const m = /^(.+)_([2-9])$/.exec(key);
   if (m && LOAN_DOCS.some((d) => d.kind === m[1])) return { base: m[1], page: Number(m[2]) };
@@ -196,7 +196,7 @@ export function ageFrom(birth: Date, now = new Date()) {
   return a;
 }
 
-/** Хүсэлт илгээхээс өмнөх урьдчилсан шалгалт — submit_loan_request-ийн checks-тэй ижил дүрэм */
+/** Хүсэлт илгээхээс өмнөх урьдчилсан шалгалт - submit_loan_request-ийн checks-тэй ижил дүрэм */
 export function previewChecks(o: {
   partner: Partner;
   age: number | null;

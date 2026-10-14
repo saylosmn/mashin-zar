@@ -1,8 +1,8 @@
 # Шалгалт: push болон pull request бүрт вэб, апп, өгөгдлийн сангийн кодыг автоматаар шалгана.
 #  - Вэб: TypeScript, ESLint, unit тест (шимтгэл, хугацаа, харьцуулалт, лизинг…), production build
 #  - Апп: TypeScript
-#  - SQL: schema.sql-ийг хоосон Postgres-д 2 удаа ажиллуулж (дахин ажиллуулахад аюулгүй эсэх),
-#         supabase/tests/flows.sql-ийн урсгалын тестүүд (эрх, RLS, агент, гомдол, хугацаа…)
+#  - SQL: schema.sql-ийг 2 удаа (idempotent эсэх), migrations/-ийг хоосон DB дээр дарааллаар нь
+#         ажиллуулж, хоёуланд нь supabase/tests/flows.sql-ийн тестүүд
 name: CI
 
 on:
@@ -85,3 +85,11 @@ jobs:
           psql -v ON_ERROR_STOP=1 -q -f /tmp/schema.sql
       - name: Урсгалын тест
         run: psql -v ON_ERROR_STOP=1 -q -f supabase/tests/flows.sql
+      - name: Migration-уудыг хоосон DB дээр дарааллаар нь
+        run: |
+          psql -v ON_ERROR_STOP=1 -q -c "create database migrations"
+          psql -d migrations -v ON_ERROR_STOP=1 -q -f supabase/tests/stubs.sql
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            sed 's/^create extension if not exists pg_net;/-- pg_net (CI)/' "$f" | psql -d migrations -v ON_ERROR_STOP=1 -q
+          done
+          psql -d migrations -v ON_ERROR_STOP=1 -q -f supabase/tests/flows.sql
